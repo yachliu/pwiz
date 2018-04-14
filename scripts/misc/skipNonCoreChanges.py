@@ -3,6 +3,12 @@ import sys
 import subprocess
 import re
 
+def runCommandAndExit(args):
+        cmd = args[0]
+        args = args[0:len(args)]
+        os.execv(cmd, args)
+        exit(0)
+
 args = sys.argv[1:len(sys.argv)]
 
 if len(args) == 0:
@@ -18,16 +24,22 @@ matchPaths = \
     "pwiz_tools/Shared/.*"
 ]
 
-changed_files = subprocess.check_output("git whatchanged --name-only --pretty=\"\" master..HEAD", shell=True).decode(sys.stdout.encoding) 
+branch = subprocess.check_output("git branch", shell=True).decode(sys.stdout.encoding)
+print("Branches:\n", branch)
+branch = re.search("(?<=\* )([^\n]*)", branch).groups(0)[0]
+print("Current branch: %s" % branch)
+if branch == "master":
+    runCommandAndExit(args)
+
+changed_files = subprocess.check_output("git whatchanged --name-only --pretty=\"\" master..HEAD", shell=True).decode(sys.stdout.encoding)
+print("Changed files:\n", changed_files)
 changed_files = changed_files.splitlines()
 pathsPattern = "(?:" + ")|(?:".join(matchPaths) + ")"
 
 # if any changed file does not match to one of the paths above, then we run the command
 for path in changed_files:
     if not re.match(pathsPattern, path):
-        cmd = args[0]
-        args = args[0:len(args)]
-        os.execv(cmd, args)
-        exit(0)
+        print("Core path triggering build: %s" % path)
+        runCommandAndExit(args)
 
 # otherwise we don't run it but still report success
