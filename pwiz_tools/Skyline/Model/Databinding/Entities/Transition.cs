@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using pwiz.Common.Chemistry;
 using pwiz.Common.DataBinding.Attributes;
 using pwiz.Skyline.Model.Databinding.Collections;
 using pwiz.Skyline.Model.DocSettings;
@@ -257,7 +258,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         [InvariantDisplayName("ProductIonMzDistribution")]
         [ChildDisplayName("ProductIon{0}")]
         [Format(Formats.Mz)]
-        public MzDistribution MzDistribution 
+        public AbstractDistribution.MzDistribution MzDistribution 
         {
             get
             {
@@ -266,8 +267,31 @@ namespace pwiz.Skyline.Model.Databinding.Entities
                 var mzDistribution = fragmentedMolecule.GetFragmentDistribution(settings, null, null);
                 var monoMass = settings.GetMonoMass(fragmentedMolecule.FragmentFormula,
                     fragmentedMolecule.FragmentMassShift, fragmentedMolecule.FragmentCharge);
-                return new MzDistribution(mzDistribution, monoMass);
+                return new AbstractDistribution.MzDistribution(mzDistribution, monoMass);
             } 
+        }
+
+        [ChildDisplayName("ComplementaryProductMassDistribution{0}")]
+        [Format(Formats.Mz)]
+        public AbstractDistribution.MassDistribution ComplementaryProductMassDistribution
+        {
+            get
+            {
+                Molecule complementaryFormula;
+                var fragmentedMolecule = GetFragmentedMolecule();
+                try
+                {
+                    complementaryFormula = fragmentedMolecule.GetComplementaryProductFormula();
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+                var settings = FragmentedMolecule.Settings.FromSrmSettings(SrmDocument.Settings);
+                double massShift = fragmentedMolecule.PrecursorMassShift - fragmentedMolecule.FragmentMassShift;
+                return new AbstractDistribution.MassDistribution(settings.GetMassDistribution(complementaryFormula, massShift, 0),
+                    settings.GetMonoMass(complementaryFormula, massShift, 0));
+            }
         }
 
         public FragmentedMolecule GetFragmentedMolecule()

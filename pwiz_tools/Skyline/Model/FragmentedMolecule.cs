@@ -156,26 +156,9 @@ namespace pwiz.Skyline.Model
 
         public IDictionary<double, double> GetFragmentDistribution(Settings settings, double? precursorMinMz, double? precursorMaxMz)
         {
-            var precursorFormula = PrecursorFormula;
-            var fragmentFormula = FragmentFormula;
             var fragmentDistribution = settings.GetMassDistribution(FragmentFormula, FragmentMassShift, FragmentCharge);
-            var difference = new Dictionary<string, int>(precursorFormula);
-            foreach (var entry in fragmentFormula)
-            {
-                int count;
-                difference.TryGetValue(entry.Key, out count);
-                count -= entry.Value;
-                difference[entry.Key] = count;
-            }
-            var negative = difference.FirstOrDefault(entry => entry.Value < 0);
-            if (null != negative.Key)
-            {
-                string message = string.Format(
-                    "Unable to calculate expected distribution because the fragment contains more '{0}' atoms than the precursor.",
-                    negative.Key);
-                throw new InvalidOperationException(message);
-            }
-            var otherFragmentDistribution = settings.GetMassDistribution(Molecule.FromDict(difference), PrecursorMassShift - FragmentMassShift, PrecursorCharge);
+            var otherFragmentFormula = GetComplementaryProductFormula();
+            var otherFragmentDistribution = settings.GetMassDistribution(otherFragmentFormula, PrecursorMassShift - FragmentMassShift, PrecursorCharge);
             var result = new Dictionary<double, double>();
             foreach (var entry in fragmentDistribution)
             {
@@ -191,6 +174,27 @@ namespace pwiz.Skyline.Model
                 }
             }
             return result;
+        }
+
+        public Molecule GetComplementaryProductFormula()
+        {
+            var difference = new Dictionary<string, int>(PrecursorFormula);
+            foreach (var entry in FragmentFormula)
+            {
+                int count;
+                difference.TryGetValue(entry.Key, out count);
+                count -= entry.Value;
+                difference[entry.Key] = count;
+            }
+            var negative = difference.FirstOrDefault(entry => entry.Value < 0);
+            if (null != negative.Key)
+            {
+                string message = string.Format(
+                    "Unable to calculate expected distribution because the fragment contains more '{0}' atoms than the precursor.",
+                    negative.Key);
+                throw new InvalidOperationException(message);
+            }
+            return Molecule.FromDict(difference);
         }
 
         private static Molecule GetSequenceFormula(ModifiedSequence modifiedSequence, MassType massType, out double unexplainedMassShift)

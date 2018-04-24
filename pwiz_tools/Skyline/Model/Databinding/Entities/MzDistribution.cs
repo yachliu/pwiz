@@ -10,30 +10,27 @@ using pwiz.Skyline.Util.Extensions;
 
 namespace pwiz.Skyline.Model.Databinding.Entities
 {
-    public class MzDistribution : IFormattable
+    public abstract class AbstractDistribution : IFormattable
     {
-        public MzDistribution(IEnumerable<KeyValuePair<double, double>> mzs, double? monoisotopicMz)
+        protected FormattableList<double> _mzsOrMasses;
+        protected double _averageMzOrMass;
+        protected double? _monoMzOrMass;
+        protected AbstractDistribution(IEnumerable<KeyValuePair<double, double>> mzOrMassIntensities, double? monoMzOrMass)
         {
-            var mzList = mzs.OrderBy(mz => mz.Key).ToArray();
-            Mzs = new FormattableList<double>(ImmutableList.ValueOf(mzList.Select(mz => mz.Key)));
-            Abundances = new FormattableList<double>(ImmutableList.ValueOf(mzList.Select(mz=>mz.Value)));
+            var mzList = mzOrMassIntensities.OrderBy(mz => mz.Key).ToArray();
+            _mzsOrMasses = new FormattableList<double>(ImmutableList.ValueOf(mzList.Select(mz => mz.Key)));
+            Abundances = new FormattableList<double>(ImmutableList.ValueOf(mzList.Select(mz => mz.Value)));
             var totalAbundance = mzList.Sum(mz => mz.Value);
             if (totalAbundance != 0)
             {
                 var totalMzIntensity = mzList.Sum(mz => mz.Key * mz.Value);
-                AverageMz = totalMzIntensity / totalAbundance;
+                _averageMzOrMass = totalMzIntensity / totalAbundance;
             }
-            MonoisotopicMz = monoisotopicMz;
+            _monoMzOrMass = monoMzOrMass;
         }
-        [Format(Formats.Mz)]
-        public FormattableList<double> Mzs { get; private set; }
+
         [Format(Formats.STANDARD_RATIO)]
         public FormattableList<double> Abundances { get; private set; }
-        [Format(Formats.Mz)]
-        public double AverageMz { get; private set; }
-        [Format(Formats.Mz)]
-        public double? MonoisotopicMz { get; private set; }
-
         public override string ToString()
         {
             return ToString(null, CultureInfo.CurrentCulture);
@@ -41,12 +38,40 @@ namespace pwiz.Skyline.Model.Databinding.Entities
 
         public string ToString(string format, IFormatProvider formatProvider)
         {
-            if (MonoisotopicMz.HasValue)
+            if (_monoMzOrMass.HasValue)
             {
-                return TextUtil.SpaceSeparate("Mono:", MonoisotopicMz.Value.ToString(format, formatProvider),
-                    "Average:", AverageMz.ToString(format, formatProvider));
+                return TextUtil.SpaceSeparate("Mono:", _monoMzOrMass.Value.ToString(format, formatProvider),
+                    "Average:", _averageMzOrMass.ToString(format, formatProvider));
             }
-            return TextUtil.SpaceSeparate("Average:", AverageMz.ToString(format, formatProvider));
+            return TextUtil.SpaceSeparate("Average:", _averageMzOrMass.ToString(format, formatProvider));
+        }
+        public class MzDistribution : AbstractDistribution
+        {
+            public MzDistribution(IEnumerable<KeyValuePair<double, double>> mzs, double? monoisotopicMz)
+                : base(mzs,
+                    monoisotopicMz)
+            {
+            }
+
+            [Format(Formats.Mz)]
+            public FormattableList<double> Mzs { get { return _mzsOrMasses; } }
+            [Format(Formats.Mz)]
+            public double AverageMz { get { return _averageMzOrMass; } }
+            [Format(Formats.Mz)]
+            public double? MonoisotopicMz { get { return _monoMzOrMass; } }
+        }
+        public class MassDistribution : AbstractDistribution
+        {
+            public MassDistribution(IEnumerable<KeyValuePair<double, double>> massAbundances, double? monoisotopicMass)
+                : base(massAbundances, monoisotopicMass)
+            {
+            }
+            [Format(Formats.Mz)]
+            public FormattableList<double> Masses { get { return _mzsOrMasses; } }
+            [Format(Formats.Mz)]
+            public double AverageMass { get { return _averageMzOrMass; } }
+            [Format(Formats.Mz)]
+            public double? MonoisotopicMass { get { return _monoMzOrMass; } }
         }
     }
 }
