@@ -191,6 +191,17 @@ namespace pwiz.Skyline.Model.DocSettings.AbsoluteQuantification
                 }
                 return CalibrationCurve.NO_EXTERNAL_STANDARDS;
             }
+            var weightedPoints = GetStandardPoints();
+            if (weightedPoints.Count == 0)
+            {
+                return new CalibrationCurve()
+                    .ChangeErrorMessage(QuantificationStrings.CalibrationCurveFitter_GetCalibrationCurve_All_of_the_external_standards_are_missing_one_or_more_peaks_);
+            }
+            return FindBestLodForPoints(weightedPoints);
+        }
+
+        private IList<WeightedPoint> GetStandardPoints()
+        {
             List<WeightedPoint> weightedPoints = new List<WeightedPoint>();
             foreach (var replicateIndex in GetValidStandardReplicates())
             {
@@ -204,12 +215,7 @@ namespace pwiz.Skyline.Model.DocSettings.AbsoluteQuantification
                 WeightedPoint weightedPoint = new WeightedPoint(x, intensity.Value, weight);
                 weightedPoints.Add(weightedPoint);
             }
-            if (weightedPoints.Count == 0)
-            {
-                return new CalibrationCurve()
-                    .ChangeErrorMessage(QuantificationStrings.CalibrationCurveFitter_GetCalibrationCurve_All_of_the_external_standards_are_missing_one_or_more_peaks_);
-            }
-            return FindBestLodForPoints(weightedPoints);
+            return weightedPoints;
         }
 
         public FiguresOfMerit GetFiguresOfMerit(CalibrationCurve calibrationCurve)
@@ -230,12 +236,23 @@ namespace pwiz.Skyline.Model.DocSettings.AbsoluteQuantification
 
         public double? GetLimitOfQuantification(CalibrationCurve calibrationCurve)
         {
+            var bilinearLoq = GetBilinearLoq(calibrationCurve);
+            var cvLoq = GetLoqFromBiasAndCv(calibrationCurve);
+            if (bilinearLoq.HasValue && cvLoq.HasValue)
+            {
+                return Math.Max(bilinearLoq.Value, cvLoq.Value);
+            }
+            return bilinearLoq ?? cvLoq;
+        }
+
+        private double? GetLoqFromBiasAndCv(CalibrationCurve calibrationCurve)
+        {
             if (!QuantificationSettings.MaxLoqBias.HasValue && !QuantificationSettings.MaxLoqCv.HasValue)
             {
                 return null;
             }
-            var concentrationReplicateLookup = GetStandardConcentrations().ToLookup(entry=>entry.Value, entry=>entry.Key);
-            foreach (var concentrationReplicate in concentrationReplicateLookup.OrderBy(grouping=>grouping.Key))
+            var concentrationReplicateLookup = GetStandardConcentrations().ToLookup(entry => entry.Value, entry => entry.Key);
+            foreach (var concentrationReplicate in concentrationReplicateLookup.OrderBy(grouping => grouping.Key))
             {
                 var peakAreas = new List<double>();
                 foreach (var replicateIndex in concentrationReplicate)
@@ -284,7 +301,51 @@ namespace pwiz.Skyline.Model.DocSettings.AbsoluteQuantification
                 }
                 return concentrationReplicate.Key;
             }
-            return null;
+            return double.PositiveInfinity;
+        }
+
+        private double? GetBilinearLoq(CalibrationCurve calibrationCurve)
+        {
+            if (!QuantificationSettings.BilinearLoq || !calibrationCurve.TurningPoint.HasValue)
+            {
+                return null;
+            }
+            var allPoints = GetStandardPoints();
+            return GetBilinearLoq(calibrationCurve, allPoints);
+        }
+
+        public static double? GetBilinearLoq(CalibrationCurve calibrationCurve, IList<WeightedPoint> allPoints)
+        {
+            var noisePoints = allPoints.Where(pt => pt.X < calibrationCurve.TurningPoint).ToArray();
+            if (noisePoints.Length == 0)
+            {
+                return double.NaN;
+            }
+            var linearPoints = allPoints.Where(pt => pt.X >= calibrationCurve.TurningPoint).ToArray();
+            if (linearPoints.Length == 0)
+            {
+                return double.PositiveInfinity;
+            }
+            var predictIntervalNoise = GetPredictionInterval(noisePoints, calibrationCurve);
+            var predictIntervalLinear = GetPredictionInterval(linearPoints, calibrationCurve);
+            var interceptLinear = calibrationCurve.Intercept.Value;
+            var interceptNoise = calibrationCurve.GetY(calibrationCurve.TurningPoint).Value;
+            var intersectPiLinear = (interceptLinear - interceptNoise - predictIntervalLinear - predictIntervalNoise) /
+                                    -calibrationCurve.Slope.Value;
+            return intersectPiLinear;
+        }
+
+        private static double GetPredictionInterval(IList<WeightedPoint> points, CalibrationCurve calibrationCurve)
+        {
+            var df = points.Count - 2;
+            var tStat = Util.Statistics.QT(.95, df);
+            var residuals = points.Select(pt => pt.Y - calibrationCurve.GetY(pt.X).Value);
+            var stdErr = Math.Sqrt(residuals.Sum(r => r * r) / df);
+            var meanX = points.Select(pt => pt.X).Mean();
+            var maxXDeviation = calibrationCurve.TurningPoint.Value - meanX;
+            var extraFactor = Math.Pow(maxXDeviation, 2) / points.Sum(pt => Math.Pow(pt.X - meanX, 2));
+            var predictInterval = tStat * stdErr * Math.Sqrt(1 + 1 / points.Count + extraFactor);
+            return predictInterval;
         }
 
         private CalibrationCurve GetCalibrationCurveFromPoints(IList<WeightedPoint> points)

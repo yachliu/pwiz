@@ -16,9 +16,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+using System;
+using System.Configuration;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using pwiz.Common.Collections;
 using pwiz.Skyline.Model.DocSettings.AbsoluteQuantification;
+using pwiz.Skyline.Util;
 using pwiz.SkylineTestUtil;
 
 namespace pwiz.SkylineTestA
@@ -37,6 +42,53 @@ namespace pwiz.SkylineTestA
             Assert.AreEqual(11673.593881022069, calcurve.TurningPoint.Value, 1);
             Assert.AreEqual(1.2771070764E-12, calcurve.Slope.Value, 1E-15);
             Assert.AreEqual(-1.4118993633E-08, calcurve.Intercept.Value, 1E-12);
+        }
+
+        [TestMethod]
+        public void TestBilinearLoq()
+        {
+            CalibrationCurve calcurve = RegressionFit.BilinearFit(LKPALAVILLER_POINTS);
+            var loq = CalibrationCurveFitter.GetBilinearLoq(calcurve, LKPALAVILLER_POINTS);
+            Assert.AreEqual(29380.814749852558, loq.Value, 1);
+//            Assert.IsNotNull(calcurve.TurningPoint);
+//            var subset_noise = LKPALAVILLER_POINTS.Where(p => p.X < calcurve.TurningPoint).ToArray();
+//            Assert.AreNotEqual(0, subset_noise.Length);
+//            var dfNoise = subset_noise.Length - 2;
+//            Assert.AreEqual(31, dfNoise);
+//            var tStatNoise = Statistics.QT(.95, dfNoise);
+//            Assert.AreEqual(1.6955, tStatNoise, .0001);
+//            var yNoise = calcurve.GetY(calcurve.TurningPoint);
+//            Assert.IsNotNull(yNoise);
+//            var residNoise = subset_noise.Select(pt => pt.Y - yNoise.Value).ToArray();
+//            var stdErrNoise = Math.Sqrt(residNoise.Sum(r => r * r) / dfNoise);
+//            Assert.AreEqual(1.12629e-9, stdErrNoise, 1e-12);
+//            var statsXNoise = new Statistics(subset_noise.Select(pt => pt.X));
+//            var meanXNoise = statsXNoise.Mean();
+//            var maxDevXNoise = calcurve.TurningPoint.Value - meanXNoise;
+//            var extraFactorNoise = Math.Pow(maxDevXNoise, 2) / subset_noise.Sum(pt=>Math.Pow(pt.X - meanXNoise, 2));
+//            Assert.AreEqual(0.38383093464270984, extraFactorNoise, .000001);
+//            var predictIntervalNoise = tStatNoise * stdErrNoise * Math.Sqrt(1 + 1 / subset_noise.Length + extraFactorNoise);
+//            Assert.AreEqual(2.246440945355845e-09, predictIntervalNoise, 1E-14);
+//
+//            var subset_linear = LKPALAVILLER_POINTS.Where(p => p.X >= calcurve.TurningPoint).ToArray();
+//            var dfLinear = subset_linear.Length - 2;
+//            Assert.AreEqual(7, dfLinear);
+//            var tStatLinear = Statistics.QT(.95, dfLinear);
+//            Assert.AreEqual(1.894578605061305, tStatLinear, .0001);
+//            var residLinear = subset_linear.Select(pt => pt.Y - calcurve.GetY(pt.X).Value).ToArray();
+//            var stdErrLinear = Math.Sqrt(residLinear.Sum(r => r * r) / dfLinear);
+//            Assert.AreEqual(9.147036314447513e-09, stdErrLinear, 1E-13);
+//            var meanXLinear = subset_linear.Average(pt => pt.X);
+//            var maxDevXLinear = meanXLinear - calcurve.TurningPoint.Value;
+//            var extraFactorLinear = Math.Pow(maxDevXLinear, 2) / subset_linear.Sum(pt => Math.Pow(pt.X - meanXLinear, 2));
+//            var predictIntervalLinear =
+//                tStatLinear * stdErrLinear * Math.Sqrt(1 + 1 / subset_linear.Length + extraFactorLinear);
+//            Assert.AreEqual(2.0367576129195363e-08, predictIntervalLinear, 1E-12);
+//            var interceptLinear = calcurve.Intercept.Value;
+//            var interceptNoise = calcurve.GetY(calcurve.TurningPoint).Value;
+//            var intersectPiLinear = (interceptLinear - interceptNoise - predictIntervalLinear - predictIntervalNoise) /
+//                                    -calcurve.Slope.Value;
+//            Assert.AreEqual(29380.814749852558, intersectPiLinear, 1);
         }
 
         public static readonly ImmutableList<WeightedPoint> LKPALAVILLER_POINTS = ImmutableList.ValueOf(new[]

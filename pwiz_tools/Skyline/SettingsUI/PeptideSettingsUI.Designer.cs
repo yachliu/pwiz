@@ -140,6 +140,7 @@ namespace pwiz.Skyline.SettingsUI
             this.addIonMobilityLibraryContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editIonMobilityLibraryCurrentContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editIonMobilityLibraryListContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.cbxBilinearLoq = new System.Windows.Forms.CheckBox();
             this.tabControl1.SuspendLayout();
             this.tabDigestion.SuspendLayout();
             this.tabPrediction.SuspendLayout();
@@ -784,6 +785,7 @@ namespace pwiz.Skyline.SettingsUI
             // groupBoxFiguresOfMerit
             // 
             resources.ApplyResources(this.groupBoxFiguresOfMerit, "groupBoxFiguresOfMerit");
+            this.groupBoxFiguresOfMerit.Controls.Add(this.cbxBilinearLoq);
             this.groupBoxFiguresOfMerit.Controls.Add(this.tbxMaxLoqBias);
             this.groupBoxFiguresOfMerit.Controls.Add(this.comboLodMethod);
             this.groupBoxFiguresOfMerit.Controls.Add(this.lblCaclulateLodBy);
@@ -881,6 +883,7 @@ namespace pwiz.Skyline.SettingsUI
             this.comboRegressionFit.FormattingEnabled = true;
             resources.ApplyResources(this.comboRegressionFit, "comboRegressionFit");
             this.comboRegressionFit.Name = "comboRegressionFit";
+            this.comboRegressionFit.SelectedIndexChanged += new System.EventHandler(this.comboRegressionFit_SelectedIndexChanged);
             // 
             // lblRegressionFit
             // 
@@ -952,6 +955,12 @@ namespace pwiz.Skyline.SettingsUI
             this.editIonMobilityLibraryListContextMenuItem.Name = "editIonMobilityLibraryListContextMenuItem";
             resources.ApplyResources(this.editIonMobilityLibraryListContextMenuItem, "editIonMobilityLibraryListContextMenuItem");
             this.editIonMobilityLibraryListContextMenuItem.Click += new System.EventHandler(this.editIonMobilityLibraryListContextMenuItem_Click);
+            // 
+            // cbxBilinearLoq
+            // 
+            resources.ApplyResources(this.cbxBilinearLoq, "cbxBilinearLoq");
+            this.cbxBilinearLoq.Name = "cbxBilinearLoq";
+            this.cbxBilinearLoq.UseVisualStyleBackColor = true;
             // 
             // PeptideSettingsUI
             // 
@@ -1102,5 +1111,6 @@ namespace pwiz.Skyline.SettingsUI
         private System.Windows.Forms.Label lblMaxLoqBias;
         private System.Windows.Forms.ComboBox comboLodMethod;
         private System.Windows.Forms.GroupBox groupBoxFiguresOfMerit;
+        private System.Windows.Forms.CheckBox cbxBilinearLoq;
     }
 }

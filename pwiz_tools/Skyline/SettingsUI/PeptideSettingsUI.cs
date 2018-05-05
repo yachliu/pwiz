@@ -198,7 +198,7 @@ namespace pwiz.Skyline.SettingsUI
             comboLodMethod.SelectedItem = _peptideSettings.Quantification.LodCalculation;
             tbxMaxLoqBias.Text = _peptideSettings.Quantification.MaxLoqBias.ToString();
             tbxMaxLoqCv.Text = _peptideSettings.Quantification.MaxLoqCv.ToString();
-
+            cbxBilinearLoq.Checked = _peptideSettings.Quantification.BilinearLoq;
             UpdateLibraryDriftPeakWidthControls();
         }
 
@@ -527,6 +527,7 @@ namespace pwiz.Skyline.SettingsUI
                 }
                 quantification = quantification.ChangeMaxLoqCv(maxLoqCv);
             }
+            quantification = quantification.ChangeBilinearLoq(cbxBilinearLoq.Checked);
 
             return new PeptideSettings(enzyme, digest, prediction, filter, libraries, modifications, integration, backgroundProteome)
                     .ChangeAbsoluteQuantification(quantification);
@@ -1828,6 +1829,23 @@ namespace pwiz.Skyline.SettingsUI
         {
             cbLinear.Checked = checkedState;
             UpdateLibraryDriftPeakWidthControls();
+        }
+
+        private void comboRegressionFit_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var regressionFit = comboRegressionFit.SelectedItem as RegressionFit;
+            if (regressionFit == RegressionFit.BILINEAR)
+            {
+                cbxBilinearLoq.Enabled = true;
+                if (string.IsNullOrEmpty(tbxMaxLoqBias.Text) && string.IsNullOrEmpty(tbxMaxLoqCv.Text))
+                {
+                    cbxBilinearLoq.Checked = true;
+                }
+            }
+            else
+            {
+                cbxBilinearLoq.Enabled = false;
+            }
         }
     }
 }
