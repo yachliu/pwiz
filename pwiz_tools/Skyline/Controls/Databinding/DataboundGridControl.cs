@@ -329,7 +329,7 @@ namespace pwiz.Skyline.Controls.Databinding
             })
             {
                 quickFilterForm.SetFilter(BindingListSource.ViewInfo.DataSchema, _columnFilterPropertyDescriptor, BindingListSource.RowFilter);
-                if (FormUtil.ShowDialog(this, quickFilterForm) == DialogResult.OK)
+                if (FormUtil.ShowDialog(FormUtil.FindTopLevelOwner(this), quickFilterForm) == DialogResult.OK)
                 {
                     BindingListSource.RowFilter = quickFilterForm.RowFilter;
                 }

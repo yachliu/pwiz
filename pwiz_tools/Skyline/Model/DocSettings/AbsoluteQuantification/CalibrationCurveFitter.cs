@@ -332,6 +332,14 @@ namespace pwiz.Skyline.Model.DocSettings.AbsoluteQuantification
             var interceptNoise = calibrationCurve.GetY(calibrationCurve.TurningPoint).Value;
             var intersectPiLinear = (interceptLinear - interceptNoise - predictIntervalLinear - predictIntervalNoise) /
                                     -calibrationCurve.Slope.Value;
+            if (intersectPiLinear > allPoints.Max(pt => pt.X))
+            {
+                return double.PositiveInfinity;
+            }
+            if (intersectPiLinear < 0)
+            {
+                return double.NaN;
+            }
             return intersectPiLinear;
         }
 

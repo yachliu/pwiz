@@ -114,6 +114,7 @@ namespace pwiz.Skyline.SettingsUI
             this.label36 = new System.Windows.Forms.Label();
             this.tabQuantification = new System.Windows.Forms.TabPage();
             this.groupBoxFiguresOfMerit = new System.Windows.Forms.GroupBox();
+            this.cbxBilinearLoq = new System.Windows.Forms.CheckBox();
             this.tbxMaxLoqBias = new System.Windows.Forms.TextBox();
             this.comboLodMethod = new System.Windows.Forms.ComboBox();
             this.lblCaclulateLodBy = new System.Windows.Forms.Label();
@@ -140,7 +141,6 @@ namespace pwiz.Skyline.SettingsUI
             this.addIonMobilityLibraryContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editIonMobilityLibraryCurrentContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editIonMobilityLibraryListContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.cbxBilinearLoq = new System.Windows.Forms.CheckBox();
             this.tabControl1.SuspendLayout();
             this.tabDigestion.SuspendLayout();
             this.tabPrediction.SuspendLayout();
@@ -797,6 +797,12 @@ namespace pwiz.Skyline.SettingsUI
             this.groupBoxFiguresOfMerit.Name = "groupBoxFiguresOfMerit";
             this.groupBoxFiguresOfMerit.TabStop = false;
             // 
+            // cbxBilinearLoq
+            // 
+            resources.ApplyResources(this.cbxBilinearLoq, "cbxBilinearLoq");
+            this.cbxBilinearLoq.Name = "cbxBilinearLoq";
+            this.cbxBilinearLoq.UseVisualStyleBackColor = true;
+            // 
             // tbxMaxLoqBias
             // 
             resources.ApplyResources(this.tbxMaxLoqBias, "tbxMaxLoqBias");
@@ -955,12 +961,6 @@ namespace pwiz.Skyline.SettingsUI
             this.editIonMobilityLibraryListContextMenuItem.Name = "editIonMobilityLibraryListContextMenuItem";
             resources.ApplyResources(this.editIonMobilityLibraryListContextMenuItem, "editIonMobilityLibraryListContextMenuItem");
             this.editIonMobilityLibraryListContextMenuItem.Click += new System.EventHandler(this.editIonMobilityLibraryListContextMenuItem_Click);
-            // 
-            // cbxBilinearLoq
-            // 
-            resources.ApplyResources(this.cbxBilinearLoq, "cbxBilinearLoq");
-            this.cbxBilinearLoq.Name = "cbxBilinearLoq";
-            this.cbxBilinearLoq.UseVisualStyleBackColor = true;
             // 
             // PeptideSettingsUI
             // 

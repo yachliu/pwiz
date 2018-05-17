@@ -178,15 +178,16 @@ namespace pwiz.SkylineTestFunctional
             {
                 double min = Math.Min(options.MaxLoqBias.GetValueOrDefault(1000),
                     options.MaxLoqCv.GetValueOrDefault(1000));
+                Assert.IsNotNull(figuresOfMerit.LimitOfQuantification);
                 if (min <= 0)
                 {
-                    Assert.IsNull(figuresOfMerit.LimitOfQuantification);
+                    Assert.IsTrue(double.IsInfinity(figuresOfMerit.LimitOfQuantification.Value));
                 }
                 if (min >= 1000)
                 {
                     if (!Equals(RegressionFit.NONE, options.RegressionFit) || !options.MaxLoqBias.HasValue)
                     {
-                        Assert.IsNotNull(figuresOfMerit.LimitOfQuantification);
+                        Assert.IsFalse(double.IsInfinity(figuresOfMerit.LimitOfQuantification.Value));
                     }
                 }
             }
@@ -270,7 +271,7 @@ namespace pwiz.SkylineTestFunctional
                 }
                 return grouping.Key * concentrationMultiplier;
             }
-            return null;
+            return Double.PositiveInfinity;
         }
 
         /// <summary>

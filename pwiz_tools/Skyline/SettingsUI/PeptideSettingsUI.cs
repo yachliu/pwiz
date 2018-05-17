@@ -1484,6 +1484,12 @@ namespace pwiz.Skyline.SettingsUI
             set { tbxMaxLoqCv.Text = value.ToString(); }
         }
 
+        public bool QuantBilinearLoq
+        {
+            get { return cbxBilinearLoq.Checked; }
+            set { cbxBilinearLoq.Checked = value; }
+        }
+
         public LodCalculation QuantLodMethod
         {
             get { return comboLodMethod.SelectedItem as LodCalculation; }
