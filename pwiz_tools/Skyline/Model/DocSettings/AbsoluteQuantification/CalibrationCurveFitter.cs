@@ -251,8 +251,9 @@ namespace pwiz.Skyline.Model.DocSettings.AbsoluteQuantification
             {
                 return null;
             }
+            double loq = double.PositiveInfinity;
             var concentrationReplicateLookup = GetStandardConcentrations().ToLookup(entry => entry.Value, entry => entry.Key);
-            foreach (var concentrationReplicate in concentrationReplicateLookup.OrderBy(grouping => grouping.Key))
+            foreach (var concentrationReplicate in concentrationReplicateLookup.OrderByDescending(grouping => grouping.Key))
             {
                 var peakAreas = new List<double>();
                 foreach (var replicateIndex in concentrationReplicate)
@@ -263,16 +264,19 @@ namespace pwiz.Skyline.Model.DocSettings.AbsoluteQuantification
                         peakAreas.Add(peakArea.Value);
                     }
                 }
-                if (QuantificationSettings.MaxLoqCv.HasValue)
+                if (peakAreas.Count > 1)
                 {
-                    double cv = peakAreas.StandardDeviation() / peakAreas.Mean();
-                    if (double.IsNaN(cv) || double.IsInfinity(cv))
+                    if (QuantificationSettings.MaxLoqCv.HasValue)
                     {
-                        continue;
-                    }
-                    if (cv * 100 > QuantificationSettings.MaxLoqCv)
-                    {
-                        continue;
+                        double cv = peakAreas.StandardDeviation() / peakAreas.Mean();
+                        if (double.IsNaN(cv) || double.IsInfinity(cv))
+                        {
+                            return loq;
+                        }
+                        if (cv * 100 > QuantificationSettings.MaxLoqCv)
+                        {
+                            return loq;
+                        }
                     }
                 }
                 if (QuantificationSettings.MaxLoqBias.HasValue)
@@ -292,16 +296,16 @@ namespace pwiz.Skyline.Model.DocSettings.AbsoluteQuantification
                                   concentrationReplicate.Key;
                     if (double.IsNaN(bias) || double.IsInfinity(bias))
                     {
-                        continue;
+                        return loq;
                     }
                     if (Math.Abs(bias * 100) > QuantificationSettings.MaxLoqBias.Value)
                     {
-                        continue;
+                        return loq;
                     }
                 }
-                return concentrationReplicate.Key;
+                loq = concentrationReplicate.Key;
             }
-            return double.PositiveInfinity;
+            return loq;
         }
 
         private double? GetBilinearLoq(CalibrationCurve calibrationCurve)
