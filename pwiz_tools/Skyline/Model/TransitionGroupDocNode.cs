@@ -1073,9 +1073,6 @@ namespace pwiz.Skyline.Model
             }
             else
             {
-                // Recalculate results information
-                bool integrateAll = settingsNew.TransitionSettings.Integration.IsIntegrateAll;
-
                 // Store indexes to previous results in a dictionary for lookup
                 var settingsOld = diff.SettingsOld;
                 var dictChromIdIndex = settingsOld != null && settingsOld.HasResults
@@ -1139,8 +1136,6 @@ namespace pwiz.Skyline.Model
                         // by the user, then preserve it, and skip automatic peak picking
                         var resultOld = Results != null ? Results[iResultOld] : default(ChromInfoList<TransitionGroupChromInfo>);
                         if (!resultOld.IsEmpty &&
-                                // Do not reuse results, if integrate all has changed
-                                integrateAll == settingsOld.TransitionSettings.Integration.IsIntegrateAll &&
                                 (// Unfortunately, it is always possible that new results need
                                  // to be added from other files.  So this must be handled below.
                                  //(UserSetResults(resultOld) && setTranPrevious == null) ||
@@ -1174,7 +1169,7 @@ namespace pwiz.Skyline.Model
                     if (keepUserSet && iResultOld != -1)
                     {
                         // Or we have reintegrated peaks that are not matching the current integrate all setting
-                        if (integrateAll && (settingsOld == null || !settingsOld.TransitionSettings.Integration.IsIntegrateAll))
+                        if (settingsOld == null)
                             missmatchedEmptyReintegrated = nodePrevious.IsMismatchedEmptyReintegrated(iResultOld);
                         if (setTranPrevious != null || missmatchedEmptyReintegrated)
                             dictUserSetInfoBest = nodePrevious.FindBestUserSetInfo(iResultOld);
@@ -1270,7 +1265,7 @@ namespace pwiz.Skyline.Model
                                 ChromFileInfoId fileId = fileIds[j];
                                 PeakFeatureStatistics reintegratePeak = reintegratePeaks != null ? reintegratePeaks[j] : null;
 
-                                chromGroupInfo.GetAllTransitionInfo(nodeTran.Mz,
+                                chromGroupInfo.GetAllTransitionInfo(nodeTran,
                                     mzMatchTolerance, chromatograms.OptimizationFunction, listChromInfo, TransformChrom.interpolated);
 
                                 // Always add the right number of steps to the list, no matter
@@ -1280,6 +1275,8 @@ namespace pwiz.Skyline.Model
                                 // Make sure nothing gets added when no measurements are present
                                 if (listChromInfo.Count == 0)
                                     countInfos = 0;
+                                else if (listChromInfo.Count < countInfos)
+                                    offset = FindCenterInfo(nodeTran, listChromInfo) - numSteps;
                                 for (int i = 0; i < countInfos; i++)
                                 {
                                     ChromatogramInfo info = null;
@@ -1310,7 +1307,7 @@ namespace pwiz.Skyline.Model
                                             else if (nodePep.HasResults && !HasResults &&
                                                 TryGetMatchingGroupInfo(nodePep, chromIndex, fileId, step, out chromGroupInfoMatch))
                                             {
-                                                peak = CalcMatchingPeak(settingsNew, info, chromGroupInfoMatch, reintegratePeak, qcutoff, integrateAll, ref userSet);
+                                                peak = CalcMatchingPeak(settingsNew, info, chromGroupInfoMatch, reintegratePeak, qcutoff, ref userSet);
                                             }
                                             // Otherwize use the best peak chosen at import time
                                             else
@@ -1318,7 +1315,6 @@ namespace pwiz.Skyline.Model
                                                 int bestIndex = GetBestIndex(info, reintegratePeak, qcutoff, ref userSet);
                                                 if (bestIndex != -1)
                                                     peak = info.GetPeak(bestIndex);
-                                                peak = CheckForcedPeak(peak, integrateAll);
                                             }
                                             ionMobility = info.GetIonMobilityFilter();
                                         }
@@ -1354,6 +1350,27 @@ namespace pwiz.Skyline.Model
                 }
                 return resultsCalc.UpdateTransitionGroupNode(this);
             }
+        }
+
+        /// <summary>
+        /// Returns the <see cref="ChromatogramInfo"/> with the closest m/z value to the given transition.
+        /// </summary>
+        private int FindCenterInfo(TransitionDocNode nodeTran, List<ChromatogramInfo> listChromInfo)
+        {
+            // The list is assumed to be sorted by m/z. So, m/z values should get closer and closer
+            // until they start getting farther and farther.
+            double minDelta = double.MaxValue;
+            for (int i = 1; i < listChromInfo.Count; i++)
+            {
+                // Stop once the first element is farther away than the last and return the last
+                double delta = Math.Abs(listChromInfo[i].ProductMz - nodeTran.Mz);
+                if (delta > minDelta)
+                    return i - 1;
+                minDelta = delta;
+            }
+
+            // Just got closer with each step. So return the last element
+            return listChromInfo.Count - 1;
         }
 
         private static int GetBestIndex(ChromatogramInfo info, PeakFeatureStatistics reintegratePeak, double qcutoff, ref UserSet userSet)
@@ -1401,7 +1418,6 @@ namespace pwiz.Skyline.Model
                                                   TransitionGroupChromInfo chromGroupInfoMatch,
                                                   PeakFeatureStatistics reintegratePeak,
                                                   double qcutoff, 
-                                                  bool integrateAll,
                                                   ref UserSet userSet)
         {
             int startIndex = info.IndexOfNearestTime(chromGroupInfoMatch.StartRetentionTime.Value);
@@ -1418,7 +1434,6 @@ namespace pwiz.Skyline.Model
                 var peakBest = info.GetPeak(bestIndex);
                 if (peakBest.StartTime == peak.StartTime && peakBest.EndTime == peak.EndTime)
                 {
-                    peak = CheckForcedPeak(peakBest, integrateAll);
                     userSet = userSetBest;
                 }
             }
@@ -1453,13 +1468,6 @@ namespace pwiz.Skyline.Model
             }
             chromGroupInfoMatch = null;
             return false;
-        }
-
-        private static ChromPeak CheckForcedPeak(ChromPeak peak, bool integrateAll)
-        {
-            if (!integrateAll && peak.IsForcedIntegration)
-                return ChromPeak.EMPTY;
-            return peak;
         }
 
         private static TransitionChromInfo CreateTransitionChromInfo(TransitionChromInfo chromInfo, ChromFileInfoId fileId,
@@ -2261,7 +2269,7 @@ namespace pwiz.Skyline.Model
 
                 if (!info.IsEmpty)
                 {
-                    if (info.Area > 0)
+                    if (info.IsGoodPeak(Settings.TransitionSettings.Integration.IsIntegrateAll))
                         PeakCount++;
                     if (nodeTran.Quantitative)
                     {
@@ -2489,7 +2497,7 @@ namespace pwiz.Skyline.Model
             {
                 if (tranId != null && !ReferenceEquals(tranId, nodeTran.Id))
                     continue;
-                var chromInfo = chromGroupInfo.GetTransitionInfo(nodeTran.Mz, (float)mzMatchTolerance);
+                var chromInfo = chromGroupInfo.GetTransitionInfo(nodeTran, (float)mzMatchTolerance);
                 if (chromInfo == null)
                     continue;
                 int indexPeak = chromInfo.IndexOfPeak(retentionTime);
@@ -2509,7 +2517,7 @@ namespace pwiz.Skyline.Model
             double startMin = double.MaxValue, endMax = double.MinValue;
             foreach (TransitionDocNode nodeTran in Children)
             {
-                var chromInfo = chromGroupInfo.GetTransitionInfo(nodeTran.Mz, (float)mzMatchTolerance);
+                var chromInfo = chromGroupInfo.GetTransitionInfo(nodeTran, (float)mzMatchTolerance);
                 if (chromInfo == null)
                     continue;
                 ChromPeak peakNew = chromInfo.GetPeak(indexPeakBest);
@@ -2523,7 +2531,7 @@ namespace pwiz.Skyline.Model
             var listChromInfo = new List<ChromatogramInfo>();
             foreach (TransitionDocNode nodeTran in Children)
             {
-                chromGroupInfo.GetAllTransitionInfo(nodeTran.Mz, (float)mzMatchTolerance, regression, listChromInfo, TransformChrom.interpolated);
+                chromGroupInfo.GetAllTransitionInfo(nodeTran, (float)mzMatchTolerance, regression, listChromInfo, TransformChrom.interpolated);
                 // Shouldn't need to update a transition with no chrom info
                 if (listChromInfo.Count == 0)
                     listChildrenNew.Add(nodeTran.RemovePeak(indexSet, fileId, userSet));
@@ -2598,7 +2606,7 @@ namespace pwiz.Skyline.Model
                         }
                     }
                 }
-                chromGroupInfo.GetAllTransitionInfo(nodeTran.Mz, (float)mzMatchTolerance, regression, listChromInfo, TransformChrom.interpolated);
+                chromGroupInfo.GetAllTransitionInfo(nodeTran, (float)mzMatchTolerance, regression, listChromInfo, TransformChrom.interpolated);
 
                 // Shouldn't need to update a transition with no chrom info
                 // Also if startTime is null, remove the peak
