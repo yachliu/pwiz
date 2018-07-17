@@ -297,14 +297,12 @@
     <Compile Include="AlgLib\solvers.cs" />
     <Compile Include="AlgLib\specialfunctions.cs" />
     <Compile Include="AlgLib\statistics.cs" />
-<<<<<<< HEAD
     <Compile Include="Controls\IsotopeDistForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Controls\IsotopeDistForm.Designer.cs">
       <DependentUpon>IsotopeDistForm.cs</DependentUpon>
     </Compile>
-=======
     <Compile Include="Model\AuditLog\Databinding\AuditLogDetailRow.cs" />
     <Compile Include="Model\AuditLog\Databinding\AuditLogRow.cs" />
     <Compile Include="Model\AuditLog\AuditLogStrings.Designer.cs">
@@ -326,7 +324,6 @@
       <DependentUpon>PropertyNames.resx</DependentUpon>
     </Compile>
     <Compile Include="Model\AuditLog\Reflector.cs" />
->>>>>>> remotes/origin/master
     <Compile Include="Model\Databinding\Entities\ColumnCaptions.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -347,9 +344,7 @@
     <Compile Include="Model\ElementLocators\ResultRef.cs" />
     <Compile Include="Model\DocSettings\AbsoluteQuantification\FiguresOfMerit.cs" />
     <Compile Include="Model\DocSettings\AbsoluteQuantification\LodCalculation.cs" />
-<<<<<<< HEAD
     <Compile Include="Model\FragmentedMolecule.cs" />
-=======
     <Compile Include="Controls\AuditLog\AuditLogForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -359,7 +354,6 @@
     <Compile Include="Model\AuditLog\AuditLogEntry.cs" />
     <Compile Include="Model\AuditLog\DiffNode.cs" />
     <Compile Include="Model\AuditLog\PropertyName.cs" />
->>>>>>> remotes/origin/master
     <Compile Include="Model\Lib\BlibData\DbRefSpectraPeakAnnotations.cs" />
     <Compile Include="Model\Lib\ExplicitPeakBounds.cs" />
     <Compile Include="Model\Lib\LibKeyIndex.cs" />
@@ -369,9 +363,7 @@
     <Compile Include="Model\MassModification.cs" />
     <Compile Include="Model\MassShift.cs" />
     <Compile Include="Model\Optimization\OptimizationDictionary.cs" />
-<<<<<<< HEAD
     <Compile Include="Model\Results\ScanInfo.cs" />
-=======
     <Compile Include="Model\Results\RemoteApi\RemoteAccountList.cs" />
     <Compile Include="Model\Results\RemoteApi\Chorus\ChorusUrl.cs" />
     <Compile Include="Model\Results\RemoteApi\RemoteAccount.cs" />
@@ -380,7 +372,6 @@
     <Compile Include="Model\Results\RemoteApi\RemoteServerException.cs" />
     <Compile Include="Model\Results\RemoteApi\RemoteSession.cs" />
     <Compile Include="Model\Results\RemoteApi\RemoteUrl.cs" />
->>>>>>> remotes/origin/master
     <Compile Include="Model\Serialization\Pre372CustomIonTransitionGroupHandler.cs" />
     <Compile Include="Model\Serialization\XmlReadAhead.cs" />
     <Compile Include="Model\TargetMap.cs" />
