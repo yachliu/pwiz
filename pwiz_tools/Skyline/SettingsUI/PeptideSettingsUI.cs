@@ -1074,7 +1074,7 @@ namespace pwiz.Skyline.SettingsUI
                                   : (_driverLibrary.CheckedNames.Any() ? _driverLibrary.CheckedNames[0] : string.Empty);
                 }
                 var viewLibraryDlg = new ViewLibraryDlg(_libraryManager, libName, _parent) { Owner = Owner };
-                viewLibraryDlg.Show();
+                viewLibraryDlg.Show(Owner);
             }
         }
 
