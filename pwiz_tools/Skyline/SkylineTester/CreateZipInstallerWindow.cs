@@ -33,6 +33,7 @@ namespace SkylineTester
             "testresults",
             "skylinetester.zip",
             "testrunner.log",
+            "microsoft.visualstudio.qualitytools.unittestframework.dll", // Ignore if this appears in a build dir - gets added explicitly
             "testrunnermemory.log"
         };
 
@@ -100,6 +101,7 @@ namespace SkylineTester
                     // Add files to top level of zip file.
                     var files = new[]
                     {
+                        "SkylineNightlyShim.exe",
                         "SkylineNightly.exe",
                         "SkylineNightly.pdb",
                         "Microsoft.Win32.TaskScheduler.dll",
@@ -194,9 +196,11 @@ namespace SkylineTester
                     AddFile(Path.Combine(solutionDirectory,"..\\..\\pwiz\\Version.cpp"), zipFile);
 
                     // Add unit testing DLL.
-                    var unitTestingDll = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
-                        @"Microsoft Visual Studio 12.0\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll");
+                    const string relativeUnitTestingDll =
+                        @"PublicAssemblies\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll";
+                    var unitTestingDll = SkylineTesterWindow.GetExistingVsIdeFilePath(relativeUnitTestingDll);
+                    if (unitTestingDll == null)
+                        throw new ApplicationException(string.Format("Can't find {0}", relativeUnitTestingDll));
                     AddFile(unitTestingDll, zipFile);
                 }
 

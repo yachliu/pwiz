@@ -36,12 +36,13 @@ namespace pwiz.Skyline.Model.Results
     {
         bool IsWatersFile { get; }
         bool IsAgilentFile { get; }
+        IEnumerable<MsInstrumentConfigInfo> ConfigInfoList { get; }
     }
 
     public interface IIonMobilityFunctionsProvider
     {
         bool ProvidesCollisionalCrossSectionConverter { get; }
-        MsDataFileImpl.eIonMobilityUnits IonMobilityUnits { get; } // Reports ion mobility units in use by the mass spec
+        eIonMobilityUnits IonMobilityUnits { get; } // Reports ion mobility units in use by the mass spec
         IonMobilityValue IonMobilityFromCCS(double ccs, double mz, int charge); // Convert from Collisional Cross Section to ion mobility
         double CCSFromIonMobility(IonMobilityValue im, double mz, int charge); // Convert from ion mobility to Collisional Cross Section
     }
@@ -59,6 +60,7 @@ namespace pwiz.Skyline.Model.Results
         private double _minFilterPairsRT; // Min of range of RT filter values across FilterPairs 
         private double _maxFilterPairsRT; // Max of range of RT filter values across FilterPairs
         private readonly SpectrumFilterPair[] _filterMzValues;
+        private readonly Dictionary<double,SpectrumFilterPair[]> _filterMzValuesFAIMSDict; // FAIMS chromatogram extraction is a special case for non-contiguous scans
         private readonly SpectrumFilterPair[] _filterRTValues;
         private readonly ChromKey[] _productChromKeys;
         private int _retentionTimeIndex;
@@ -66,10 +68,14 @@ namespace pwiz.Skyline.Model.Results
         private readonly bool _isWatersMse;
         private readonly bool _isAgilentMse;
         private readonly bool _extractIsotopeEnvelope;
+        private readonly bool _isFAIMS; // TIC and Base peak are meaningless with FAIMS, where we can't know the actual overall ion counts -also can't share times
+        private readonly bool _isElectronIonizationMse; // All ions, data MS1 only, but produces just fragments
+        private readonly IEnumerable<MsInstrumentConfigInfo> _configInfoList;
         private readonly IIonMobilityFunctionsProvider _ionMobilityFunctionsProvider;
         private int _mseLevel;
         private MsDataSpectrum _mseLastSpectrum;
         private int _mseLastSpectrumLevel; // for averaging Agilent stepped CE spectra
+        private bool _sourceHasDeclaredMS2Scans; // Used in all-ions mode to discern low and high energy scans for Bruker
 
         public IEnumerable<SpectrumFilterPair> FilterPairs { get { return _filterMzValues; } }
 
@@ -84,11 +90,34 @@ namespace pwiz.Skyline.Model.Results
             if (instrumentInfo != null)
             {
                 _isWatersFile = instrumentInfo.IsWatersFile;
+                _configInfoList = instrumentInfo.ConfigInfoList;
             }
             IsFirstPass = firstPass;
 
             var comparer = PrecursorTextId.PrecursorTextIdComparerInstance;
             var dictPrecursorMzToFilter = new SortedDictionary<PrecursorTextId, SpectrumFilterPair>(comparer);
+
+            // If we're using bare measured ion mobility values from spectral libraries, go get those now
+            var libraryIonMobilityInfo = document.Settings.PeptideSettings.Prediction.UseLibraryIonMobilityValues
+                ? document.Settings.GetIonMobilities(msDataFileUri)
+                : null;
+            var ionMobilityMax = maxObservedIonMobilityValue ?? 0;
+
+            // TIC and Base peak are meaningless with FAIMS, where we can't know the actual overall ion counts -also can't share times
+            if (instrumentInfo != null && instrumentInfo.IonMobilityUnits == eIonMobilityUnits.compensation_V)
+            {
+                foreach (var pair in document.MoleculePrecursorPairs)
+                {
+                    double windowIM;
+                    var ionMobility = document.Settings.GetIonMobility(
+                        pair.NodePep, pair.NodeGroup, libraryIonMobilityInfo, _ionMobilityFunctionsProvider, ionMobilityMax, out windowIM);
+                    _isFAIMS = ionMobility.HasIonMobilityValue && (ionMobility.IonMobility.Units == eIonMobilityUnits.compensation_V);
+                    if (_isFAIMS)
+                    {
+                        break;
+                    }
+                }
+            }
 
             if (EnabledMs || EnabledMsMs)
             {
@@ -97,14 +126,14 @@ namespace pwiz.Skyline.Model.Results
                     _isHighAccMsFilter = !Equals(_fullScan.PrecursorMassAnalyzer,
                         FullScanMassAnalyzerType.qit);
 
-                    if (!firstPass)
+                    if (!firstPass && !_isFAIMS)
                     {
-                        var key = new PrecursorTextId(SignedMz.ZERO, null, ChromExtractor.summed);  // TIC
+                        var key = new PrecursorTextId(SignedMz.ZERO, null, null, ChromExtractor.summed);  // TIC
                         dictPrecursorMzToFilter.Add(key, new SpectrumFilterPair(key, PeptideDocNode.UNKNOWN_COLOR, dictPrecursorMzToFilter.Count,
-                            _instrument.MinTime, _instrument.MaxTime, null, null, IonMobilityAndCCS.EMPTY, _isHighAccMsFilter, _isHighAccProductFilter));
-                        key = new PrecursorTextId(SignedMz.ZERO, null, ChromExtractor.base_peak);   // BPC
+                            _instrument.MinTime, _instrument.MaxTime, 0, _isHighAccMsFilter, _isHighAccProductFilter));
+                        key = new PrecursorTextId(SignedMz.ZERO, null, null, ChromExtractor.base_peak);   // BPC
                         dictPrecursorMzToFilter.Add(key, new SpectrumFilterPair(key, PeptideDocNode.UNKNOWN_COLOR, dictPrecursorMzToFilter.Count,
-                            _instrument.MinTime, _instrument.MaxTime, null, null, IonMobilityAndCCS.EMPTY, _isHighAccMsFilter, _isHighAccProductFilter));
+                            _instrument.MinTime, _instrument.MaxTime, 0, _isHighAccMsFilter, _isHighAccProductFilter));
                     }
                 }
                 if (EnabledMsMs)
@@ -119,8 +148,10 @@ namespace pwiz.Skyline.Model.Results
                         {
                             _isWatersMse = _isWatersFile;
                             _isAgilentMse = instrumentInfo.IsAgilentFile;
+                            _isElectronIonizationMse = instrumentInfo.ConfigInfoList != null &&
+                                   instrumentInfo.ConfigInfoList.Any(c => "electron ionization".Equals(c.Ionization)); // Not L10N
                         }
-                        _mseLevel = 1;
+                        _mseLevel =  _isElectronIonizationMse ? 2 : 1; // Electron ionization produces fragments only
                     }
                 }
 
@@ -131,13 +162,7 @@ namespace pwiz.Skyline.Model.Results
                 bool canSchedule = !firstPass && CanSchedule(document, retentionTimePredictor);
                 // TODO: Figure out a way to turn off time sharing on first SIM scan so that
                 //       times can be shared for MS1 without SIM scans
-                _isSharedTime = !canSchedule;
-
-                // If we're using bare measured ion mobility values from spectral libraries, go get those now
-                var libraryIonMobilityInfo = document.Settings.PeptideSettings.Prediction.UseLibraryIonMobilityValues
-                    ? document.Settings.GetIonMobilities(msDataFileUri)
-                    : null;
-                var ionMobilityMax = maxObservedIonMobilityValue??0;
+                _isSharedTime = !canSchedule && !_isFAIMS;
 
                 int filterCount = 0;
                 foreach (var nodePep in document.Molecules)
@@ -151,18 +176,18 @@ namespace pwiz.Skyline.Model.Results
                             continue;
 
                         double? minTime = _minTime, maxTime = _maxTime;
-                        double? startIM = null, endIM = null;
                         double windowIM;
-                        var ionMobility = document.Settings.PeptideSettings.Prediction.GetIonMobility(
+                        var ionMobility = document.Settings.GetIonMobility(
                             nodePep, nodeGroup, libraryIonMobilityInfo, _ionMobilityFunctionsProvider, ionMobilityMax, out windowIM);
+                        IonMobilityFilter ionMobilityFilter;
                         if (ionMobility.IonMobility.HasValue)
                         {
-                            startIM = ionMobility.IonMobility.Mobility - windowIM / 2; // Get the low energy ion mobility
-                            endIM = startIM + windowIM;
+                            ionMobilityFilter = IonMobilityFilter.GetIonMobilityFilter(ionMobility.IonMobility, windowIM, ionMobility.CollisionalCrossSectionSqA);
                         }
                         else
                         {
                             ionMobility = IonMobilityAndCCS.EMPTY;
+                            ionMobilityFilter = IonMobilityFilter.EMPTY;
                         }
 
 
@@ -225,11 +250,11 @@ namespace pwiz.Skyline.Model.Results
                         SpectrumFilterPair filter;
                         var textId = nodePep.ModifiedTarget; // Modified Sequence for peptides, or some other string for custom ions
                         var mz = new SignedMz(nodeGroup.PrecursorMz, nodeGroup.PrecursorCharge < 0);
-                        var key = new PrecursorTextId(mz, textId, ChromExtractor.summed);
+                        var key = new PrecursorTextId(mz, ionMobilityFilter, textId, ChromExtractor.summed);
                         if (!dictPrecursorMzToFilter.TryGetValue(key, out filter))
                         {
                             filter = new SpectrumFilterPair(key, nodePep.Color, dictPrecursorMzToFilter.Count, minTime, maxTime,
-                                startIM, endIM, ionMobility,
+                                ionMobility.HighEnergyIonMobilityValueOffset,
                                 _isHighAccMsFilter, _isHighAccProductFilter);
                             dictPrecursorMzToFilter.Add(key, filter);
                         }
@@ -254,6 +279,21 @@ namespace pwiz.Skyline.Model.Results
                 }
                 _filterMzValues = dictPrecursorMzToFilter.Values.ToArray();
 
+                // For FAIMS chromatogram extraction is a special case for non-contiguous scans, so create convenient subsets of filters
+                foreach (var cv in _filterMzValues.Where(f => f.HasIonMobilityFAIMS())
+                    .Select(f => f.GetIonMobilityWindow(false).IonMobility.Mobility.Value).Distinct())
+                {
+                    if (_filterMzValuesFAIMSDict == null)
+                    {
+                        _filterMzValuesFAIMSDict = new Dictionary<double, SpectrumFilterPair[]>();
+                    }
+                    var filterCV = _filterMzValues.Where(f =>
+                        !f.HasIonMobilityFAIMS() || // TIC, base peak
+                        Equals(cv, f.GetIonMobilityWindow(false).IonMobility.Mobility.Value))
+                        .ToArray();
+                    _filterMzValuesFAIMSDict.Add(cv, filterCV);
+                }
+
                 var listChromKeyFilterIds = new List<ChromKey>(filterCount);
                 foreach (var spectrumFilterPair in _filterMzValues)
                 {
@@ -274,13 +314,13 @@ namespace pwiz.Skyline.Model.Results
 
         public bool ProvidesCollisionalCrossSectionConverter { get { return _ionMobilityFunctionsProvider != null;  } }
 
-        public MsDataFileImpl.eIonMobilityUnits IonMobilityUnits
+        public eIonMobilityUnits IonMobilityUnits
         {
             get
             {
                 return ProvidesCollisionalCrossSectionConverter
                     ? _ionMobilityFunctionsProvider.IonMobilityUnits
-                    : MsDataFileImpl.eIonMobilityUnits.none;
+                    : eIonMobilityUnits.none;
             } }
 
         public IonMobilityValue IonMobilityFromCCS(double ccs, double mz, int charge)
@@ -385,6 +425,11 @@ namespace pwiz.Skyline.Model.Results
         public bool IsAgilentFile
         {
             get { return _isAgilentMse; }
+        }
+
+        public IEnumerable<MsInstrumentConfigInfo> ConfigInfoList
+        {
+            get { return _configInfoList; }
         }
 
         /// <summary>
@@ -510,6 +555,7 @@ namespace pwiz.Skyline.Model.Results
         {
             if (!EnabledMsMs)
                 return false;
+            _sourceHasDeclaredMS2Scans |= (dataSpectrum.Level == 2);
             if (_mseLevel > 0)
                 return UpdateMseLevel(dataSpectrum) == 2;
             return dataSpectrum.Level == 2;
@@ -529,6 +575,7 @@ namespace pwiz.Skyline.Model.Results
                 // Bruker MSe is enumerated in interleaved MS1 and MS/MS scans
                 // Agilent MSe is a series of MS1 scans with ramped CE (SpectrumList_Agilent returns these as MS1,MS2,MS2,...) 
                 //    but with ion mobility, as of June 2014, it's just a series of MS2 scans with a single nonzero CE, or MS1 scans with 0 CE
+                // Electron Ionization "MSe" is all MS1 data, but contains only fragments
                 if (_isAgilentMse)
                 {
                     if (1 == dataSpectrum.Level)
@@ -547,10 +594,17 @@ namespace pwiz.Skyline.Model.Results
                         returnval = 0; // Not useful - probably the file started off mid-cycle, with MS2 CE>0
                     }
                 }
+                else if (_isElectronIonizationMse)
+                {
+                    _mseLevel = 2; // EI data is all fragments
+                    returnval = 2; // Report as MS2 even though its recorded as MS1
+                }
                 else if (!_isWatersMse)
                 {
-                    // Bruker - Alternate between 1 and 2
-                    _mseLevel = (_mseLevel % 2) + 1;
+                    // Bruker - Alternate between 1 and 2 if everything is declared as MS1, assume first is low energy
+                    _mseLevel = _mseLastSpectrum == null || _sourceHasDeclaredMS2Scans 
+                        ? dataSpectrum.Level  
+                        : (_mseLevel % 2) + 1;
                     returnval = _mseLevel;
                 }
                 else
@@ -570,6 +624,13 @@ namespace pwiz.Skyline.Model.Results
             return returnval;
         }
 
+        public bool PassesFilterFAIMS(MsDataSpectrum spectrum)
+        {
+            return _filterMzValuesFAIMSDict == null || // No FAIMS filtering, everything passes
+                   !spectrum.IonMobility.Mobility.HasValue || // This spectrum is not ion mobility data
+                   _filterMzValuesFAIMSDict.ContainsKey(spectrum.IonMobility.Mobility.Value);
+        }
+
         public IEnumerable<ExtractedSpectrum> SrmSpectraFromMs1Scan(double? retentionTime,
                                                                     IList<MsPrecursor> precursors, MsDataSpectrum[] spectra)
         {
@@ -578,7 +639,27 @@ namespace pwiz.Skyline.Model.Results
 
             // All filter pairs have a shot at filtering the MS1 scans
             bool isSimSpectra = IsSimSpectrum(spectra.First(), spectra);
-            foreach (var filterPair in isSimSpectra ? FindMs1FilterPairs(precursors) : _filterMzValues)
+            SpectrumFilterPair[] filterPairs;
+            if (isSimSpectra)
+            {
+                filterPairs = FindMs1FilterPairs(precursors).ToArray();
+            }
+            else
+            {
+                if (_filterMzValuesFAIMSDict != null && spectra.First().IonMobility.HasValue)
+                {
+                    // For FAIMS use only filters that match the CV
+                    if (!_filterMzValuesFAIMSDict.TryGetValue(spectra.First().IonMobility.Mobility.Value, out filterPairs))
+                    {
+                        yield break;
+                    }
+                }
+                else
+                {
+                    filterPairs = _filterMzValues;
+                }
+            }
+            foreach (var filterPair in filterPairs)
             {
                 if (!filterPair.ContainsRetentionTime(retentionTime.Value))
                     continue;

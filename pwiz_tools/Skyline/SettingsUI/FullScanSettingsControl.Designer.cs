@@ -77,6 +77,7 @@
             this.cbHighSelectivity = new System.Windows.Forms.CheckBox();
             this.groupBoxIsotopes = new System.Windows.Forms.GroupBox();
             this.cbxExtractIsotopeEnvelope = new System.Windows.Forms.CheckBox();
+            this.useSpectralLibraryIonMobilityValuesControl = new pwiz.Skyline.SettingsUI.IonMobility.UseSpectralLibraryIonMobilityValuesControl();
             this.groupBoxRetentionTimeToKeep.SuspendLayout();
             this.flowLayoutPanelUseSchedulingWindow.SuspendLayout();
             this.flowLayoutPanelTimeAroundMs2Ids.SuspendLayout();
@@ -389,6 +390,10 @@
             resources.ApplyResources(this.cbxExtractIsotopeEnvelope, "cbxExtractIsotopeEnvelope");
             this.cbxExtractIsotopeEnvelope.Name = "cbxExtractIsotopeEnvelope";
             this.cbxExtractIsotopeEnvelope.UseVisualStyleBackColor = true;
+            // useSpectralLibraryIonMobilityValuesControl1
+            // 
+            resources.ApplyResources(this.useSpectralLibraryIonMobilityValuesControl, "useSpectralLibraryIonMobilityValuesControl");
+            this.useSpectralLibraryIonMobilityValuesControl.Name = "useSpectralLibraryIonMobilityValuesControl";
             // 
             // FullScanSettingsControl
             // 
@@ -396,6 +401,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Transparent;
             this.Controls.Add(this.groupBoxIsotopes);
+            this.Controls.Add(this.useSpectralLibraryIonMobilityValuesControl);
             this.Controls.Add(this.cbHighSelectivity);
             this.Controls.Add(this.textPrecursorCharges);
             this.Controls.Add(this.lblPrecursorCharges);
@@ -469,6 +475,6 @@
         private System.Windows.Forms.CheckBox cbHighSelectivity;
         private System.Windows.Forms.GroupBox groupBoxIsotopes;
         private System.Windows.Forms.CheckBox cbxExtractIsotopeEnvelope;
-
+        private IonMobility.UseSpectralLibraryIonMobilityValuesControl useSpectralLibraryIonMobilityValuesControl;
     }
 }
