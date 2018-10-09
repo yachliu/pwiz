@@ -1296,7 +1296,7 @@
     <value>Products</value>
   </data>
   <data name="areaCVTransitionsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>136, 22</value>
+    <value>209, 22</value>
   </data>
   <data name="areaCVTransitionsToolStripMenuItem.Text" xml:space="preserve">
     <value>Transitions</value>
@@ -1344,7 +1344,7 @@
     <value>206, 6</value>
   </data>
   <data name="contextMenuPeakAreas.Size" type="System.Drawing.Size, System.Drawing">
-    <value>210, 412</value>
+    <value>210, 434</value>
   </data>
   <data name="&gt;&gt;contextMenuPeakAreas.Name" xml:space="preserve">
     <value>contextMenuPeakAreas</value>
@@ -2964,14 +2964,17 @@
   <data name="documentGridMenuItem.Text" xml:space="preserve">
     <value>&amp;Document Grid</value>
   </data>
-  <data name="isotopeDistributionMenuItem.Text" xml:space="preserve">
-    <value>Isotope Distribution</value>
+  <data name="isotopeDistributionsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>191, 22</value>
+  </data>
+  <data name="isotopeDistributionsToolStripMenuItem.Text" xml:space="preserve">
+    <value>Isotope Distributions</value>
   </data>
   <data name="auditLogMenuItem.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
     <value>Alt+4</value>
   </data>
   <data name="auditLogMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>273, 30</value>
+    <value>191, 22</value>
   </data>
   <data name="auditLogMenuItem.Text" xml:space="preserve">
     <value>Au&amp;dit Log</value>
@@ -5934,8 +5937,11 @@
   <data name="&gt;&gt;documentGridMenuItem.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;isotopeDistributionMenuItem.Name" xml:space="preserve">
-    <value>isotopeDistributionMenuItem</value>
+  <data name="&gt;&gt;isotopeDistributionsToolStripMenuItem.Name" xml:space="preserve">
+    <value>isotopeDistributionsToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;isotopeDistributionsToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;auditLogMenuItem.Name" xml:space="preserve">
     <value>auditLogMenuItem</value>

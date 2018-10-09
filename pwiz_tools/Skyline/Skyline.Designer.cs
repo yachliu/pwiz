@@ -469,6 +469,7 @@ namespace pwiz.Skyline
             this.editGroupComparisonListMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resultsGridMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.documentGridMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.isotopeDistributionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.auditLogMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator36 = new System.Windows.Forms.ToolStripSeparator();
             this.toolBarToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -3000,6 +3001,7 @@ namespace pwiz.Skyline
             this.groupComparisonsMenuItem,
             this.resultsGridMenuItem,
             this.documentGridMenuItem,
+            this.isotopeDistributionsToolStripMenuItem,
             this.auditLogMenuItem,
             this.toolStripSeparator36,
             this.toolBarToolStripMenuItem,
@@ -3645,6 +3647,12 @@ namespace pwiz.Skyline
             this.documentGridMenuItem.Name = "documentGridMenuItem";
             resources.ApplyResources(this.documentGridMenuItem, "documentGridMenuItem");
             this.documentGridMenuItem.Click += new System.EventHandler(this.documentGridMenuItem_Click);
+            // 
+            // isotopeDistributionsToolStripMenuItem
+            // 
+            this.isotopeDistributionsToolStripMenuItem.Name = "isotopeDistributionsToolStripMenuItem";
+            resources.ApplyResources(this.isotopeDistributionsToolStripMenuItem, "isotopeDistributionsToolStripMenuItem");
+            this.isotopeDistributionsToolStripMenuItem.Click += new System.EventHandler(this.isotopeDistributionMenuItem_Click);
             // 
             // auditLogMenuItem
             // 
@@ -4620,6 +4628,7 @@ namespace pwiz.Skyline
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator58;
         private System.Windows.Forms.ToolStripMenuItem areaCVPrecursorsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem areaCVProductsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem isotopeDistributionsToolStripMenuItem;
     }
 }
 

@@ -506,7 +506,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         [InvariantDisplayName("PrecursorMzDistribution")]
         [ChildDisplayName("Precursor{0}")]
         [Format(Formats.Mz)]
-        public MzDistribution MzDistribution
+        public AbstractDistribution.MzDistribution MzDistribution
         {
             get
             {
@@ -516,7 +516,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
                     fragmentedMolecule.PrecursorMassShift, fragmentedMolecule.PrecursorCharge);
                 var monoMz = settings.GetMonoMass(fragmentedMolecule.PrecursorFormula,
                     fragmentedMolecule.PrecursorMassShift, fragmentedMolecule.PrecursorCharge);
-                return new MzDistribution(mzDistribution, monoMz);
+                return new AbstractDistribution.MzDistribution(mzDistribution, monoMz);
             }
         }
 
