@@ -865,6 +865,13 @@ also when you hover over the protein name in the peptide tree view.</value>
   <data name="Quantitative">
     <value>Whether the transition's peak area should be included when quantifying peptides.</value>
   </data>
+  <data name="QuantitativeResult">
+    <value>
+      Indicates whether the transition result should be used for quantification.
+      Transitions can be explicitly marked as non-quantitive.
+      Also, all MS2 transition results are non-quantitative if the Transition Full Scan MS/MS Filtering Acquisition Method is "DDA".
+    </value>
+  </data>
   <data name="Range">
     <value>Range</value>
   </data>

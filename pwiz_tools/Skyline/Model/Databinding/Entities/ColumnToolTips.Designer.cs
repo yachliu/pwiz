@@ -2363,6 +2363,19 @@ namespace pwiz.Skyline.Model.Databinding.Entities {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 
+        ///      Indicates whether the transition result should be used for quantification.
+        ///      Transitions can be explicitly marked as non-quantitive.
+        ///      Also, all MS2 transition results are non-quantitative if the Transition Full Scan MS/MS Filtering Acquisition Method is &quot;DDA&quot;.
+        ///    .
+        /// </summary>
+        public static string QuantitativeResult {
+            get {
+                return ResourceManager.GetString("QuantitativeResult", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Range.
         /// </summary>
         public static string Range {

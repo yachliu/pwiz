@@ -86,6 +86,12 @@ namespace pwiz.Skyline.Model.Databinding.Entities
 
         public bool Coeluting { get { return !ChromInfo.IsForcedIntegration; } }
 
+        [InvariantDisplayName("QuantitativeResult")]
+        public bool Quantitative
+        {
+            get { return Transition.DocNode.IsQuantitative(SrmDocument.Settings); }
+        }
+
         public Chromatogram Chromatogram
         {
             get { return _chromatogram.Value; }
