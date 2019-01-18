@@ -553,7 +553,7 @@ namespace pwiz.Skyline.Model.Results
 
                         _collectors.SetException(ex);
                     }
-                }, "Chromatogram extractor"); // Not L10N
+                }, @"Chromatogram extractor");
             }
         }
 
@@ -754,7 +754,7 @@ namespace pwiz.Skyline.Model.Results
                     {
                         SetException(ex);
                     }
-                }, "Spectrum reader"); // Not L10N
+                }, @"Spectrum reader");
             }
 
             /// <summary>
