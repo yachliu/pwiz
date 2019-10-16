@@ -769,6 +769,20 @@ namespace pwiz.Skyline.Util
         }
 
         /// <summary>
+        /// Checks for equality of all items in an IEnumerable without regard for order.
+        /// </summary>
+        /// <typeparam name="TItem">Type of items in the IEnumerable</typeparam>
+        /// <param name="values1">First IEnumerable in the comparison</param>
+        /// <param name="values2">Second IEnumerable in the comparison</param>
+        /// <returns>True if all items in one IEnumerable are found in the other, and IEnumerables are same length</returns>
+        public static bool ContainsAll<TItem>(this IEnumerable<TItem> values1, IEnumerable<TItem> values2)
+        {
+            var set1 = values1.ToHashSet();
+            var set2 = values2.ToHashSet();
+            return set1.Count == set2.Count && set1.IsSubsetOf(set2);
+        }
+
+        /// <summary>
         /// Checks for deep equality, or equality of all items in an Array.
         /// </summary>
         /// <typeparam name="TItem">Type of items in the array</typeparam>
@@ -1355,7 +1369,7 @@ namespace pwiz.Skyline.Util
     /// <summary>
     /// A set of generic, static helper functions.
     /// </summary>
-    public static class Helpers
+    public static partial class Helpers
     {
         /// <summary>
         /// Swaps two reference values in memory, making each contain
@@ -1616,6 +1630,24 @@ namespace pwiz.Skyline.Util
             return 0;
         }
 
+        public static List<string> EnsureUniqueNames(List<string> names, HashSet<string> reservedNames = null)
+        {
+            var setUsedNames = reservedNames ?? new HashSet<string>();
+            var result = new List<string>();
+            for (int i = 0; i < names.Count; i++)
+            {
+                string baseName = names[i];
+                // Make sure the next name added is unique
+                string name = (baseName.Length != 0 ? baseName : @"1");
+                for (int suffix = 2; setUsedNames.Contains(name); suffix++)
+                    name = baseName + suffix;
+                result.Add(name);
+                // Add this name to the used set
+                setUsedNames.Add(name);
+            }
+            return result;
+        }
+
         /// <summary>
         /// Count the number of lines in the file specified.
         /// </summary>
@@ -1862,7 +1894,7 @@ namespace pwiz.Skyline.Util
 
         public static string NullableDoubleToString(double? d)
         {
-            return d.HasValue ? d.Value.ToString(LocalizationHelper.CurrentCulture) : string.Empty;
+            return d.HasValue ? d.Value.ToString(LocalizationHelper.CurrentCulture) : String.Empty;
         }
     }
 

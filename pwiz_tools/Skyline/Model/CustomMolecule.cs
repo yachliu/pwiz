@@ -47,12 +47,13 @@ namespace pwiz.Skyline.Model
         public string PrimaryAccessionValue { get { return AccessionNumbers == null ? null : AccessionNumbers.Values.FirstOrDefault(); } } // Value of key, if any, in first order of PREFERRED_ACCESSION_TYPE_ORDER
 
         // Familiar molecule ID formats, and our order of preference as primary key
-        public static readonly string[] PREFERRED_ACCESSION_TYPE_ORDER = { TagInChiKey, TagCAS, TagHMDB, TagInChI, TagSMILES };
+        public static readonly string[] PREFERRED_ACCESSION_TYPE_ORDER = { TagInChiKey, TagCAS, TagHMDB, TagInChI, TagSMILES, TagKEGG };
         public const string TagInChiKey = "InChiKey";
         public const string TagCAS = "CAS";
         public const string TagHMDB = "HMDB";
         public const string TagInChI = "InChI";
         public const string TagSMILES = "SMILES";
+        public const string TagKEGG = "KEGG";
 
         public static MoleculeAccessionNumbers FromString(string tsv)
         {
@@ -146,14 +147,20 @@ namespace pwiz.Skyline.Model
 
         public string GetHMDB()
         {
-            string cas;
-            return AccessionNumbers != null && AccessionNumbers.TryGetValue(TagHMDB, out cas) ? cas : null;
+            string hmdb;
+            return AccessionNumbers != null && AccessionNumbers.TryGetValue(TagHMDB, out hmdb) ? hmdb : null;
         }
 
         public string GetSMILES()
         {
-            string cas;
-            return AccessionNumbers != null && AccessionNumbers.TryGetValue(TagSMILES, out cas) ? cas : null;
+            string smiles;
+            return AccessionNumbers != null && AccessionNumbers.TryGetValue(TagSMILES, out smiles) ? smiles : null;
+        }
+
+        public string GetKEGG()
+        {
+            string kegg;
+            return AccessionNumbers != null && AccessionNumbers.TryGetValue(TagKEGG, out kegg) ? kegg : null;
         }
 
         public string GetNonInChiKeys()
@@ -293,10 +300,11 @@ namespace pwiz.Skyline.Model
         {
         }
 
-        public CustomMolecule(SmallMoleculeLibraryAttributes libraryAttributes)
-            : this(libraryAttributes.ChemicalFormula, libraryAttributes.MoleculeName, libraryAttributes.CreateMoleculeID())
+        public static CustomMolecule FromSmallMoleculeLibraryAttributes(SmallMoleculeLibraryAttributes libraryAttributes)
         {
             Assume.IsFalse(libraryAttributes.IsEmpty);
+            SmallMoleculeLibraryAttributes.ParseMolecularFormulaOrMassesString(libraryAttributes.ChemicalFormulaOrMassesString, out var formula, out var monoMass, out var averageMass);
+            return new CustomMolecule(formula, monoMass, averageMass, libraryAttributes.MoleculeName, libraryAttributes.CreateMoleculeID());
         }
 
         public CustomMolecule(string formula, TypedMass monoisotopicMass, TypedMass averageMass, string name, MoleculeAccessionNumbers moleculeAccessionNumbers)
@@ -360,6 +368,7 @@ namespace pwiz.Skyline.Model
         public SmallMoleculeLibraryAttributes GetSmallMoleculeLibraryAttributes()
         {
             return SmallMoleculeLibraryAttributes.Create(Name, Formula,
+                MonoisotopicMass, AverageMass, // In case forumla is empty
                 AccessionNumbers.GetInChiKey(), AccessionNumbers.GetNonInChiKeys());
         }
 
@@ -375,11 +384,18 @@ namespace pwiz.Skyline.Model
             return FromTSV(tsv);
         }
 
+        public const char MASS_SPLITTER = '/';
+
+        public static string FormattedMasses(double monoisotopicMass, double averageMass)
+        {
+            return string.Format(CultureInfo.InvariantCulture, @"{0:F09}/{1:F09}", monoisotopicMass, averageMass);
+        }
+
         public List<string> AsFields()
         {
             var massOrFormula = !string.IsNullOrEmpty(Formula) ?
                 Formula :
-                string.Format(CultureInfo.InvariantCulture, @"{0:F09}/{1:F09}", MonoisotopicMass, AverageMass);
+                FormattedMasses(MonoisotopicMass, AverageMass);
             var parts = new[] { Name, massOrFormula, AccessionNumbers.ToString() };
             return (parts.All(string.IsNullOrEmpty) ? new[] { InvariantName } : parts).ToList();
         }
@@ -414,12 +430,12 @@ namespace pwiz.Skyline.Model
                     }
                 }
             }
-            else if (formula != null && formula.Contains(@"/"))
+            else if (formula != null && formula.Contains(MASS_SPLITTER))
             {
                 // "formula" is actually mono and average masses
                 try
                 {
-                    var values = formula.Split('/');
+                    var values = formula.Split(MASS_SPLITTER);
                     var massMono = new TypedMass(double.Parse(values[0], CultureInfo.InvariantCulture), MassType.Monoisotopic);
                     var massAvg = new TypedMass(double.Parse(values[1], CultureInfo.InvariantCulture), MassType.Average);
                     return new CustomMolecule(massMono, massAvg, name, new MoleculeAccessionNumbers(keysTSV));

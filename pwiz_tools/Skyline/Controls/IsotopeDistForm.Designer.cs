@@ -33,6 +33,8 @@
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
             this.groupBoxFragment = new System.Windows.Forms.GroupBox();
+            this.tbxFragmentMassShift = new System.Windows.Forms.TextBox();
+            this.lblFragmentMassShift = new System.Windows.Forms.Label();
             this.lblLosses = new System.Windows.Forms.Label();
             this.lblFragmentFormula = new System.Windows.Forms.Label();
             this.tbxFragmentFormula = new System.Windows.Forms.TextBox();
@@ -48,6 +50,8 @@
             this.lblHyphen = new System.Windows.Forms.Label();
             this.tbxIsolationUpper = new System.Windows.Forms.TextBox();
             this.groupBoxPrecursor = new System.Windows.Forms.GroupBox();
+            this.tbxPrecursorMassShift = new System.Windows.Forms.TextBox();
+            this.lblPrecursorMassShift = new System.Windows.Forms.Label();
             this.lblPeptideSequence = new System.Windows.Forms.Label();
             this.tbxPeptideSequence = new System.Windows.Forms.TextBox();
             this.lblPrecursorFormula = new System.Windows.Forms.Label();
@@ -70,10 +74,6 @@
             this.lblMassResolution = new System.Windows.Forms.Label();
             this.tbxMassResolution = new System.Windows.Forms.TextBox();
             this.cbxTrackSelection = new System.Windows.Forms.CheckBox();
-            this.lblPrecursorMassShift = new System.Windows.Forms.Label();
-            this.tbxPrecursorMassShift = new System.Windows.Forms.TextBox();
-            this.lblFragmentMassShift = new System.Windows.Forms.Label();
-            this.tbxFragmentMassShift = new System.Windows.Forms.TextBox();
             this.groupBoxFragment.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBoxPrecursor.SuspendLayout();
@@ -111,6 +111,22 @@
             this.groupBoxFragment.TabIndex = 1;
             this.groupBoxFragment.TabStop = false;
             this.groupBoxFragment.Text = "Fragment";
+            // 
+            // tbxFragmentMassShift
+            // 
+            this.tbxFragmentMassShift.Location = new System.Drawing.Point(397, 32);
+            this.tbxFragmentMassShift.Name = "tbxFragmentMassShift";
+            this.tbxFragmentMassShift.Size = new System.Drawing.Size(120, 20);
+            this.tbxFragmentMassShift.TabIndex = 11;
+            // 
+            // lblFragmentMassShift
+            // 
+            this.lblFragmentMassShift.AutoSize = true;
+            this.lblFragmentMassShift.Location = new System.Drawing.Point(397, 16);
+            this.lblFragmentMassShift.Name = "lblFragmentMassShift";
+            this.lblFragmentMassShift.Size = new System.Drawing.Size(106, 13);
+            this.lblFragmentMassShift.TabIndex = 10;
+            this.lblFragmentMassShift.Text = "Extra Fragment Mass";
             // 
             // lblLosses
             // 
@@ -253,6 +269,24 @@
             this.groupBoxPrecursor.TabIndex = 0;
             this.groupBoxPrecursor.TabStop = false;
             this.groupBoxPrecursor.Text = "Precursor";
+            // 
+            // tbxPrecursorMassShift
+            // 
+            this.tbxPrecursorMassShift.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.tbxPrecursorMassShift.Location = new System.Drawing.Point(671, 71);
+            this.tbxPrecursorMassShift.Name = "tbxPrecursorMassShift";
+            this.tbxPrecursorMassShift.Size = new System.Drawing.Size(100, 20);
+            this.tbxPrecursorMassShift.TabIndex = 7;
+            // 
+            // lblPrecursorMassShift
+            // 
+            this.lblPrecursorMassShift.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblPrecursorMassShift.AutoSize = true;
+            this.lblPrecursorMassShift.Location = new System.Drawing.Point(668, 55);
+            this.lblPrecursorMassShift.Name = "lblPrecursorMassShift";
+            this.lblPrecursorMassShift.Size = new System.Drawing.Size(107, 13);
+            this.lblPrecursorMassShift.TabIndex = 6;
+            this.lblPrecursorMassShift.Text = "Extra Precursor Mass";
             // 
             // lblPeptideSequence
             // 
@@ -540,40 +574,6 @@
             this.cbxTrackSelection.TabIndex = 3;
             this.cbxTrackSelection.Text = "Track selection";
             this.cbxTrackSelection.UseVisualStyleBackColor = true;
-            // 
-            // lblPrecursorMassShift
-            // 
-            this.lblPrecursorMassShift.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblPrecursorMassShift.AutoSize = true;
-            this.lblPrecursorMassShift.Location = new System.Drawing.Point(668, 55);
-            this.lblPrecursorMassShift.Name = "lblPrecursorMassShift";
-            this.lblPrecursorMassShift.Size = new System.Drawing.Size(107, 13);
-            this.lblPrecursorMassShift.TabIndex = 6;
-            this.lblPrecursorMassShift.Text = "Extra Precursor Mass";
-            // 
-            // tbxPrecursorMassShift
-            // 
-            this.tbxPrecursorMassShift.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbxPrecursorMassShift.Location = new System.Drawing.Point(671, 71);
-            this.tbxPrecursorMassShift.Name = "tbxPrecursorMassShift";
-            this.tbxPrecursorMassShift.Size = new System.Drawing.Size(100, 20);
-            this.tbxPrecursorMassShift.TabIndex = 7;
-            // 
-            // lblFragmentMassShift
-            // 
-            this.lblFragmentMassShift.AutoSize = true;
-            this.lblFragmentMassShift.Location = new System.Drawing.Point(397, 16);
-            this.lblFragmentMassShift.Name = "lblFragmentMassShift";
-            this.lblFragmentMassShift.Size = new System.Drawing.Size(106, 13);
-            this.lblFragmentMassShift.TabIndex = 10;
-            this.lblFragmentMassShift.Text = "Extra Fragment Mass";
-            // 
-            // tbxFragmentMassShift
-            // 
-            this.tbxFragmentMassShift.Location = new System.Drawing.Point(397, 32);
-            this.tbxFragmentMassShift.Name = "tbxFragmentMassShift";
-            this.tbxFragmentMassShift.Size = new System.Drawing.Size(120, 20);
-            this.tbxFragmentMassShift.TabIndex = 11;
             // 
             // IsotopeDistForm
             // 

@@ -143,14 +143,18 @@ namespace pwiz.SkylineTestUtil
             test();
         }
 
-        protected static TDlg ShowDialog<TDlg>(Action act) where TDlg : Form
+        protected static TDlg ShowDialog<TDlg>(Action act, int millis = -1) where TDlg : Form
         {
             var existingDialog = FindOpenForm<TDlg>();
             if (existingDialog != null)
                 Assert.IsNull(existingDialog, typeof(TDlg) + " is already open");
 
             SkylineBeginInvoke(act);
-            TDlg dlg = WaitForOpenForm<TDlg>();
+            TDlg dlg;
+            if (millis == -1)
+                dlg = WaitForOpenForm<TDlg>();
+            else
+                dlg = WaitForOpenForm<TDlg>(millis);
             Assert.IsNotNull(dlg);
             return dlg;
         }
@@ -782,7 +786,7 @@ namespace pwiz.SkylineTestUtil
             return false;
         }
 
-        public static bool WaitForConditionUI(Func<bool> func)
+        public static bool WaitForConditionUI([InstantHandle] Func<bool> func)
         {
             return WaitForConditionUI(WAIT_TIME, func);
         }
@@ -899,7 +903,6 @@ namespace pwiz.SkylineTestUtil
                 if (_isPauseForScreenShots)
                 {
                     Program.PauseSeconds = -1;
-                    TestSmallMolecules = false; // Extra test node will mess up the pretty pictures
                 }
             }
         }
@@ -921,9 +924,9 @@ namespace pwiz.SkylineTestUtil
             get { return IsTutorial; }
         }
 
-        public static bool IsRecordAuditLogForTutorials
+        public bool IsRecordAuditLogForTutorials
         {
-            get { return false; }
+            get { return IsTutorial && RecordAuditLogs; }
         }
 
         public static bool IsShowMatchingTutorialPages { get; set; }
@@ -998,7 +1001,7 @@ namespace pwiz.SkylineTestUtil
         /// <summary>
         /// Starts up Skyline, and runs the <see cref="DoTest"/> test method.
         /// </summary>
-        protected void RunFunctionalTest()
+        protected void RunFunctionalTest(string defaultUiMode = UiModes.PROTEOMIC)
         {
             try
             {
@@ -1009,6 +1012,7 @@ namespace pwiz.SkylineTestUtil
                 }
 
                 Program.FunctionalTest = true;
+                Program.DefaultUiMode = defaultUiMode;
                 Program.TestExceptions = new List<Exception>();
                 LocalizationHelper.InitThread();
 
@@ -1174,9 +1178,9 @@ namespace pwiz.SkylineTestUtil
                 // Copy the just recorded file to the project for comparison or commit
                 File.Copy(recordedFile, projectFile, true);
                 if (!existsInProject)
-                    Assert.Fail("Successfully recorded tutorial audit log");
+                    Console.WriteLine(@"Successfully recorded tutorial audit log");
                 else
-                    AssertEx.NoDiff(expected, actual, "Successfully recorded changed tutorial audit log:");
+                    Console.WriteLine(@"Successfully recorded changed tutorial audit log");
             }
         }
 
@@ -1233,7 +1237,7 @@ namespace pwiz.SkylineTestUtil
                 result += allInfoItem + "\r\n";
 
             if (entry.ExtraInfo != null)
-                result += string.Format("Extra Info: {0}\r\n", LogMessage.ParseLogString(entry.ExtraInfo, LogLevel.all_info));
+                result += string.Format("Extra Info: {0}\r\n", LogMessage.ParseLogString(entry.ExtraInfo, LogLevel.all_info, entry.DocumentType));
 
             return result;
         }
@@ -1258,7 +1262,6 @@ namespace pwiz.SkylineTestUtil
                     @"Timeout {0} seconds exceeded in WaitForSkyline", waitCycles * SLEEP_INTERVAL / 1000);
                 }
                 Settings.Default.Reset();
-                Settings.Default.TestSmallMolecules = TestSmallMolecules;
                 Settings.Default.ImportResultsAutoCloseWindow = true;
                 Settings.Default.ImportResultsSimultaneousFiles = (int)MultiFileLoader.ImportResultsSimultaneousFileOptions.many;    // use maximum threads for multiple file import
                 BeginAuditLogging();

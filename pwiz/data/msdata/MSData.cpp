@@ -824,10 +824,18 @@ PWIZ_API_DECL void Spectrum::swapMZIntensityArrays(pwiz::util::BinaryData<double
 
     bd_mz->data.swap(mzArray);
     bd_intensity->data.swap(intensityArray);
-
 }
 
-PWIZ_API_DECL void Spectrum::setMZIntensityArrays(const std::vector<double>& mzArray, const std::vector<double>& intensityArray, CVID intensityUnits)
+
+PWIZ_API_DECL void Spectrum::setMZIntensityArrays(const vector<double>& mzArray, const vector<double>& intensityArray, CVID intensityUnits)
+{
+    pwiz::util::BinaryData<double> mz, intensity;
+    mz = mzArray, intensity = intensityArray;
+    setMZIntensityArrays(mz, intensity, intensityUnits);
+}
+
+
+PWIZ_API_DECL void Spectrum::setMZIntensityArrays(const pwiz::util::BinaryData<double>& mzArray, const pwiz::util::BinaryData<double>& intensityArray, CVID intensityUnits)
 {
     if (mzArray.size() != intensityArray.size())
         throw runtime_error("[MSData::Spectrum::setMZIntensityArrays()] Sizes do not match.");
@@ -1168,6 +1176,16 @@ PWIZ_API_DECL size_t ChromatogramList::find(const string& id) const
         if (chromatogramIdentity(index).id == id) 
             return index;
     return size();
+}
+
+
+PWIZ_API_DECL ChromatogramPtr ChromatogramList::chromatogram(size_t index, DetailLevel detailLevel) const
+{
+    // By default faster metadata access is not implemented
+    if (detailLevel == DetailLevel_FastMetadata || detailLevel == DetailLevel_InstantMetadata)
+        return ChromatogramPtr(new Chromatogram);
+
+    return chromatogram(index, detailLevel == DetailLevel_FullData);
 }
 
 

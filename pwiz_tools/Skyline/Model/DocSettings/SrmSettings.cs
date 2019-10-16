@@ -879,6 +879,7 @@ namespace pwiz.Skyline.Model.DocSettings
         /// </summary>
         public IonMobilityAndCCS GetIonMobility(PeptideDocNode nodePep,
             TransitionGroupDocNode nodeGroup,
+            TransitionDocNode nodeTran,
             LibraryIonMobilityInfo libraryIonMobilityInfo,
             IIonMobilityFunctionsProvider instrumentInfo, // For converting CCS to IM if needed
             double ionMobilityMax,
@@ -891,7 +892,7 @@ namespace pwiz.Skyline.Model.DocSettings
                     nodeGroup.PrecursorMz, nodeGroup.TransitionGroup.PrecursorCharge);
                 var result = IonMobilityAndCCS.GetIonMobilityAndCCS(im,
                     nodeGroup.ExplicitValues.CollisionalCrossSectionSqA,
-                    nodeGroup.ExplicitValues.IonMobilityHighEnergyOffset ?? 0);
+                    ExplicitTransitionValues.Get(nodeTran).IonMobilityHighEnergyOffset ?? 0);
                 // Now get the resolving power
                 if (PeptideSettings.Prediction.IonMobilityPredictor != null)
                 {
@@ -912,7 +913,7 @@ namespace pwiz.Skyline.Model.DocSettings
                 // Use the explicitly specified DT value
                 var result = IonMobilityAndCCS.GetIonMobilityAndCCS(IonMobilityValue.GetIonMobilityValue(nodeGroup.ExplicitValues.IonMobility, nodeGroup.ExplicitValues.IonMobilityUnits),
                     nodeGroup.ExplicitValues.CollisionalCrossSectionSqA,
-                    nodeGroup.ExplicitValues.IonMobilityHighEnergyOffset ?? 0);
+                    ExplicitTransitionValues.Get(nodeTran).IonMobilityHighEnergyOffset ?? 0);
                 // Now get the resolving power
                 if (PeptideSettings.Prediction.IonMobilityPredictor != null)
                 {
@@ -1556,10 +1557,9 @@ namespace pwiz.Skyline.Model.DocSettings
                 }
             }
             var mainViewSpecList = defSet.PersistedViews.GetViewSpecList(PersistedViews.MainGroup.Id);
-            foreach (var viewSpec in DataSettings.ViewSpecList.ViewSpecs)
+            foreach (var viewSpec in DataSettings.ViewSpecList.ViewSpecLayouts)
             {
                 mainViewSpecList = mainViewSpecList.ReplaceView(viewSpec.Name, viewSpec);
-                mainViewSpecList = mainViewSpecList.SaveViewLayouts(DataSettings.ViewSpecList.GetViewLayouts(viewSpec.Name));
             }
 
             foreach (var listData in DataSettings.Lists)
@@ -2509,7 +2509,9 @@ namespace pwiz.Skyline.Model.DocSettings
                                  // if a library is in use.
                                  (newLib.HasLibraries && DiffTransitions) ||
                                  // If using MS1 isotopes, an enrichment change can change transition masses
-                                 (newTran.FullScan.PrecursorIsotopes != FullScanPrecursorIsotopes.None && enrichmentsChanged)
+                                 (newTran.FullScan.PrecursorIsotopes != FullScanPrecursorIsotopes.None && enrichmentsChanged) ||
+                                  !Equals(newTran.FullScan.PrecursorRes, oldTran.FullScan.PrecursorRes) ||
+                                  !Equals(newTran.FullScan.PrecursorResMz, oldTran.FullScan.PrecursorResMz)
                                  ;
 
             // If the results changed, then update the results information which has changed

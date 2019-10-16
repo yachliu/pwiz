@@ -190,7 +190,8 @@ namespace pwiz.Skyline.Model.Results
             polarity_negative = 0x40, // When set, only use negative scans.
             raw_chromatograms = 0x80,
             ion_mobility_type_bitmask = 0x700, // 3 bits for ion mobility type none, drift, inverse_mobility, spares
-            dda_acquisition_method = 0x800
+            dda_acquisition_method = 0x800,
+            extracted_qc_trace = 0x1000
         }
 
         /// <summary>
@@ -250,7 +251,7 @@ namespace pwiz.Skyline.Model.Results
             _startPeakIndex = startPeakIndex;
             _startScoreIndex = startScoreIndex;
             _maxPeakIndex = maxPeakIndex != -1 ? CheckByte(maxPeakIndex, byte.MaxValue - 1) : NO_MAX_PEAK;
-            _numPoints = CheckUShort(numPoints);
+            _numPoints = precursor == SignedMz.ZERO ? 0 : CheckUShort(numPoints);
             _compressedSize = compressedSize;
             _uncompressedSize = uncompressedSize;
             _locationPoints = location;
@@ -412,9 +413,11 @@ namespace pwiz.Skyline.Model.Results
         {
             get
             {
-                return (Flags & FlagValues.extracted_base_peak) != 0
-                           ? ChromExtractor.base_peak
-                           : ChromExtractor.summed;
+                if (Flags.HasFlag(FlagValues.extracted_base_peak)) 
+                    return ChromExtractor.base_peak;
+                if (Flags.HasFlag(FlagValues.extracted_qc_trace)) 
+                    return ChromExtractor.qc;
+                return ChromExtractor.summed;
             }
         }
 
@@ -896,8 +899,8 @@ namespace pwiz.Skyline.Model.Results
 
         public double Product { get { return _product; } }
         public float ExtractionWidth { get { return _extractionWidth; }}  // In m/z
-        public float IonMobilityValue { get { return _ionMobilityValue; } } // In msec
-        public float IonMobilityExtractionWidth { get { return _ionMobilityExtractionWidth; } } // In msec
+        public float IonMobilityValue { get { return _ionMobilityValue; } } // Units depend on ion mobility type
+        public float IonMobilityExtractionWidth { get { return _ionMobilityExtractionWidth; } } // Units depend on ion mobility type
 
         public FlagValues Flags
         {
@@ -1093,7 +1096,15 @@ namespace pwiz.Skyline.Model.Results
             var massErrors = timeIntensities.MassErrors;
             // Get the interval being used to convert from Crawdad index based numbers
             // to numbers that are normalized with respect to time.
-            double interval = times[peak.StartIndex + 1] - times[peak.StartIndex];
+            double interval;
+            if (peak.StartIndex + 1 < timeIntensities.NumPoints)
+            {
+                interval = times[peak.StartIndex + 1] - times[peak.StartIndex];
+            }
+            else
+            {
+                interval = 0;
+            }
 
             _retentionTime = times[peak.TimeIndex];
             _startTime = times[peak.StartIndex];
@@ -1387,8 +1398,9 @@ namespace pwiz.Skyline.Model.Results
         }
 
         public ChromCachedFile(MsDataFileUri filePath, FlagValues flags, DateTime fileWriteTime, DateTime? runStartTime,
-                               float maxRT, float maxIntensity, eIonMobilityUnits ionMobilityUnits, IEnumerable<MsInstrumentConfigInfo> instrumentInfoList)
-            : this(filePath, flags, fileWriteTime, runStartTime, maxRT, maxIntensity, 0, 0, default(float?), ionMobilityUnits, instrumentInfoList)
+                               float maxRT, float maxIntensity, eIonMobilityUnits ionMobilityUnits, string sampleId, string serialNumber,
+                               IEnumerable<MsInstrumentConfigInfo> instrumentInfoList)
+            : this(filePath, flags, fileWriteTime, runStartTime, maxRT, maxIntensity, 0, 0, default(float?), ionMobilityUnits, sampleId, serialNumber, instrumentInfoList)
         {
         }
 
@@ -1402,6 +1414,8 @@ namespace pwiz.Skyline.Model.Results
                                long locationScanIds,
                                float? ticArea,
                                eIonMobilityUnits ionMobilityUnits,
+                               string sampleId,
+                               string instrumentSerialNumber,
                                IEnumerable<MsInstrumentConfigInfo> instrumentInfoList)
         {
             FilePath = filePath;
@@ -1413,6 +1427,8 @@ namespace pwiz.Skyline.Model.Results
             SizeScanIds = sizeScanIds;
             LocationScanIds = locationScanIds;
             TicArea = ticArea;
+            SampleId = sampleId;
+            InstrumentSerialNumber = instrumentSerialNumber;
             InstrumentInfoList = ImmutableList.ValueOf(instrumentInfoList) ?? ImmutableList<MsInstrumentConfigInfo>.EMPTY;
             ScanInfos = ImmutableList.Empty<ScanInfo>();
         }
@@ -1429,6 +1445,8 @@ namespace pwiz.Skyline.Model.Results
         public float? TicArea { get; private set; }
         public ImmutableList<ScanInfo> ScanInfos { get; private set; }
         public eIonMobilityUnits IonMobilityUnits { get { return IonMobilityUnitsFromFlags(Flags); } }
+        public string SampleId { get; private set; }
+        public string InstrumentSerialNumber { get; private set; }
 
         public bool IsCurrent
         {
@@ -1458,6 +1476,16 @@ namespace pwiz.Skyline.Model.Results
         public ChromCachedFile ChangeFilePath(MsDataFileUri filePath)
         {
             return ChangeProp(ImClone(this), im => im.FilePath = filePath);
+        }
+
+        public ChromCachedFile ChangeSampleId(string sampleId)
+        {
+            return ChangeProp(ImClone(this), im => im.SampleId = sampleId);
+        }
+
+        public ChromCachedFile ChangeSerialNumber(string serialNumber)
+        {
+            return ChangeProp(ImClone(this), im => im.InstrumentSerialNumber = serialNumber);
         }
 
         public ChromCachedFile ChangeScanInfos(ImmutableList<ScanInfo> scanInfos)
@@ -1617,7 +1645,7 @@ namespace pwiz.Skyline.Model.Results
 
     public enum ChromSource { fragment, sim, ms1, unknown  }
 
-    public enum ChromExtractor { summed, base_peak }
+    public enum ChromExtractor { summed, base_peak, qc }
 
     public class ChromKey : IComparable<ChromKey>
     {
@@ -1838,7 +1866,20 @@ namespace pwiz.Skyline.Model.Results
                 var isNegativeChargeNullable = MsDataFileImpl.IsNegativeChargeIdNullable(idIn);
                 bool isNegativeCharge = isNegativeChargeNullable ?? false;
                 var id = isNegativeChargeNullable.HasValue ? idIn.Substring(2) : idIn;
-                if (id.StartsWith(MsDataFileImpl.PREFIX_TOTAL))
+                var source = ChromSource.fragment;
+                var extractor = ChromExtractor.summed;
+                if (id == MsDataFileImpl.TIC)
+                {
+                    precursor = product = 0;
+                    source = ChromSource.unknown;
+                }
+                else if (id == MsDataFileImpl.BPC)
+                {
+                    precursor = product = 0;
+                    extractor = ChromExtractor.base_peak;
+                    source = ChromSource.unknown;
+                }
+                else if (id.StartsWith(MsDataFileImpl.PREFIX_TOTAL))
                 {
                     precursor = double.Parse(id.Substring(MsDataFileImpl.PREFIX_TOTAL.Length), CultureInfo.InvariantCulture);
                     product = 0;
@@ -1894,12 +1935,18 @@ namespace pwiz.Skyline.Model.Results
                         ceValue = Math.Abs(ceParsed);
                     }
                 }
-                return new ChromKey(null, new SignedMz(precursor, isNegativeCharge), null, new SignedMz(product, isNegativeCharge), ceValue, 0, ChromSource.fragment, ChromExtractor.summed, false, true, null, null);
+                return new ChromKey(null, new SignedMz(precursor, isNegativeCharge), null, new SignedMz(product, isNegativeCharge), ceValue, 0, source, extractor, false, true, null, null);
             }
             catch (FormatException)
             {
                 throw new InvalidDataException(string.Format(Resources.ChromKey_FromId_Invalid_chromatogram_ID__0__found_Failure_parsing_mz_values, idIn));
             }
+        }
+
+        public static ChromKey FromQcTrace(MsDataFileImpl.QcTrace qcTrace)
+        {
+            var qcTextBytes = Encoding.UTF8.GetBytes(qcTrace.Name);
+            return new ChromKey(qcTextBytes, 0, qcTextBytes.Length, SignedMz.ZERO, SignedMz.ZERO, 0, null, ChromSource.unknown, ChromExtractor.qc, false, false, null, null);
         }
 
         #region object overrides
@@ -1999,6 +2046,7 @@ namespace pwiz.Skyline.Model.Results
     {
         protected readonly ChromGroupHeaderInfo _groupHeaderInfo;
         protected readonly IDictionary<Type, int> _scoreTypeIndices;
+        protected readonly byte[] _textIdBytes;
         protected readonly IList<ChromCachedFile> _allFiles;
         protected readonly IReadOnlyList<ChromTransition> _allTransitions;
         protected readonly IReadOnlyList<ChromPeak> _allPeaks;
@@ -2006,6 +2054,7 @@ namespace pwiz.Skyline.Model.Results
 
         public ChromatogramGroupInfo(ChromGroupHeaderInfo groupHeaderInfo,
                                      IDictionary<Type, int> scoreTypeIndices,
+                                     byte[] textIdBytes,
                                      IList<ChromCachedFile> allFiles,
                                      IReadOnlyList<ChromTransition> allTransitions,
                                      IReadOnlyList<ChromPeak> allPeaks,
@@ -2013,6 +2062,7 @@ namespace pwiz.Skyline.Model.Results
         {
             _groupHeaderInfo = groupHeaderInfo;
             _scoreTypeIndices = scoreTypeIndices;
+            _textIdBytes = textIdBytes;
             _allFiles = allFiles;
             _allTransitions = allTransitions;
             _allPeaks = allPeaks;
@@ -2024,12 +2074,21 @@ namespace pwiz.Skyline.Model.Results
         }
 
         protected ChromatogramGroupInfo(ChromGroupHeaderInfo header, ChromatogramGroupInfo copyFrom) 
-            : this(header, copyFrom._scoreTypeIndices, copyFrom._allFiles, copyFrom._allTransitions, copyFrom._allPeaks, copyFrom._allScores)
+            : this(header, copyFrom._scoreTypeIndices, copyFrom._textIdBytes, copyFrom._allFiles, copyFrom._allTransitions, copyFrom._allPeaks, copyFrom._allScores)
         {
         }
 
         internal ChromGroupHeaderInfo Header { get { return _groupHeaderInfo; } }
         public SignedMz PrecursorMz { get { return new SignedMz(_groupHeaderInfo.Precursor, _groupHeaderInfo.NegativeCharge); } }
+        public string TextId
+        {
+            get
+            {
+                return _groupHeaderInfo.TextIdIndex != -1
+                    ? Encoding.UTF8.GetString(_textIdBytes, _groupHeaderInfo.TextIdIndex, _groupHeaderInfo.TextIdLen)
+                    : null;
+            }
+        }
         public double? PrecursorCollisionalCrossSection { get { return _groupHeaderInfo.CollisionalCrossSection; } }
         public MsDataFileUri FilePath { get { return _allFiles[_groupHeaderInfo.FileIndex].FilePath; } }
         public DateTime FileWriteTime { get { return _allFiles[_groupHeaderInfo.FileIndex].FileWriteTime; } }

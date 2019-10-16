@@ -211,7 +211,7 @@ namespace pwiz.Skyline.Model.Results
                         if (null == inFile)
                         {
                             _currentFileInfo = new FileBuildInfo(fileInfo.RunStartTime,
-                                fileInfo.FileWriteTime ?? DateTime.Now, new MsInstrumentConfigInfo[0], null, false);
+                                fileInfo.FileWriteTime ?? DateTime.Now, new MsInstrumentConfigInfo[0], null, false, null, null);
                         }
                         else
                         {
@@ -367,7 +367,9 @@ namespace pwiz.Skyline.Model.Results
                                      cachedFile.FileWriteTime,
                                      cachedFile.InstrumentInfoList,
                                      cachedFile.IsSingleMatchMz,
-                                     cachedFile.HasMidasSpectra);
+                                     cachedFile.HasMidasSpectra,
+                                     cachedFile.SampleId,
+                                     cachedFile.InstrumentSerialNumber);
         }
 
         private MsDataFileImpl GetMsDataFile(string dataFilePathPart, int sampleIndex, LockMassParameters lockMassParameters, MsInstrumentConfigInfo msInstrumentConfigInfo, bool enableSimSpectrum, bool requireCentroidedMS1, bool requireCentroidedMS2, int preferOnlyMsLevel)
@@ -422,7 +424,15 @@ namespace pwiz.Skyline.Model.Results
 
                 // All threads must complete scoring before we complete the first pass.
                 _chromDataSets.Wait();
-                doSecondPass = _retentionTimePredictor.CreateConversion();
+                if (!_retentionTimePredictor.CreateConversion())
+                {
+                    var transitionFullScan = _document.Settings.TransitionSettings.FullScan;
+                    if (transitionFullScan.IsEnabled && transitionFullScan.RetentionTimeFilterType ==
+                        RetentionTimeFilterType.scheduling_windows)
+                    {
+                        doSecondPass = false;
+                    }
+                }
                 if (!doSecondPass && listChromData.Any(data => null != data && !IsFirstPassPeptide(data)))
                 {
                     _status = _status.ChangeWarningMessage(
@@ -489,6 +499,8 @@ namespace pwiz.Skyline.Model.Results
                                      _currentFileInfo.LocationScanIds,
                                      (float?) provider.TicArea,
                                      provider.IonMobilityUnits,
+                                     _currentFileInfo.SampleId,
+                                     _currentFileInfo.SerialNumber,
                                      _currentFileInfo.InstrumentInfoList));
         }
 
@@ -743,6 +755,10 @@ namespace pwiz.Skyline.Model.Results
                 return;
             }
             var fullScan = _document.Settings.TransitionSettings.FullScan;
+            if (!fullScan.IsEnabled)
+            {
+                return;
+            }
             if (fullScan.RetentionTimeFilterType != RetentionTimeFilterType.scheduling_windows)
             {
                 return;
@@ -1350,6 +1366,8 @@ namespace pwiz.Skyline.Model.Results
                     flags |= ChromGroupHeaderInfo.FlagValues.has_calculated_mzs;
                 if (chromDataSet.Extractor == ChromExtractor.base_peak)
                     flags |= ChromGroupHeaderInfo.FlagValues.extracted_base_peak;
+                else if(chromDataSet.Extractor == ChromExtractor.qc)
+                    flags |= ChromGroupHeaderInfo.FlagValues.extracted_qc_trace;
             if (scanIdsByChromSource != null && scanIdsByChromSource.ContainsKey(ChromSource.ms1))
                         flags |= ChromGroupHeaderInfo.FlagValues.has_ms1_scan_ids;
             if (scanIdsByChromSource != null && scanIdsByChromSource.ContainsKey(ChromSource.fragment))
@@ -1432,25 +1450,31 @@ namespace pwiz.Skyline.Model.Results
         public static FileBuildInfo GetFileBuildInfo(MsDataFileUri msDataFileUri, MsDataFileImpl file)
         {
             return new FileBuildInfo(file.RunStartTime, msDataFileUri.GetFileLastWriteTime(),
-                file.GetInstrumentConfigInfoList(), null, false);
+                file.GetInstrumentConfigInfoList(), null, false, file.GetSampleId(), file.GetInstrumentSerialNumber());
         }
 
         public FileBuildInfo(DateTime? startTime,
             DateTime lastWriteTime,
             IEnumerable<MsInstrumentConfigInfo> instrumentInfoList,
             bool? isSingleMatchMz,
-            bool hasMidasSpectra)
+            bool hasMidasSpectra,
+            string sampleId,
+            string serialNumber)
         {
             StartTime = startTime;
             LastWriteTime = lastWriteTime;
             InstrumentInfoList = instrumentInfoList;
             IsSingleMatchMz = isSingleMatchMz;
+            SampleId = sampleId;
+            SerialNumber = serialNumber;
         }
 
         public DateTime? StartTime { get; private set; }
         public DateTime LastWriteTime { get; private set; }
         public IEnumerable<MsInstrumentConfigInfo> InstrumentInfoList { get; private set; }
         public ChromCachedFile.FlagValues Flags { get; private set; }
+        public string SampleId { get; private set; }
+        public string SerialNumber { get; private set; }
 
         public bool? IsSingleMatchMz
         {

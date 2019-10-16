@@ -188,6 +188,12 @@
     <Compile Include="Alerts\AlertLinkDlg.Designer.cs">
       <DependentUpon>AlertLinkDlg.cs</DependentUpon>
     </Compile>
+    <Compile Include="Alerts\NoModeUIDlg.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Alerts\NoModeUIDlg.Designer.cs">
+      <DependentUpon>NoModeUIDlg.cs</DependentUpon>
+    </Compile>
     <Compile Include="Alerts\PeptidesPerProteinDlg.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -302,6 +308,13 @@
     <Compile Include="AlgLib\solvers.cs" />
     <Compile Include="AlgLib\specialfunctions.cs" />
     <Compile Include="AlgLib\statistics.cs" />
+    <Compile Include="CommandArgUsage.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>CommandArgUsage.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\AuditLog\AuditLogExtraInfoForm.cs">
+      <SubType>Form</SubType>
     <Compile Include="Controls\IsotopeDistForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -313,6 +326,11 @@
     </Compile>
     <Compile Include="Controls\AuditLog\AuditLogExtraInfoForm.Designer.cs">
       <DependentUpon>AuditLogExtraInfoForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\Graphs\ReplicateGroupOp.cs" />
+    <Compile Include="Controls\Graphs\ReplicateValue.cs" />
+    <Compile Include="Controls\ImageListBox.cs">
+      <SubType>Component</SubType>
     </Compile>
     <Compile Include="Controls\TargetColumn.cs" />
     <Compile Include="FileUI\ExportAnnotationsDlg.cs">
@@ -340,6 +358,7 @@
       <DependentUpon>AuditLogStrings.resx</DependentUpon>
     </Compile>
     <Compile Include="Model\AuditLog\CustomPropertyLocalizer.cs" />
+    <Compile Include="Model\AuditLog\Databinding\AuditLogRowTime.cs" />
     <Compile Include="Model\AuditLog\Databinding\TextImageColumn.cs" />
     <Compile Include="Model\AuditLog\EnumNames.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -361,8 +380,8 @@
     <Compile Include="Model\AuditLog\ReflectorEnumerator.cs" />
     <Compile Include="Model\AuditLog\ReflectorToString.cs" />
     <Compile Include="Model\Databinding\Entities\ColumnCaptions.Designer.cs">
-      <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
       <DependentUpon>ColumnCaptions.resx</DependentUpon>
     </Compile>
     <Compile Include="Model\Databinding\Entities\ColumnToolTips.Designer.cs">
@@ -375,9 +394,13 @@
     <Compile Include="Model\Databinding\ListLookupDataGridViewColumn.cs" />
     <Compile Include="Model\Databinding\ListLookupPropertyDescriptor.cs" />
     <Compile Include="Model\Databinding\BoundComboBoxColumn.cs" />
+    <Compile Include="Model\Databinding\ProteomicDisplayNameAttribute.cs" />
     <Compile Include="Model\Databinding\RowActions\DeleteNodesAction.cs" />
     <Compile Include="Model\Databinding\RowActions\RemovePeaksAction.cs" />
     <Compile Include="Model\Databinding\RowActions\RowAction.cs" />
+    <Compile Include="Model\DocSettings\AnnotationCalculator.cs" />
+    <Compile Include="Model\DocSettings\AnnotationExpression.cs" />
+    <Compile Include="Model\DocSettings\DocumentAnnotationUpdater.cs" />
     <Compile Include="Model\ElementLocators\ElementLocator.cs" />
     <Compile Include="Model\ElementLocators\ListRef.cs" />
     <Compile Include="Model\DocSettings\FullScanAcquisitionMethod.cs" />
@@ -403,9 +426,11 @@
     <Compile Include="Model\AuditLog\AuditLogEntry.cs" />
     <Compile Include="Model\AuditLog\DiffNode.cs" />
     <Compile Include="Model\AuditLog\PropertyName.cs" />
+    <Compile Include="Model\ExplicitTransitionValues.cs" />
     <Compile Include="Model\Lib\BlibData\DbRefSpectraPeakAnnotations.cs" />
     <Compile Include="Model\Lib\ExplicitPeakBounds.cs" />
     <Compile Include="Model\Lib\LibKeyIndex.cs" />
+    <Compile Include="Model\Lib\SpectralLibraryExporter.cs" />
     <Compile Include="Model\Lib\ViewLibraryPepInfoList.cs" />
     <Compile Include="Model\Lib\LibKeyMap.cs" />
     <Compile Include="Model\Lib\LibraryKey.cs" />
@@ -422,6 +447,7 @@
     <Compile Include="Model\Results\RemoteApi\RemoteServerException.cs" />
     <Compile Include="Model\Results\RemoteApi\RemoteSession.cs" />
     <Compile Include="Model\Results\RemoteApi\RemoteUrl.cs" />
+    <Compile Include="Model\Serialization\AnnotationScrubber.cs" />
     <Compile Include="Model\Serialization\Pre372CustomIonTransitionGroupHandler.cs" />
     <Compile Include="Model\Serialization\XmlReadAhead.cs" />
     <Compile Include="Model\TargetMap.cs" />
@@ -476,6 +502,12 @@
     <Compile Include="Model\Results\RemoteApi\Unifi\UnifiSession.cs" />
     <Compile Include="Model\Results\RemoteApi\Unifi\UnifiUrl.cs" />
     <Compile Include="Model\TargetResolver.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Util\UiModes.cs" />
     <Compile Include="SettingsUI\IonMobility\UseSpectralLibraryIonMobilityValuesControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -1449,11 +1481,6 @@
     <Compile Include="Controls\UndoRedoButtons.cs" />
     <Compile Include="Model\V01\Sequence.cs" />
     <Compile Include="Model\V01\XmlExport.cs" />
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
     <Compile Include="ProtocolBuffers\GeneratedCode\ChromatogramGroupData.cs" />
     <Compile Include="ProtocolBuffers\GeneratedCode\SkylineDocument.cs" />
     <Compile Include="SettingsUI\AddModificationsDlg.cs">
@@ -1656,12 +1683,6 @@
     <Compile Include="SettingsUI\Irt\ChangeIrtPeptidesDlg.Designer.cs">
       <DependentUpon>ChangeIrtPeptidesDlg.cs</DependentUpon>
     </Compile>
-    <Compile Include="SettingsUI\Irt\RecalibrateIrtDlg.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SettingsUI\Irt\RecalibrateIrtDlg.Designer.cs">
-      <DependentUpon>RecalibrateIrtDlg.cs</DependentUpon>
-    </Compile>
     <Compile Include="SettingsUI\Irt\EditIrtCalcDlg.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -1831,6 +1852,15 @@
     <EmbeddedResource Include="Alerts\MissingFileDlg.zh-CHS.resx">
       <DependentUpon>MissingFileDlg.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Alerts\NoModeUIDlg.ja.resx">
+      <DependentUpon>NoModeUIDlg.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Alerts\NoModeUIDlg.resx">
+      <DependentUpon>NoModeUIDlg.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Alerts\NoModeUIDlg.zh-CHS.resx">
+      <DependentUpon>NoModeUIDlg.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Alerts\PasteFilteredPeptidesDlg.ja.resx">
       <DependentUpon>PasteFilteredPeptidesDlg.cs</DependentUpon>
     </EmbeddedResource>
@@ -1897,6 +1927,19 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Alerts\UpgradeLicenseDlg.zh-CHS.resx">
       <DependentUpon>UpgradeLicenseDlg.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CommandArgUsage.ja.resx">
+      <DependentUpon>CommandArgUsage.resx</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CommandArgUsage.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>CommandArgUsage.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CommandArgUsage.zh-CHS.resx">
+      <DependentUpon>CommandArgUsage.resx</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\AuditLog\AuditLogExtraInfoForm.ja.resx">
@@ -2090,6 +2133,9 @@
     <EmbeddedResource Include="Controls\GroupComparison\MsStatsLogoForm.zh-CHS.resx">
       <DependentUpon>MsStatsLogoForm.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\Lists\ListDesigner.ja.resx">
+      <DependentUpon>ListDesigner.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\Lists\ListDesigner.resx">
       <DependentUpon>ListDesigner.cs</DependentUpon>
     </EmbeddedResource>
@@ -2111,7 +2157,12 @@
     <EmbeddedResource Include="Controls\GroupComparison\VolcanoPlotPropertiesDlg.zh-CHS.resx">
       <DependentUpon>VolcanoPlotPropertiesDlg.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Controls\IsotopeDistForm.resx">
+    <EmbeddedResource Include="Controls\Lists\ListDesigner.zh-CHS.resx">
+      <DependentUpon>ListDesigner.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\Startup\ActionBoxControl.ja.resx">
+      <DependentUpon>ActionBoxControl.cs</DependentUpon>
+    </EmbeddedResource>    <EmbeddedResource Include="Controls\IsotopeDistForm.resx">
       <DependentUpon>IsotopeDistForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\Startup\ActionBoxControl.ja.resx">
@@ -2211,6 +2262,9 @@
     <EmbeddedResource Include="FileUI\CreateIrtCalculatorDlg.zh-CHS.resx">
       <DependentUpon>CreateIrtCalculatorDlg.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FileUI\ExportAnnotationsDlg.ja.resx">
+      <DependentUpon>ExportAnnotationsDlg.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FileUI\ExportAnnotationsDlg.resx">
       <DependentUpon>ExportAnnotationsDlg.cs</DependentUpon>
@@ -2512,6 +2566,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="EditUI\PasteDlg.zh-CHS.resx">
       <DependentUpon>PasteDlg.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="EditUI\RefineDlg.ja.resx">
       <DependentUpon>RefineDlg.cs</DependentUpon>
@@ -2809,6 +2864,10 @@
       <Link>unimod.xml</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Condition=" '$(Platform)' == 'x86' " Include="..\Shared\ProteowizardWrapper\obj\x86\timsdata.dll">
+      <Link>timsdata.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Condition=" '$(Platform)' == 'x64' " Include="..\Shared\ProteowizardWrapper\obj\x64\timsdata.dll">
       <Link>timsdata.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -2853,15 +2912,17 @@
     <EmbeddedResource Include="Resources\StartPage\WizardPeptideSearchPRM.png" />
     <EmbeddedResource Include="Resources\Ions_fragments.bmp" />
     <EmbeddedResource Include="Resources\Edit_Undo_Multiple.bmp" />
-    <Content Include="Resources\Locked.bmp" />
+    <None Include="Resources\Locked.bmp" />
     <EmbeddedResource Include="Resources\MoleculeLib.bmp" />
-    <Content Include="Resources\MoleculeStandard.bmp" />
-    <Content Include="Resources\Pindownlight.bmp" />
-    <Content Include="Resources\Pinleftlight.bmp" />
+    <None Include="Resources\MoleculeStandard.bmp" />
+    <None Include="Resources\MoleculeUI.bmp" />
+    <None Include="Resources\Pindownlight.bmp" />
+    <None Include="Resources\Pinleftlight.bmp" />
     <EmbeddedResource Include="Model\Lib\Midas\mapping.xml">
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <Content Include="Resources\Replicate.bmp" />
+    <None Include="Resources\ProteinUI.bmp" />
+    <None Include="Resources\Replicate.bmp" />
     <EmbeddedResource Include="Model\Irt\StandardsDocuments\APOA1.sky" />
     <EmbeddedResource Include="Model\Irt\StandardsDocuments\Biognosys11.sky" />
     <EmbeddedResource Include="Model\Irt\StandardsDocuments\Pierce.sky" />
@@ -2880,11 +2941,18 @@
     <None Include="Resources\StartPage\GroupedStudies_thumb.jpg" />
     <None Include="Resources\StartPage\DIA_thumb.jpg" />
     <None Include="Resources\StartPage\SmallMolecule_thumb.jpg" />
+    <EmbeddedResource Include="Resources\StartPage\WizardMoleculeIcon.png" />
     <EmbeddedResource Include="Resources\StartPage\HiResMetabolomics_thumb.png" />
     <EmbeddedResource Include="Resources\StartPage\SmallMoleculeMethodDevCEOpt_thumb.png" />
     <EmbeddedResource Include="Resources\StartPage\SmallMoleculeQuantification_thumb.png" />
-    <Content Include="Resources\Unlocked.bmp" />
-    <Content Include="Resources\warning.png" />
+    <EmbeddedResource Include="Resources\UIModeMixed.bmp" />
+    <EmbeddedResource Include="Resources\UIModeProteomic.bmp" />
+    <EmbeddedResource Include="Resources\UIModeSmallMolecules.bmp" />
+    <None Include="Resources\Unlocked.bmp" />
+    <None Include="Resources\warning.png" />
+    <EmbeddedResource Include="Resources\MoleculeIrt.bmp" />
+    <EmbeddedResource Include="Resources\MoleculeIrtLib.bmp" />
+    <EmbeddedResource Include="Resources\MoleculeStandardLib.bmp" />
     <Content Include="SkylineProcessRunner.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -2998,6 +3066,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="SettingsUI\EditCustomMoleculeDlg.ja.resx">
       <DependentUpon>EditCustomMoleculeDlg.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="SettingsUI\EditCustomMoleculeDlg.resx">
       <DependentUpon>EditCustomMoleculeDlg.cs</DependentUpon>
@@ -3005,6 +3074,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="SettingsUI\EditCustomMoleculeDlg.zh-CHS.resx">
       <DependentUpon>EditCustomMoleculeDlg.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="SettingsUI\EditDPDlg.ja.resx">
       <DependentUpon>EditDPDlg.cs</DependentUpon>
@@ -3227,12 +3297,6 @@
     <EmbeddedResource Include="SettingsUI\Irt\EditIrtCalcDlg.zh-CHS.resx">
       <DependentUpon>EditIrtCalcDlg.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="SettingsUI\Irt\RecalibrateIrtDlg.ja.resx">
-      <DependentUpon>RecalibrateIrtDlg.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SettingsUI\Irt\RecalibrateIrtDlg.zh-CHS.resx">
-      <DependentUpon>RecalibrateIrtDlg.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="SettingsUI\Optimization\AddOptimizationLibraryDlg.ja.resx">
       <DependentUpon>AddOptimizationLibraryDlg.cs</DependentUpon>
     </EmbeddedResource>
@@ -3256,9 +3320,11 @@
     </EmbeddedResource>
     <EmbeddedResource Include="SettingsUI\PeptideSettingsUI.ja.resx">
       <DependentUpon>PeptideSettingsUI.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="SettingsUI\PeptideSettingsUI.zh-CHS.resx">
       <DependentUpon>PeptideSettingsUI.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="SettingsUI\RTDetails.ja.resx">
       <DependentUpon>RTDetails.cs</DependentUpon>
@@ -3684,11 +3750,17 @@
     <Compile Include="Util\AxisLabelScaler.cs" />
     <Compile Include="Util\BackgroundEventThreads.cs" />
     <Compile Include="Util\BioMassCalc.cs" />
+    <Compile Include="Util\ConsoleTable.cs" />
     <Compile Include="Util\CreateHandleDebugBase.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Util\ExceptionPointers.cs" />
     <Compile Include="Util\FormattableList.cs" />
+    <Compile Include="Util\ModeUIAwareForm.cs" />
+    <Compile Include="Util\ModeUIInvariantFormEx.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Util\PeptideToMoleculeTextMapper.cs" />
     <Compile Include="Util\HistogramHelper.cs" />
     <Compile Include="Util\LongOperationRunner.cs" />
     <Compile Include="Util\CultureUtil.cs" />
@@ -4682,10 +4754,6 @@
       <DependentUpon>ChangeIrtPeptidesDlg.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="SettingsUI\Irt\RecalibrateIrtDlg.resx">
-      <DependentUpon>RecalibrateIrtDlg.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
     <EmbeddedResource Include="SettingsUI\Irt\EditIrtCalcDlg.resx">
       <DependentUpon>EditIrtCalcDlg.cs</DependentUpon>
       <SubType>Designer</SubType>
@@ -4813,6 +4881,26 @@
       <TargetPath>
       </TargetPath>
       <PublishState>Include</PublishState>
+      <IncludeHash>True</IncludeHash>
+      <FileType>Assembly</FileType>
+    </PublishFile>
+    <PublishFile Include="Microsoft.VC90.CRT">
+      <Visible>False</Visible>
+      <Group>
+      </Group>
+      <TargetPath>
+      </TargetPath>
+      <PublishState>Exclude</PublishState>
+      <IncludeHash>True</IncludeHash>
+      <FileType>Assembly</FileType>
+    </PublishFile>
+    <PublishFile Include="Microsoft.VC90.MFC">
+      <Visible>False</Visible>
+      <Group>
+      </Group>
+      <TargetPath>
+      </TargetPath>
+      <PublishState>Exclude</PublishState>
       <IncludeHash>True</IncludeHash>
       <FileType>Assembly</FileType>
     </PublishFile>
