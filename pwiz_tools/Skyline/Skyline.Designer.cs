@@ -4832,12 +4832,7 @@ namespace pwiz.Skyline
         private System.Windows.Forms.ToolStripMenuItem otherGridsMenuItem;
         private System.Windows.Forms.ToolStripMenuItem auditLogMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator59;
-        private System.Windows.Forms.ToolStripMenuItem areaCVProductsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem isotopeDistributionsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem targetsAt1FDRToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem otherGridsMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem auditLogMenuItem;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator59;
         private System.Windows.Forms.ToolStripMenuItem webinarsMenuItem;
         private System.Windows.Forms.ToolStripMenuItem documentationToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem reportsHelpMenuItem;

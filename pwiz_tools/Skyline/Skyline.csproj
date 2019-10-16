@@ -322,9 +322,6 @@
     <Compile Include="Controls\IsotopeDistForm.Designer.cs">
       <DependentUpon>IsotopeDistForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Controls\AuditLog\AuditLogExtraInfoForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="Controls\AuditLog\AuditLogExtraInfoForm.Designer.cs">
       <DependentUpon>AuditLogExtraInfoForm.cs</DependentUpon>
     </Compile>
@@ -2163,11 +2160,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\Startup\ActionBoxControl.ja.resx">
       <DependentUpon>ActionBoxControl.cs</DependentUpon>
-    </EmbeddedResource>    <EmbeddedResource Include="Controls\IsotopeDistForm.resx">
+    </EmbeddedResource>    
+    <EmbeddedResource Include="Controls\IsotopeDistForm.resx">
       <DependentUpon>IsotopeDistForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Controls\Startup\ActionBoxControl.ja.resx">
-      <DependentUpon>ActionBoxControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\Startup\ActionBoxControl.resx">
       <DependentUpon>ActionBoxControl.cs</DependentUpon>
