@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>pwiz.Common</RootNamespace>
     <AssemblyName>pwiz.Common</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -125,6 +125,7 @@
     <Compile Include="DataAnalysis\PValues.cs" />
     <Compile Include="DataAnalysis\NelderMeadSimplex.cs" />
     <Compile Include="DataAnalysis\LoessInterpolator.cs" />
+    <Compile Include="DataAnalysis\ThreadingHelper.cs" />
     <Compile Include="Database\NHibernate\AbstractSessionWithLock.cs" />
     <Compile Include="Database\NHibernate\SessionFactoryFactory.cs" />
     <Compile Include="Database\NHibernate\SessionWithLock.cs" />
@@ -132,7 +133,6 @@
     <Compile Include="Database\SqliteOperations.cs" />
     <Compile Include="DataBinding\AbstractViewContext.cs" />
     <Compile Include="DataBinding\AggregateOperation.cs" />
-    <Compile Include="DataBinding\Attributes\AdvancedAttribute.cs" />
     <Compile Include="DataBinding\Attributes\ColumnCaptionAttribute.cs" />
     <Compile Include="DataBinding\Attributes\ExpensiveAttribute.cs" />
     <Compile Include="DataBinding\Attributes\InvariantDisplayNameAttribute.cs" />
@@ -141,9 +141,12 @@
     <Compile Include="DataBinding\Attributes\DataGridViewColumnTypeAttribute.cs" />
     <Compile Include="DataBinding\Attributes\FormatAttribute.cs" />
     <Compile Include="DataBinding\Attributes\OneToManyAttribute.cs" />
+    <Compile Include="DataBinding\Attributes\UiModeAttribute.cs" />
+    <Compile Include="DataBinding\Attributes\HiddenAttribute.cs" />
     <Compile Include="DataBinding\ChainedPropertyDescriptor.cs" />
     <Compile Include="DataBinding\CollectionInfo.cs" />
     <Compile Include="DataBinding\ColumnFormats.cs" />
+    <Compile Include="DataBinding\ColumnSelector.cs" />
     <Compile Include="DataBinding\Controls\ColumnListEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -258,6 +261,7 @@
     <Compile Include="DataBinding\DisplayColumn.cs" />
     <Compile Include="DataBinding\Documentation\DocumentationGenerator.cs" />
     <Compile Include="DataBinding\DsvWriter.cs" />
+    <Compile Include="DataBinding\EventTaskScheduler.cs" />
     <Compile Include="DataBinding\FilterInfo.cs" />
     <Compile Include="DataBinding\FilterOperation.cs" />
     <Compile Include="DataBinding\FilterPredicate.cs" />
@@ -274,6 +278,7 @@
     <Compile Include="DataBinding\Internal\Pivoter.cs" />
     <Compile Include="DataBinding\Internal\QueryRequestor.cs" />
     <Compile Include="DataBinding\Internal\QueryResults.cs" />
+    <Compile Include="DataBinding\IUiModeInfo.cs" />
     <Compile Include="DataBinding\Layout\RowFilter.cs" />
     <Compile Include="DataBinding\Internal\RowSourceWrapper.cs" />
     <Compile Include="DataBinding\IRowSource.cs" />
@@ -281,6 +286,7 @@
     <Compile Include="DataBinding\IViewTransformer.cs" />
     <Compile Include="DataBinding\Layout\TransformStack.cs" />
     <Compile Include="DataBinding\Layout\ViewLayoutList.cs" />
+    <Compile Include="DataBinding\NewRowHandler.cs" />
     <Compile Include="DataBinding\PivotKey.cs" />
     <Compile Include="DataBinding\Layout\PivotSpec.cs" />
     <Compile Include="DataBinding\PropertyPath.cs" />
@@ -288,6 +294,7 @@
     <Compile Include="DataBinding\QueryLock.cs" />
     <Compile Include="DataBinding\RowItem.cs" />
     <Compile Include="DataBinding\LinkValue.cs" />
+    <Compile Include="DataBinding\RowItemValues.cs" />
     <Compile Include="DataBinding\RowSourceInfo.cs" />
     <Compile Include="DataBinding\RowSources\BindingListSupport.cs" />
     <Compile Include="DataBinding\RowSources\IListChanged.cs" />
@@ -302,6 +309,7 @@
     <Compile Include="DataBinding\ViewGroup.cs" />
     <Compile Include="DataBinding\ViewGroupInfo.cs" />
     <Compile Include="DataBinding\ViewInfo.cs" />
+    <Compile Include="DataBinding\ViewSpecLayout.cs" />
     <Compile Include="DataBinding\ViewSpecList.cs" />
     <Compile Include="Graph\CurveDataHandler.cs" />
     <Compile Include="Graph\DataColumn.cs" />
@@ -500,6 +508,8 @@
     <None Include="Resources\up-pro32.bmp" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Resources\HiddenColumns.bmp" />
+    <Content Include="Resources\UnknownUiMode.png" />
     <EmbeddedResource Include="DataBinding\Documentation\DocumentationGenerator.css" />
     <Content Include="Resources\agg_mean.bmp" />
     <Content Include="Resources\agg_median.bmp" />
@@ -539,9 +549,6 @@
       <Project>{13BF2FFB-50A1-4AB1-83A4-5733E36905CE}</Project>
       <Name>CommonUtil</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="DataBinding\ColumnCaptions\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Original author: Brendan MacLean <brendanx .at. u.washington.edu>,
  *                  MacCoss Lab, Department of Genome Sciences, UW
  *
@@ -21,9 +21,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using pwiz.Common.Chemistry;
 using pwiz.Common.Collections;
 using pwiz.Common.SystemUtil;
-using pwiz.ProteowizardWrapper;
 using pwiz.Skyline.Model.DocSettings;
 using pwiz.Skyline.Model.Results.Scoring;
 using pwiz.Skyline.Model.Serialization;
@@ -304,7 +304,6 @@ namespace pwiz.Skyline.Model.Results
                 im.ZScore = score;
             });
         }
-
         #endregion
 
         #region object overrides
@@ -615,18 +614,8 @@ namespace pwiz.Skyline.Model.Results
             return chromInfo;
         }
 
-        /// <summary>
-        /// Because creating a copy shows up in a profiler, and this is currently only used
-        /// during calculation of this object, a copy flag was added to allow modified
-        /// immutability with direct setting allowed during extended creation time.
-        /// </summary>
-        public TransitionChromInfo ChangeRatios(bool copy, IList<float?> prop)
+        public TransitionChromInfo ChangeRatios(IList<float?> prop)
         {
-            if (!copy)
-            {
-                Ratios = prop;
-                return this;
-            }
             return ChangeProp(ImClone(this), im => im.Ratios = prop);
         }
 
@@ -675,7 +664,7 @@ namespace pwiz.Skyline.Model.Results
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return base.Equals(other) &&
+            var result =  base.Equals(other) &&
                    Equals(other.MassError, MassError) &&
                    other.RetentionTime == RetentionTime &&
                    other.StartRetentionTime == StartRetentionTime &&
@@ -696,6 +685,7 @@ namespace pwiz.Skyline.Model.Results
                    Equals(other.IonMobility, IonMobility) &&
                    other.PointsAcrossPeak.Equals(PointsAcrossPeak) &&
                    Equals(IsForcedIntegration, other.IsForcedIntegration);
+            return result; // For ease of breakpoint setting
         }
 
         public override bool Equals(object obj)
@@ -736,26 +726,27 @@ namespace pwiz.Skyline.Model.Results
 
         #endregion
 
-        public static Results<TransitionChromInfo> FromProtoTransitionResults(StringPool stringPool, SrmSettings settings,
+        public static Results<TransitionChromInfo> FromProtoTransitionResults(AnnotationScrubber annotationScrubber, SrmSettings settings,
             SkylineDocumentProto.Types.TransitionResults transitionResults)
         {
             if (transitionResults == null)
             {
                 return null;
             }
+
             var measuredResults = settings.MeasuredResults;
             var peaksByReplicate = transitionResults.Peaks.ToLookup(peak => peak.ReplicateIndex);
             var lists = new List<ChromInfoList<TransitionChromInfo>>();
             for (int replicateIndex = 0; replicateIndex < measuredResults.Chromatograms.Count; replicateIndex++)
             {
                 var transitionChromInfos = peaksByReplicate[replicateIndex]
-                    .Select(transitionPeak => FromProtoTransitionPeak(stringPool, settings, transitionPeak)).ToArray();
+                    .Select(transitionPeak => FromProtoTransitionPeak(annotationScrubber, settings, transitionPeak)).ToArray();
                 lists.Add(new ChromInfoList<TransitionChromInfo>(transitionChromInfos));
             }
             return new Results<TransitionChromInfo>(lists);
         }
 
-        private static TransitionChromInfo FromProtoTransitionPeak(StringPool stringPool, SrmSettings settings,
+        private static TransitionChromInfo FromProtoTransitionPeak(AnnotationScrubber annotationScrubber, SrmSettings settings,
             SkylineDocumentProto.Types.TransitionPeak transitionPeak)
         {
             var measuredResults = settings.MeasuredResults;
@@ -804,7 +795,7 @@ namespace pwiz.Skyline.Model.Results
                 (short) transitionPeak.Rank,
                 (short) transitionPeak.RankByLevel,
                 GetEmptyRatios(settings.PeptideSettings.Modifications.RatioInternalStandardTypes.Count),
-                Annotations.FromProtoAnnotations(stringPool, transitionPeak.Annotations), 
+                annotationScrubber.ScrubAnnotations(Annotations.FromProtoAnnotations(transitionPeak.Annotations), AnnotationDef.AnnotationTarget.transition_result), 
                 DataValues.FromUserSet(transitionPeak.UserSet),
                 transitionPeak.ForcedIntegration
                 );
@@ -1301,7 +1292,7 @@ namespace pwiz.Skyline.Model.Results
 
         public override string ToString()
         {
-            return String.Format("FileId = {0}", FileId.GlobalIndex); // Not L10N : For debugging
+            return String.Format(@"FileId = {0}", FileId.GlobalIndex); // For debugging
         }
 
         #endregion

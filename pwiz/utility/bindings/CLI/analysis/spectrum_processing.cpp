@@ -79,15 +79,25 @@ public ref class Version
 
 void SpectrumListFactory::wrap(msdata::MSData^ msd, System::String^ wrapper)
 {
-    b::SpectrumListFactory::wrap(msd->base(), ToStdString(wrapper));
+    wrap(msd, wrapper, nullptr);
+}
+
+void SpectrumListFactory::wrap(msdata::MSData^ msd, System::String^ wrapper, util::IterationListenerRegistry^ ilr)
+{
+    b::SpectrumListFactory::wrap(msd->base(), ToStdString(wrapper), ilr ? &ilr->base() : nullptr);
 }
 
 void SpectrumListFactory::wrap(msdata::MSData^ msd, System::Collections::Generic::IList<System::String^>^ wrappers)
 {
+    wrap(msd, wrappers, nullptr);
+}
+
+void SpectrumListFactory::wrap(msdata::MSData^ msd, System::Collections::Generic::IList<System::String^>^ wrappers, util::IterationListenerRegistry^ ilr)
+{
     std::vector<std::string> nativeWrappers;
     for each(System::String^ wrapper in wrappers)
         nativeWrappers.push_back(ToStdString(wrapper));
-    b::SpectrumListFactory::wrap(msd->base(), nativeWrappers);
+    b::SpectrumListFactory::wrap(msd->base(), nativeWrappers, ilr ? &ilr->base() : nullptr);
 }
 
 System::String^ SpectrumListFactory::usage()
@@ -109,6 +119,8 @@ class SpectrumList_FilterPredicate_Custom : public b::SpectrumList_Filter::Predi
     virtual boost::logic::tribool accept(const pwiz::msdata::Spectrum& spectrum) const;
 
     virtual bool done() const;
+
+    virtual std::string describe() const { return ""; }
 };
 
 
@@ -459,14 +471,19 @@ SpectrumList_IonMobility::SpectrumList_IonMobility(msdata::SpectrumList^ inner)
     msdata::SpectrumList::base_ = new boost::shared_ptr<pwiz::msdata::SpectrumList>(base_);
 }
 
-SpectrumList_IonMobility::eIonMobilityUnits SpectrumList_IonMobility::getIonMobilityUnits()
+SpectrumList_IonMobility::IonMobilityUnits SpectrumList_IonMobility::getIonMobilityUnits()
 {
-    try { return static_cast<SpectrumList_IonMobility::eIonMobilityUnits>(base_->getIonMobilityUnits()); } CATCH_AND_FORWARD
+    try { return static_cast<SpectrumList_IonMobility::IonMobilityUnits>(base_->getIonMobilityUnits()); } CATCH_AND_FORWARD
 }
 
-bool SpectrumList_IonMobility::canConvertIonMobilityAndCCS(eIonMobilityUnits units)
+bool SpectrumList_IonMobility::hasCombinedIonMobility()
 {
-    try { return base_->canConvertIonMobilityAndCCS(static_cast<b::SpectrumList_IonMobility::eIonMobilityUnits>(units)); } CATCH_AND_FORWARD
+    try { return base_->hasCombinedIonMobility(); } CATCH_AND_FORWARD
+}
+
+bool SpectrumList_IonMobility::canConvertIonMobilityAndCCS(IonMobilityUnits units)
+{
+    try { return base_->canConvertIonMobilityAndCCS(static_cast<b::SpectrumList_IonMobility::IonMobilityUnits>(units)); } CATCH_AND_FORWARD
 }
 
 double SpectrumList_IonMobility::ionMobilityToCCS(double ionMobility, double mz, int charge)

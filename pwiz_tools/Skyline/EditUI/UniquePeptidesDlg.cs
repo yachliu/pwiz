@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Original author: Nick Shulman <nicksh .at. u.washington.edu>,
  *                  MacCoss Lab, Department of Genome Sciences, UW
  *
@@ -23,11 +23,13 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using pwiz.Common.SystemUtil;
 using pwiz.ProteomeDatabase.API;
 using pwiz.Skyline.Alerts;
 using pwiz.Skyline.Controls;
 using pwiz.Skyline.Controls.SeqNode;
 using pwiz.Skyline.Model;
+using pwiz.Skyline.Model.AuditLog;
 using pwiz.Skyline.Model.Proteome;
 using pwiz.Skyline.Properties;
 using pwiz.Skyline.Util;
@@ -39,11 +41,12 @@ namespace pwiz.Skyline.EditUI
     /// Dialog box which shows the user which of their peptides match more than one protein in the database,
     /// and allows them to selectively remove peptides from the document.
     /// </summary>
-    public partial class UniquePeptidesDlg : FormEx
+    public partial class UniquePeptidesDlg : ModeUIInvariantFormEx,  // This dialog is inherently proteomic, never wants the "peptide"->"molecule" translation
+           IAuditLogModifier<UniquePeptidesDlg.UniquePeptideSettings>
     {
         private readonly CheckBox _checkBoxPeptideIncludedColumnHeader = new CheckBox
         {
-            Name = "checkBoxPeptideIncludedColumnHeader", // Not L10N
+            Name = @"checkBoxPeptideIncludedColumnHeader",
             Size = new Size(18, 18),
             AutoCheck = false
         };
@@ -108,7 +111,11 @@ namespace pwiz.Skyline.EditUI
             }
             PeptideDocNode peptideDocNode = rowTag.Item2;
             // Expecting to find this peptide
-            var peptideGroupDocNode = PeptideGroupDocNodes.First(g => g.Peptides.Contains(peptideDocNode));
+            var peptideGroupDocNode = PeptideGroupDocNodes.FirstOrDefault(g => null != g.FindNode(peptideDocNode.Peptide));
+            if (peptideGroupDocNode == null)
+            {
+                return;
+            }
             String peptideSequence = peptideDocNode.Peptide.Target.Sequence;
             String proteinSequence;
             var proteinColumn = dataGridView1.Columns[dataGridView1.CurrentCell.ColumnIndex].Tag as ProteinColumn;
@@ -130,15 +137,21 @@ namespace pwiz.Skyline.EditUI
             if (!string.IsNullOrEmpty(proteinSequence))
             {
                 var regex = new Regex(peptideSequence);
-                StringBuilder formattedText = new StringBuilder("{\\rtf1\\ansi{\\fonttbl\\f0\\fswiss Helvetica;}{\\colortbl ;\\red0\\green0\\blue255;}\\f0\\pard \\fs16"); // Not L10N
+                // ReSharper disable LocalizableElement
+                StringBuilder formattedText = new StringBuilder("{\\rtf1\\ansi{\\fonttbl\\f0\\fswiss Helvetica;}{\\colortbl ;\\red0\\green0\\blue255;}\\f0\\pard \\fs16");
+                // ReSharper restore LocalizableElement
                 int lastIndex = 0;
                 for (Match match = regex.Match(proteinSequence, 0); match.Success; lastIndex = match.Index + match.Length, match = match.NextMatch())
                 {
-                    formattedText.Append("\\cf0\\b0 " + proteinSequence.Substring(lastIndex, match.Index - lastIndex)); // Not L10N
-                    formattedText.Append("\\cf1\\b " + proteinSequence.Substring(match.Index, match.Length)); // Not L10N
+                    // ReSharper disable LocalizableElement
+                    formattedText.Append("\\cf0\\b0 " + proteinSequence.Substring(lastIndex, match.Index - lastIndex));
+                    formattedText.Append("\\cf1\\b " + proteinSequence.Substring(match.Index, match.Length));
+                    // ReSharper restore LocalizableElement
                 }
-                formattedText.Append("\\cf0\\b0 " + proteinSequence.Substring(lastIndex, proteinSequence.Length - lastIndex)); // Not L10N
-                formattedText.Append("\\par }"); // Not L10N
+                // ReSharper disable LocalizableElement
+                formattedText.Append("\\cf0\\b0 " + proteinSequence.Substring(lastIndex, proteinSequence.Length - lastIndex));
+                formattedText.Append("\\par }");
+                // ReSharper restore LocalizableElement
                 richTextBoxSequence.Rtf = formattedText.ToString();
             }
         }
@@ -239,7 +252,9 @@ namespace pwiz.Skyline.EditUI
             {
                 ProteinColumn proteinColumn = new ProteinColumn(_proteinColumns.Count + dataGridView1.ColumnCount, protein);
                 _proteinColumns.Add(proteinColumn);
-                var accession = string.IsNullOrEmpty(protein.Accession) ? string.Empty : protein.Accession + "\n"; // Not L10N
+                // ReSharper disable LocalizableElement
+                var accession = string.IsNullOrEmpty(protein.Accession) ? string.Empty : protein.Accession + "\n";
+                // ReSharper restore LocalizableElement
                 var proteinName = protein.Name;
                 // Isoforms may all get the same preferredname, which is confusing to look at
                 if (!string.IsNullOrEmpty(protein.PreferredName))
@@ -250,7 +265,9 @@ namespace pwiz.Skyline.EditUI
                         proteinName = protein.PreferredName;
                     }
                 }
-                var gene = string.IsNullOrEmpty(protein.Gene) ? string.Empty : "\n" + protein.Gene; // Not L10N
+                // ReSharper disable LocalizableElement
+                var gene = string.IsNullOrEmpty(protein.Gene) ? string.Empty : "\n" + protein.Gene;
+                // ReSharper restore LocalizableElement
                 DataGridViewCheckBoxColumn column = new DataGridViewCheckBoxColumn
                 {
                     Name = proteinColumn.Name,
@@ -378,7 +395,7 @@ namespace pwiz.Skyline.EditUI
                 Index = index;
                 Protein = protein;
             }
-            public String Name { get { return "protein" + Index; } } // Not L10N
+            public String Name { get { return @"protein" + Index; } }
             public int Index { get; set; }
             public Protein Protein { get; set; }
         }
@@ -508,7 +525,7 @@ namespace pwiz.Skyline.EditUI
                     Resources.UniquePeptidesDlg_SelectPeptidesWithNumberOfMatchesAtOrBelowThreshold_Some_background_proteome_proteins_did_not_have_gene_information__this_selection_may_be_suspect_ :
                     Resources.UniquePeptidesDlg_SelectPeptidesWithNumberOfMatchesAtOrBelowThreshold_Some_background_proteome_proteins_did_not_have_species_information__this_selection_may_be_suspect_,
                     Resources.UniquePeptidesDlg_SelectPeptidesWithNumberOfMatchesAtOrBelowThreshold_These_proteins_include_,
-                    TextUtil.LineSeparate(dubious)); // Not L10N
+                    TextUtil.LineSeparate(dubious));
                 MessageDlg.Show(this, dubiousValues);
             }
         }
@@ -540,7 +557,7 @@ namespace pwiz.Skyline.EditUI
 
         public void OkDialog()
         {
-            Program.MainWindow.ModifyDocument(Resources.UniquePeptidesDlg_OkDialog_Exclude_peptides, ExcludePeptidesFromDocument);
+            Program.MainWindow.ModifyDocument(Resources.UniquePeptidesDlg_OkDialog_Exclude_peptides, ExcludePeptidesFromDocument, FormSettings.EntryCreator.Create);
             Close();
         }
 
@@ -556,9 +573,84 @@ namespace pwiz.Skyline.EditUI
             return (SrmDocument) srmDocument.ChangeChildrenChecked(children);
         }
 
+        public class ProteinPeptideSelection : IAuditLogObject
+        {
+            public ProteinPeptideSelection(string proteinName, List<string> peptides)
+            {
+                ProteinName = proteinName;
+                Peptides = peptides;
+            }
+
+            protected bool Equals(ProteinPeptideSelection other)
+            {
+                return string.Equals(ProteinName, other.ProteinName);
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                if (ReferenceEquals(this, obj)) return true;
+                if (obj.GetType() != GetType()) return false;
+                return Equals((ProteinPeptideSelection) obj);
+            }
+
+            public override int GetHashCode()
+            {
+                return (ProteinName != null ? ProteinName.GetHashCode() : 0);
+            }
+
+            public string ProteinName { get; private set; }
+            [Track]
+            public List<string> Peptides { get; private set; }
+
+            public string AuditLogText { get { return ProteinName; } }
+            public bool IsName { get { return true; } }
+        }
+
+        public UniquePeptideSettings FormSettings
+        {
+            get { return new UniquePeptideSettings(this); }
+        }
+
+        public class UniquePeptideSettings : AuditLogOperationSettings<UniquePeptideSettings>
+        {
+            private readonly int _excludedCount;
+
+            public override MessageInfo MessageInfo
+            {
+                get { return new MessageInfo(_excludedCount == 1 ? MessageType.excluded_peptide : MessageType.excluded_peptides, SrmDocument.DOCUMENT_TYPE.proteomic, _excludedCount); }
+            }
+
+            public UniquePeptideSettings(UniquePeptidesDlg dlg)
+            {
+                ProteinPeptideSelections = new Dictionary<int, ProteinPeptideSelection>();
+                for (var i = 0; i < dlg.dataGridView1.Rows.Count; ++i)
+                {
+                    var row = dlg.dataGridView1.Rows[i];
+                    var rowTag = (Tuple<IdentityPath, PeptideDocNode>)row.Tag;
+                    if (!(bool)row.Cells[dlg.PeptideIncludedColumn.Name].Value)
+                    {
+                        var id = rowTag.Item1.GetIdentity(0);
+                        if (!ProteinPeptideSelections.ContainsKey(id.GlobalIndex))
+                        {
+                            var node = (PeptideGroupDocNode)dlg.SrmDocument.FindNode(id);
+                            ProteinPeptideSelections.Add(id.GlobalIndex, new ProteinPeptideSelection(node.ProteinMetadata.Name, new List<string>()));
+                        }
+
+                        var item = ProteinPeptideSelections[id.GlobalIndex];
+                        item.Peptides.Add(PeptideTreeNode.GetLabel(rowTag.Item2, string.Empty));
+                        ++_excludedCount;
+                    }
+                }
+            }
+
+            [TrackChildren]
+            public Dictionary<int, ProteinPeptideSelection> ProteinPeptideSelections { get; private set; }
+        }
+
         private PeptideGroupDocNode ExcludePeptides(PeptideGroupDocNode peptideGroupDocNode)
         {
-            HashSet<IdentityPath> excludedPeptides = new HashSet<IdentityPath>();
+            var excludedPeptides = new HashSet<IdentityPath>();
             for (int i = 0; i < dataGridView1.Rows.Count; i++)
             {
                 var row = dataGridView1.Rows[i];
@@ -568,12 +660,12 @@ namespace pwiz.Skyline.EditUI
                     excludedPeptides.Add(rowTag.Item1);
                 }
             }
-            return new PeptideGroupDocNode(
-                peptideGroupDocNode.PeptideGroup,
-                peptideGroupDocNode.Annotations,
-                peptideGroupDocNode.ProteinMetadata,
-                peptideGroupDocNode.Molecules.Where(pep =>!excludedPeptides.Contains(new IdentityPath(peptideGroupDocNode.PeptideGroup, pep.Id))).ToArray(),
-                false);
+
+            var nodeGroupNew = peptideGroupDocNode.ChangeChildrenChecked(peptideGroupDocNode.Molecules.Where(pep =>
+                !excludedPeptides.Contains(new IdentityPath(peptideGroupDocNode.PeptideGroup, pep.Id))).ToArray());
+            if (!ReferenceEquals(nodeGroupNew, peptideGroupDocNode))
+                nodeGroupNew = nodeGroupNew.ChangeAutoManageChildren(false);
+            return (PeptideGroupDocNode) nodeGroupNew;
         }
 
         private void dataGridView1_CurrentCellDirtyStateChanged(object sender, EventArgs e)
@@ -629,6 +721,5 @@ namespace pwiz.Skyline.EditUI
         }
 
         #endregion
-
     }
 }

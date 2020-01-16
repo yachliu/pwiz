@@ -22,6 +22,8 @@ using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using Ionic.Zip;
+using pwiz.Common.SystemUtil;
+using pwiz.SkylineTestUtil;
 
 namespace SkylineTester
 {
@@ -33,6 +35,7 @@ namespace SkylineTester
             "testresults",
             "skylinetester.zip",
             "testrunner.log",
+            "microsoft.visualstudio.qualitytools.unittestframework.dll", // Ignore if this appears in a build dir - gets added explicitly
             "testrunnermemory.log"
         };
 
@@ -71,6 +74,8 @@ namespace SkylineTester
 
         public static void CreateZipFile(string zipPath)
         {
+            zipPath = zipPath ?? string.Empty; // For quiet ReSharper code inspection
+
             Console.WriteLine();
             Console.WriteLine("# Creating " + Path.GetFileName(zipPath) + "...");
             Console.WriteLine();
@@ -94,12 +99,15 @@ namespace SkylineTester
                 // DotNetZip has a _bug_ which causes an extraction error without this
                 // (see http://stackoverflow.com/questions/15337186/dotnetzip-badreadexception-on-extract)
                 zipFile.ParallelDeflateThreshold = -1;
+                zipFile.AlternateEncodingUsage = ZipOption.Always;
+                zipFile.AlternateEncoding = System.Text.Encoding.UTF8;
 
                 if ((String.Empty + Path.GetFileName(zipPath)).ToLower() == "skylinenightly.zip")
                 {
                     // Add files to top level of zip file.
                     var files = new[]
                     {
+                        "SkylineNightlyShim.exe",
                         "SkylineNightly.exe",
                         "SkylineNightly.pdb",
                         "Microsoft.Win32.TaskScheduler.dll",
@@ -120,6 +128,8 @@ namespace SkylineTester
                         "BlibBuild.exe",
                         "BlibFilter.exe",
                         "MassLynxRaw.dll",
+                        "timsdata.dll",
+                        "baf2sql_c.dll",
                         "cdt.dll",
                         "modifications.xml",
                         "quantitation_1.xsd",
@@ -190,13 +200,30 @@ namespace SkylineTester
                         AddFile(testZipFile, zipFile, testZipDirectory);
                     }
 
+                    // Add pwiz vendor reader test data
+                    var vendorTestData = new List<string>();
+                    foreach (TestFilesDir.VendorDir vendorDir in Enum.GetValues(typeof(TestFilesDir.VendorDir)))
+                        FindVendorReaderTestData(TestFilesDir.GetVendorTestData(vendorDir), vendorTestData);
+                    foreach (var file in vendorTestData)
+                    {
+                        var parentDirectory = Path.GetDirectoryName(file);
+                        if (string.IsNullOrEmpty(parentDirectory))
+                            continue;
+                        int relativePathStart = parentDirectory.LastIndexOf('\\',
+                            parentDirectory.IndexOf(@"Test.data", StringComparison.InvariantCulture));
+                        parentDirectory = parentDirectory.Substring(relativePathStart + 1);
+                        AddFile(file, zipFile, Path.Combine(SkylineTesterWindow.SkylineTesterFiles, parentDirectory));
+                    }
+
                     // Add the file that we use to determine which branch this is from
                     AddFile(Path.Combine(solutionDirectory,"..\\..\\pwiz\\Version.cpp"), zipFile);
 
                     // Add unit testing DLL.
-                    var unitTestingDll = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
-                        @"Microsoft Visual Studio 12.0\Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll");
+                    const string relativeUnitTestingDll =
+                        @"PublicAssemblies\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll";
+                    var unitTestingDll = SkylineTesterWindow.GetExistingVsIdeFilePath(relativeUnitTestingDll);
+                    if (unitTestingDll == null)
+                        throw new ApplicationException(string.Format("Can't find {0}", relativeUnitTestingDll));
                     AddFile(unitTestingDll, zipFile);
                 }
 
@@ -204,7 +231,7 @@ namespace SkylineTester
                 Console.WriteLine("# Saving...");
                 zipFile.Save();
                 Console.WriteLine();
-                Console.WriteLine("# {0} size: {1:F1} MB", Path.GetFileName(zipPath), new FileInfo(zipPath).Length / (1024.0*1024));
+                Console.WriteLine("# {0} size: {1:F1} MB", Path.GetFileName(zipPath), new FileInfo(PathEx.SafePath(zipPath)).Length / (1024.0*1024));
                 Console.WriteLine("# Done.");
                 Console.WriteLine();
             }
@@ -241,6 +268,17 @@ namespace SkylineTester
             foreach (string subDirectory in subDirectories)
             {
                 FindZipFiles(subDirectory, zipFilesList);
+            }
+        }
+
+        static void FindVendorReaderTestData(string directory, List<string> vendorReaderTestData)
+        {
+            foreach (var entry in Directory.GetFileSystemEntries(directory))
+            {
+                if (!entry.EndsWith(".mzML") && !entry.EndsWith(".gitattributes") && File.Exists(entry))
+                    vendorReaderTestData.Add(Path.GetFullPath(entry));
+                else if (Directory.Exists(entry))
+                    FindVendorReaderTestData(entry, vendorReaderTestData);
             }
         }
     }

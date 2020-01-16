@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using pwiz.Common.DataAnalysis;
 using pwiz.Common.DataBinding;
 using pwiz.Common.DataBinding.Controls;
@@ -36,7 +35,7 @@ namespace pwiz.Skyline.Controls.GroupComparison
     {
         private int _referenceCount;
         private Container _container;
-        private TaskScheduler _taskScheduler;
+        private EventTaskScheduler _taskScheduler;
         private BindingListSource _bindingListSource;
         private SkylineDataSchema _skylineDataSchema;
 
@@ -45,7 +44,7 @@ namespace pwiz.Skyline.Controls.GroupComparison
         {
             _container = new Container();
             GroupComparisonModel = groupComparisonModel;
-            _taskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
+            _taskScheduler = new EventTaskScheduler();
         }
 
         public GroupComparisonModel GroupComparisonModel { get; private set; }
@@ -73,7 +72,7 @@ namespace pwiz.Skyline.Controls.GroupComparison
         {
             if (null != _bindingListSource && 0 < _referenceCount)
             {
-                Task.Factory.StartNew(() =>
+                _taskScheduler.Run(() =>
                 {
                     try
                     {
@@ -86,7 +85,7 @@ namespace pwiz.Skyline.Controls.GroupComparison
                     {
                         Program.ReportException(e);
                     }
-                }, CancellationToken.None, TaskCreationOptions.None, _taskScheduler);
+                });
             }
         }
 
@@ -161,7 +160,7 @@ namespace pwiz.Skyline.Controls.GroupComparison
                 showMsLevel = false;
                 showGroup = false;
             }
-            // ReSharper disable NonLocalizedString
+            // ReSharper disable LocalizableElement
             var columns = new List<PropertyPath>
             {
                 PropertyPath.Root.Property("Protein")
@@ -184,7 +183,7 @@ namespace pwiz.Skyline.Controls.GroupComparison
             }
             columns.Add(PropertyPath.Root.Property("FoldChangeResult"));
             columns.Add(PropertyPath.Root.Property("FoldChangeResult").Property("AdjustedPValue"));
-            // ReSharper restore NonLocalizedString
+            // ReSharper restore LocalizableElement
 
             var viewSpec = new ViewSpec()
                 .SetName(AbstractViewContext.DefaultViewName)
@@ -200,6 +199,7 @@ namespace pwiz.Skyline.Controls.GroupComparison
                 _container.Dispose();
                 _container = null;
                 GroupComparisonModel.ModelChanged -= GroupComparisonModelOnModelChanged;
+                _taskScheduler.Dispose();
             }
         }
 
@@ -207,7 +207,7 @@ namespace pwiz.Skyline.Controls.GroupComparison
         {
             if (_referenceCount <= 0)
             {
-                throw new ObjectDisposedException("FoldChangeBindingSource"); // Not L10N
+                throw new ObjectDisposedException(@"FoldChangeBindingSource");
             }
             return _bindingListSource;
         }

@@ -39,7 +39,7 @@ namespace pwiz.Common.DataBinding.Layout
         {
             return ChangeProp(ImClone(this), im => im.ColumnFormats = ImmutableList.ValueOf(formats));
         }
-        [Diff(ignoreName:true)]
+        [Track(ignoreName:true)]
         public ImmutableList<IRowTransform> RowTransforms { get; private set; } // PivotSpec, RowFilter
 
         public ViewLayout ChangeRowTransforms(IEnumerable<IRowTransform> rowTransforms)
@@ -82,7 +82,7 @@ namespace pwiz.Common.DataBinding.Layout
             }
         }
 
-        // ReSharper disable NonLocalizedString
+        // ReSharper disable LocalizableElement
         public void WriteXml(XmlWriter writer)
         {
             writer.WriteAttributeString("name", Name);
@@ -177,7 +177,7 @@ namespace pwiz.Common.DataBinding.Layout
             viewLayout.RowTransforms = ImmutableList.ValueOf(rowTransforms);
             return viewLayout;
         }
-        // ReSharper enable NonLocalizedString
+        // ReSharper restore LocalizableElement
 
     }
 }

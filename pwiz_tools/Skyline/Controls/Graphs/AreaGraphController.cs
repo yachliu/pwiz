@@ -37,9 +37,34 @@ namespace pwiz.Skyline.Controls.Graphs
 
     public enum AreaCVNormalizationMethod { global_standards, medians, none, ratio }
 
-    public enum AreaCVTransitions { all, best }
+    public enum AreaCVTransitions { all, best, count }
 
     public enum AreaCVMsLevel { precursors, products }
+
+    public static class AreCVMsLevelExtension
+    {
+        private static string[] LOCALIZED_VALUES
+        {
+            get
+            {
+                return new[]
+                {
+                    Resources.RefineDlg_RefineDlg_Precursors,
+                    Resources.RefineDlg_RefineDlg_Products
+                };
+            }
+        }
+        public static string GetLocalizedString(this AreaCVMsLevel val)
+        {
+            return LOCALIZED_VALUES[(int)val];
+        }
+
+        public static AreaCVMsLevel GetEnum(string enumValue)
+        {
+            return Helpers.EnumFromLocalizedString<AreaCVMsLevel>(enumValue, LOCALIZED_VALUES);
+        }
+
+    }
 
     public enum AreaGraphDisplayType { bars, lines }
 
@@ -103,6 +128,8 @@ namespace pwiz.Skyline.Controls.Graphs
         public static string GroupByAnnotation { get; set; }
 
         public static int MinimumDetections = 2;
+
+        public static int AreaCVTransitionsCount { get; set; }
 
         public GraphSummary GraphSummary { get; set; }
 

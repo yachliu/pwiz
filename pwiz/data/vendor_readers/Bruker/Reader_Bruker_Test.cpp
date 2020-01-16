@@ -30,11 +30,7 @@ struct IsDirectory : public pwiz::util::TestPathPredicate
 {
     bool operator() (const string& rawpath) const
     {
-    #ifndef _WIN64
-        if (bfs::exists(bfs::path(rawpath) / "analysis.tdf")) // no x86 DLL available
-            return false;
-    #endif
-        return bfs::is_directory(rawpath);
+        return bfs::is_directory(rawpath) && !bal::icontains(rawpath, "diapasef"); // don't want default mzML conversion of diaPASEF, too big
     }
 };
 
@@ -42,11 +38,23 @@ struct IsTDF : public pwiz::util::TestPathPredicate
 {
     bool operator() (const string& rawpath) const
     {
-#ifdef _WIN64
-        if (bfs::exists(bfs::path(rawpath) / "analysis.tdf")) // no x86 DLL available
-            return true;
-#endif
-        return false;
+        return bfs::exists(bfs::path(rawpath) / "analysis.tdf") && !bal::icontains(rawpath, "diapasef"); // don't want default TDF treatment for diaPASEF, too big
+    }
+};
+
+struct IsPASEF : public pwiz::util::TestPathPredicate
+{
+    bool operator() (const string& rawpath) const
+    {
+        return IsTDF()(rawpath) && bal::icontains(rawpath, "hela_qc_pasef");
+    }
+};
+
+struct IsDiaPASEF : public pwiz::util::TestPathPredicate
+{
+    bool operator() (const string& rawpath) const
+    {
+        return bfs::is_directory(rawpath) && bal::icontains(rawpath, "diapasef");
     }
 };
 
@@ -65,15 +73,28 @@ int main(int argc, char* argv[])
         bool requireUnicodeSupport = false;
 
         pwiz::util::ReaderTestConfig config;
-        pwiz::msdata::Reader_Bruker reader;
+        config.sortAndJitter = true;
+
+        pwiz::msdata::Reader_Bruker_BAF reader; // actually handles all file types
         pwiz::util::testReader(reader, testArgs, testAcceptOnly, requireUnicodeSupport, IsDirectory(), config);
 
+        // test globalChromatogramsAreMs1Only, but don't need to test spectra here
+        auto newConfig = config;
+        newConfig.globalChromatogramsAreMs1Only = true;
+        newConfig.indexRange = make_pair(0, 0);
+        pwiz::util::testReader(reader, testArgs, testAcceptOnly, requireUnicodeSupport, pwiz::util::IsNamedRawFile("Hela_QC_PASEF_Slot1-first-6-frames.d"), newConfig);
+
+        config.doublePrecision = true;
         config.preferOnlyMsLevel = 1;
         pwiz::util::testReader(reader, testArgs, testAcceptOnly, requireUnicodeSupport, IsTDF(), config);
 
         config.preferOnlyMsLevel = 2;
         pwiz::util::testReader(reader, testArgs, testAcceptOnly, requireUnicodeSupport, IsTDF(), config);
 
+        config.allowMsMsWithoutPrecursor = false;
+        pwiz::util::testReader(reader, testArgs, testAcceptOnly, requireUnicodeSupport, IsPASEF(), config);
+
+        config.allowMsMsWithoutPrecursor = true; // has no effect in combined mode
         config.combineIonMobilitySpectra = true;
         pwiz::util::testReader(reader, testArgs, testAcceptOnly, requireUnicodeSupport, IsTDF(), config);
 
@@ -82,6 +103,17 @@ int main(int argc, char* argv[])
 
         config.preferOnlyMsLevel = 0;
         pwiz::util::testReader(reader, testArgs, testAcceptOnly, requireUnicodeSupport, IsTDF(), config);
+
+        config.preferOnlyMsLevel = 2;
+        config.combineIonMobilitySpectra = false;
+        config.allowMsMsWithoutPrecursor = false;
+        /*config.isolationMzAndMobilityFilter.emplace_back(1222);
+        config.isolationMzAndMobilityFilter.emplace_back(1318);
+        pwiz::util::testReader(reader, testArgs, testAcceptOnly, requireUnicodeSupport, IsPASEF(), config);*/
+
+        config.isolationMzAndMobilityFilter.clear();
+        config.isolationMzAndMobilityFilter.emplace_back(895.9496, 1.12, 0.055);
+        pwiz::util::testReader(reader, testArgs, testAcceptOnly, requireUnicodeSupport, IsDiaPASEF(), config);
     }
     catch (exception& e)
     {

@@ -31,12 +31,15 @@ using pwiz.Skyline.Model.ElementLocators;
 using pwiz.Skyline.Model.GroupComparison;
 using pwiz.Skyline.Model.Hibernate;
 using pwiz.Skyline.Properties;
+using pwiz.Skyline.Util;
 using pwiz.Skyline.Util.Extensions;
 using SkylineTool;
 
 namespace pwiz.Skyline.Model.Databinding.Entities
 {
     [AnnotationTarget(AnnotationDef.AnnotationTarget.peptide)]
+    [ProteomicDisplayName("Peptide")]
+    [InvariantDisplayName("Molecule")]
     public class Peptide : SkylineDocNode<PeptideDocNode>
     {
         private readonly CachedValue<CalibrationCurveFitter> _calibrationCurveFitter;
@@ -61,8 +64,9 @@ namespace pwiz.Skyline.Model.Databinding.Entities
             }
         }
 
-        [InvariantDisplayName("PeptideResults")]
-        [OneToMany(ForeignKey = "Peptide", ItemDisplayName = "PeptideResult")]
+        [ProteomicDisplayName("PeptideResults")]
+        [InvariantDisplayName("MoleculeResults")]
+        [OneToMany(ForeignKey = "Peptide")]
         [HideWhen(AncestorOfType = typeof(FoldChangeBindingSource.FoldChangeRow))]
         public IDictionary<ResultKey, PeptideResult> Results
         {
@@ -74,23 +78,25 @@ namespace pwiz.Skyline.Model.Databinding.Entities
             return MakeChromInfoResultsMap(DocNode.Results, file => new PeptideResult(this, file));
         }
 
-        private bool IsSmallMolecule()
+        public bool IsSmallMolecule()
         {
             return DocNode.Peptide.IsCustomMolecule;
         }
 
         protected override PeptideDocNode CreateEmptyNode()
         {
-            return new PeptideDocNode(new Model.Peptide(null, "X", null, null, 0)); // Not L10N
+            return new PeptideDocNode(new Model.Peptide(null, @"X", null, null, 0));
         }
 
         [HideWhen(AncestorsOfAnyOfTheseTypes = new []{typeof(Protein),typeof(FoldChangeBindingSource.FoldChangeRow)})]
+        [InvariantDisplayName("MoleculeList", ExceptInUiMode = UiModes.PROTEOMIC)]
         public Protein Protein
         {
             get { return new Protein(DataSchema, IdentityPath.Parent); }
         }
 
         [InvariantDisplayName("PeptideSequence")]
+        [Hidden(InUiMode = UiModes.SMALL_MOLECULES)]
         public string Sequence
         {
             get {   return IsSmallMolecule()
@@ -99,6 +105,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         }
 
         [InvariantDisplayName("PeptideSequenceLength")]
+        [Hidden(InUiMode = UiModes.SMALL_MOLECULES)]
         [Format(NullValue = TextUtil.EXCEL_NA)]
         public int? SequenceLength
         {
@@ -112,6 +119,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
 
         [InvariantDisplayName("PeptideModifiedSequence")]
         [ChildDisplayName("PeptideModifiedSequence{0}")]
+        [Hidden(InUiMode = UiModes.SMALL_MOLECULES)]
         public ModifiedSequence ModifiedSequence
         {
             get
@@ -139,6 +147,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         }
 
         [Format(NullValue = TextUtil.EXCEL_NA)]
+        [Hidden(InUiMode = UiModes.PROTEOMIC)]
         public string MoleculeName
         {
             get
@@ -188,34 +197,39 @@ namespace pwiz.Skyline.Model.Databinding.Entities
                 {
                     throw new InvalidOperationException(Resources.Peptide_StandardType_iRT_standards_can_only_be_changed_by_modifying_the_iRT_calculator);
                 }
-                ModifyDocument(EditDescription.SetColumn("StandardType", value), // Not L10N
+                ModifyDocument(EditColumnDescription(nameof(StandardType), value).ChangeElementRef(GetElementRef()),
                     doc => doc.ChangeStandardType(value, new[]{IdentityPath}));
             }
         }
 
+        [Hidden(InUiMode = UiModes.SMALL_MOLECULES)]
         public char PreviousAa
         {
             get { return DocNode.Peptide.PrevAA; }
         }
 
+        [Hidden(InUiMode = UiModes.SMALL_MOLECULES)]
         public char NextAa
         {
             get { return DocNode.Peptide.NextAA; }
         }
 
         [Format(NullValue = TextUtil.EXCEL_NA)]
+        [Hidden(InUiMode = UiModes.SMALL_MOLECULES)]
         public int? BeginPos
         {
             get { return DocNode.Peptide.Begin; }
         }
 
         [Format(NullValue = TextUtil.EXCEL_NA)]
+        [Hidden(InUiMode = UiModes.SMALL_MOLECULES)]
         public int? EndPos
         {
             get { return DocNode.Peptide.End - 1; }
         }
 
         [Format(NullValue = TextUtil.EXCEL_NA)]
+        [Hidden(InUiMode = UiModes.SMALL_MOLECULES)]
         public int MissedCleavages
         {
             get { return DocNode.Peptide.MissedCleavages; }
@@ -255,6 +269,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         }
 
         [Format(Formats.RETENTION_TIME)]
+        [Importable]
         public double? ExplicitRetentionTime
         {
             get
@@ -265,12 +280,13 @@ namespace pwiz.Skyline.Model.Databinding.Entities
             }
             set
             {
-                ChangeDocNode(EditDescription.SetColumn("ExplicitRetentionTime", value), // Not L10N
+                ChangeDocNode(EditColumnDescription(nameof(ExplicitRetentionTime), value),
                     docNode=>docNode.ChangeExplicitRetentionTime(value));
             }
         }
 
         [Format(Formats.RETENTION_TIME)]
+        [Importable]
         public double? ExplicitRetentionTimeWindow
         {
             get
@@ -289,30 +305,33 @@ namespace pwiz.Skyline.Model.Databinding.Entities
                 }
                 else
                 {
-                    ChangeDocNode(EditDescription.SetColumn("ExplicitRetentionTimeWindow", value), // Not L10N
+                    ChangeDocNode(EditColumnDescription(nameof(ExplicitRetentionTimeWindow), value),
                         docNode=>docNode.ChangeExplicitRetentionTime(new ExplicitRetentionTimeInfo(docNode.ExplicitRetentionTime.RetentionTime, value)));
                 }
             }
         }
 
         [DataGridViewColumnType(typeof(NormalizationMethodDataGridViewColumn))]
+        [Importable]
         public NormalizationMethod NormalizationMethod
         {
             get { return DocNode.NormalizationMethod; }
             set
             {
-                ChangeDocNode(EditDescription.SetColumn("NormalizationMethod", value), // Not L10N
+                ChangeDocNode(EditColumnDescription(nameof(NormalizationMethod), value),
                     docNode=>docNode.ChangeNormalizationMethod(value));
             }
         }
 
-        [InvariantDisplayName("PeptideNote")]
+        [ProteomicDisplayName("PeptideNote")]
+        [InvariantDisplayName("MoleculeNote")]
+        [Importable]
         public string Note
         {
             get { return DocNode.Note; }
             set
             {
-                ChangeDocNode(EditDescription.SetColumn("PeptideNote", value), // Not L10N
+                ChangeDocNode(EditColumnDescription(nameof(Note), value),
                     docNode=>(PeptideDocNode) docNode.ChangeAnnotations(docNode.Annotations.ChangeNote(value)));
             }
         }
@@ -340,28 +359,31 @@ namespace pwiz.Skyline.Model.Databinding.Entities
             }
         }
 
-        [InvariantDisplayName("PeptideLocator")]
+        [ProteomicDisplayName("PeptideLocator")]
+        [InvariantDisplayName("MoleculeLocator")]
         public string Locator
         {
             get { return GetLocator(); }
         }
 
+        [Importable]
         public double? InternalStandardConcentration
         {
             get { return DocNode.InternalStandardConcentration; }
             set
             {
-                ChangeDocNode(EditDescription.SetColumn("InternalStandardConcentration", value), // Not L10N
+                ChangeDocNode(EditColumnDescription(nameof(InternalStandardConcentration), value),
                     docNode=>docNode.ChangeInternalStandardConcentration(value));
             }
         }
 
+        [Importable]
         public double? ConcentrationMultiplier
         {
             get { return DocNode.ConcentrationMultiplier; }
             set
             {
-                ChangeDocNode(EditDescription.SetColumn("ConcentrationMultiplier", value), // Not L10N
+                ChangeDocNode(EditColumnDescription(nameof(ConcentrationMultiplier), value),
                     docNode => docNode.ChangeConcentrationMultiplier(value));
             }
         }
@@ -374,10 +396,20 @@ namespace pwiz.Skyline.Model.Databinding.Entities
                 CalibrationCurve calibrationCurve = curveFitter.GetCalibrationCurve();
                 return new LinkValue<CalibrationCurve>(calibrationCurve, (sender, args) =>
                 {
-                    if (null != DataSchema.SkylineWindow)
+                    if (null == DataSchema.SkylineWindow)
                     {
-                        DataSchema.SkylineWindow.ShowCalibrationForm();
-                        DataSchema.SkylineWindow.SelectedPath = IdentityPath;
+                        return;
+                    }
+                    DataSchema.SkylineWindow.SelectedPath = IdentityPath;
+                    var calibrationForm = DataSchema.SkylineWindow.ShowCalibrationForm();
+                    if (calibrationForm != null)
+                    {
+                        if (DocNode.HasPrecursorConcentrations &&
+                            Settings.Default.CalibrationCurveOptions.SingleBatch)
+                        {
+                            Settings.Default.CalibrationCurveOptions.SingleBatch = false;
+                            calibrationForm.UpdateUI(false);
+                        }
                     }
                 });
             }
@@ -409,40 +441,94 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         {
             if (nodeCount == 1)
             {
-                return string.Format(Resources.Peptide_GetDeleteConfirmation_Are_you_sure_you_want_to_delete_the_peptide___0___, this);
+                return string.Format(DataSchema.ModeUI == SrmDocument.DOCUMENT_TYPE.proteomic
+                    ? Resources.Peptide_GetDeleteConfirmation_Are_you_sure_you_want_to_delete_the_peptide___0___
+                    : Resources.Peptide_GetDeleteConfirmation_Are_you_sure_you_want_to_delete_the_molecule___0___, this);
             }
-            return string.Format(Resources.Peptide_GetDeleteConfirmation_Are_you_sure_you_want_to_delete_these__0__peptides_, nodeCount);
+            return string.Format(
+                DataSchema.ModeUI == SrmDocument.DOCUMENT_TYPE.proteomic
+                ? Resources.Peptide_GetDeleteConfirmation_Are_you_sure_you_want_to_delete_these__0__peptides_
+                : Resources.Peptide_GetDeleteConfirmation_Are_you_sure_you_want_to_delete_these__0__molecules_, nodeCount);
         }
 
         // Small molecule IDs (in PREFERRED_ACCESSION_TYPE_ORDER) - keep these at end
+        [Hidden(InUiMode = UiModes.PROTEOMIC)]
         public string InChiKey
         {
             get { return IsSmallMolecule() ? DocNode.CustomMolecule.AccessionNumbers.GetInChiKey() ?? string.Empty : string.Empty; }
         }
 
+        [Hidden(InUiMode = UiModes.PROTEOMIC)]
         public string CAS
         {
             get { return IsSmallMolecule() ? DocNode.CustomMolecule.AccessionNumbers.GetCAS() ?? string.Empty : string.Empty; }
         }
 
+        [Hidden(InUiMode = UiModes.PROTEOMIC)]
         public string HMDB
         {
             get { return IsSmallMolecule() ? DocNode.CustomMolecule.AccessionNumbers.GetHMDB() ?? string.Empty : string.Empty; }
         }
 
+        [Hidden(InUiMode = UiModes.PROTEOMIC)]
         public string InChI
         {
             get { return IsSmallMolecule() ? DocNode.CustomMolecule.AccessionNumbers.GetInChI() ?? string.Empty : string.Empty; }
         }
 
+        [Hidden(InUiMode = UiModes.PROTEOMIC)]
         public string SMILES
         {
             get { return IsSmallMolecule() ? DocNode.CustomMolecule.AccessionNumbers.GetSMILES() ?? string.Empty : string.Empty; }
         }
 
+        [Hidden(InUiMode = UiModes.PROTEOMIC)]
+        public string KEGG
+        {
+            get { return IsSmallMolecule() ? DocNode.CustomMolecule.AccessionNumbers.GetKEGG() ?? string.Empty : string.Empty; }
+        }
+
+        [Importable]
+        public bool AutoSelectPrecursors
+        {
+            get { return DocNode.AutoManageChildren; }
+            set
+            {
+                if (value == AutoSelectPrecursors)
+                {
+                    return;
+                }
+                ChangeDocNode(EditDescription.SetColumn(nameof(AutoSelectPrecursors), value), docNode =>
+                {
+                    docNode = (PeptideDocNode) docNode.ChangeAutoManageChildren(value);
+                    if (docNode.AutoManageChildren)
+                    {
+                        var srmSettingsDiff = new SrmSettingsDiff(false, false, true, false, false, false);
+                        docNode = docNode.ChangeSettings(SrmDocument.Settings, srmSettingsDiff);
+                    }
+                    return docNode;
+                });
+            }
+        }
+
+        [Importable]
+        public string AttributeGroupId
+        {
+            get { return DocNode.AttributeGroupId; }
+            set
+            {
+                ChangeDocNode(EditDescription.SetColumn(nameof(AttributeGroupId), value), docNode=>docNode.ChangeAttributeGroupId(value));
+            }
+        }
+
         protected override NodeRef NodeRefPrototype
         {
             get { return MoleculeRef.PROTOTYPE; }
+        }
+
+        protected override Type SkylineDocNodeType
+        {
+            get { return typeof(Peptide); }
         }
     }
 }

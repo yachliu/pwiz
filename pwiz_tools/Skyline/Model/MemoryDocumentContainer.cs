@@ -24,6 +24,7 @@ using pwiz.Common.SystemUtil;
 using pwiz.Skyline.Model.IonMobility;
 using pwiz.Skyline.Model.Irt;
 using pwiz.Skyline.Model.Lib;
+using pwiz.Skyline.Model.Optimization;
 using pwiz.Skyline.Model.Results;
 using pwiz.Skyline.Model.RetentionTimes;
 using pwiz.Skyline.Properties;
@@ -59,19 +60,22 @@ namespace pwiz.Skyline.Model
             if (!ReferenceEquals(docResult, docOriginal))
                 return false;
 
+            // If the document is changing, clear progress for the previous document
+            if (docOriginal != null && docNew.Id.GlobalIndex != docOriginal.Id.GlobalIndex)
+                _backgroundLoaders.ForEach(l => l.ResetProgress(docOriginal));
+                
             if (DocumentChangedEvent != null)
             {
                 lock (CHANGE_EVENT_LOCK)
                 {
                     DocumentChangedEvent(this, new DocumentChangedEventArgs(docOriginal));
 
-                    bool complete = IsFinal(docNew);
                     if (wait)
                     {
-                        if (!complete)
+                        while (!IsFinal(Document))
                             Monitor.Wait(CHANGE_EVENT_LOCK);    // Wait for completing document changed event
                     }
-                    else if (complete)
+                    else if (IsFinal(docNew))
                     {
                         Monitor.Pulse(CHANGE_EVENT_LOCK);
                     }
@@ -200,6 +204,10 @@ namespace pwiz.Skyline.Model
             IrtDbManager = new IrtDbManager();
             IrtDbManager.Register(this);
             Register(IrtDbManager);
+
+            OptimizationDbManager = new OptimizationDbManager();
+            OptimizationDbManager.Register(this);
+            Register(OptimizationDbManager);
         }
 
         public ChromatogramManager ChromatogramManager { get; private set; }
@@ -211,6 +219,9 @@ namespace pwiz.Skyline.Model
         public IonMobilityLibraryManager IonMobilityManager { get; private set; }
 
         public IrtDbManager IrtDbManager { get; private set; }
+
+        public OptimizationDbManager OptimizationDbManager { get; private set; }
+
 
         public override void ResetProgress()
         {

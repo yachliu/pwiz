@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Xml.Serialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using pwiz.ProteowizardWrapper;
@@ -255,6 +256,31 @@ namespace pwiz.SkylineTestUtil
         {
         }
 
+        private const int SLEEP_INTERVAL = 10;
+        public const int WAIT_TIME = 5 * 1000;    // 5 seconds
+
+        private static int GetWaitCycles(int millis = WAIT_TIME)
+        {
+            return millis / SLEEP_INTERVAL;
+        }
+
+        public void WaitForProcessing(int millis = WAIT_TIME)
+        {
+            int waitCycles = GetWaitCycles(millis);
+            for (int i = 0; i < waitCycles; i++)
+            {
+                if (!AnyProcessing)
+                    return;
+                Thread.Sleep(SLEEP_INTERVAL);
+            }
+            Assert.Fail("Still processing after {0} seconds", waitCycles*SLEEP_INTERVAL/1000);
+        }
+
+        public bool AnyProcessing
+        {
+            get { return BackgroundLoaders.Any(l => l.AnyProcessing()); }
+        }
+
         public void AssertComplete()
         {
             if (LastProgress == null || LastProgress.IsComplete) return;
@@ -431,13 +457,6 @@ namespace pwiz.SkylineTestUtil
             foreach (var pair in document.MoleculePrecursorPairs)
             {
                 ChromatogramGroupInfo[] chromGroupInfo1;
-                if (Settings.Default.TestSmallMolecules && pair.NodePep.Peptide.IsCustomMolecule &&
-                    pair.NodePep.CustomMolecule.ToString().Equals(SrmDocument.TestingNonProteomicMoleculeName))
-                {
-                    Assert.IsFalse(results.TryLoadChromatogram(iChrom1, pair.NodePep, pair.NodeGroup,
-                    tolerance, true, out chromGroupInfo1));
-                    continue;
-                }
                 Assert.IsTrue(results.TryLoadChromatogram(iChrom1, pair.NodePep, pair.NodeGroup,
                     tolerance, true, out chromGroupInfo1));
                 Assert.AreEqual(1, chromGroupInfo1.Length);

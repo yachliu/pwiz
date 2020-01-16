@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Original author: Brendan MacLean <brendanx .at. u.washington.edu>,
  *                  MacCoss Lab, Department of Genome Sciences, UW
  *
@@ -40,7 +40,7 @@ namespace pwiz.Skyline.Model
     /// the <see cref="Id"/> properties of the parents to aid in node lookup
     /// in the document tree.
     /// </summary>
-    public abstract class DocNode : Immutable
+    public abstract class DocNode : Immutable, IIdentiyContainer, IAuditLogObject
     {
         protected DocNode(Identity id)
             : this(id, Annotations.EMPTY)
@@ -60,8 +60,22 @@ namespace pwiz.Skyline.Model
         /// </summary>
         public Identity Id { get; private set; }
 
-        public Annotations Annotations { get; private set; }
+        private class DefaultValuesAnnotation : DefaultValues
+        {
 
+            protected override IEnumerable<object> _values
+            {
+                get
+                {
+                    yield return null;
+                    yield return Annotations.EMPTY;
+                }
+            }
+        }
+
+        [TrackChildren(ignoreName: true, defaultValues: typeof(DefaultValuesAnnotation))]
+        public Annotations Annotations { get; private set; }
+        
         public abstract AnnotationDef.AnnotationTarget AnnotationTarget { get; }
 
         /// <summary>
@@ -309,6 +323,16 @@ namespace pwiz.Skyline.Model
             }
             return result;
         }
+
+        public virtual string AuditLogText
+        {
+            get { return null; }
+        }
+
+        public bool IsName
+        {
+            get { return true; }
+        }
     }
 
     /// <summary>
@@ -431,24 +455,6 @@ namespace pwiz.Skyline.Model
             return ChangeProp(ImClone(this), im => im._ignoreChildrenChanging = ignore);
         }
 
-        /// <summary>
-        /// Adds all children to a map by their <see cref="Identity"/> itself,
-        /// and not the <see cref="Identity.GlobalIndex"/>.  Callers should be
-        /// sure that the <see cref="Identity"/> subclass provides a useful
-        /// implementation of <see cref="object.GetHashCode"/>, otherwise this
-        /// will result in a map with one value, since by default all <see cref="Identity"/>
-        /// objects are considered content equal.
-        /// 
-        /// This method is used when picking children where distinct new
-        /// <see cref="Identity"/> objects are created, but should not replace
-        /// existing objects with the same identity.
-        /// </summary>
-        /// <returns>A map of children by their <see cref="Identity"/> values</returns>
-        public Dictionary<Identity, DocNode> CreateIdContentToChildMap()
-        {
-            return Children.ToDictionary(child => child.Id);
-        }
-        
         /// <summary>
         /// Returns the DocNodes that are in an IdentityPath.
         /// </summary>
@@ -703,19 +709,11 @@ namespace pwiz.Skyline.Model
             List<DocNode> childrenNew = new List<DocNode>(Children);
             List<int> nodeCountStack = new List<int>(_nodeCountStack);
 
-            // Support for small molecule work - most tests have a special node added to see if it breaks anything
-            bool hasSpecialTestNode = childrenNew.Any() && SrmDocument.IsSpecialNonProteomicTestDocNode(childrenNew.Last());
-            if (hasSpecialTestNode)
-                childrenNew.RemoveAt(childrenNew.Count-1);
-
             foreach(DocNode childAdd in childrenAdd)
             {
                 childrenNew.Add(childAdd);
                 AddCounts(childAdd, nodeCountStack);
             }
-
-            if (hasSpecialTestNode)
-                childrenNew.Add(Children.Last()); // Restorethe special test node, at the end
 
             return ChangeChildren(childrenNew, nodeCountStack);
         }
@@ -784,7 +782,7 @@ namespace pwiz.Skyline.Model
         public DocNodeParent InsertAll(Identity idBefore, IEnumerable<DocNode> childrenAdd, bool after)
         {
             if (Children == null)
-                throw new InvalidOperationException("Invalid operation InsertAll before children set."); // Not L10N
+                throw new InvalidOperationException(@"Invalid operation InsertAll before children set.");
 
             List<DocNode> childrenNew = new List<DocNode>(Children);
             List<int> nodeCountStack = new List<int>(_nodeCountStack);
@@ -954,7 +952,7 @@ namespace pwiz.Skyline.Model
         public DocNodeParent ReplaceChild(DocNode childReplace)
         {
             if (Children == null)
-                throw new InvalidOperationException("Invalid operation ReplaceChild before children set."); // Not L10N
+                throw new InvalidOperationException(@"Invalid operation ReplaceChild before children set.");
 
             int index = _children.IndexOf(childReplace.Id);
             // If nothing was replaced throw an exception to let the caller know.
@@ -1009,7 +1007,7 @@ namespace pwiz.Skyline.Model
         public DocNodeParent RemoveChild(DocNode childRemove)
         {
             if (Children == null)
-                throw new InvalidOperationException("Invalid operation RemoveChild before children set.");  // Not L10N
+                throw new InvalidOperationException(@"Invalid operation RemoveChild before children set.");
 
             List<DocNode> childrenNew = new List<DocNode>();
             List<int> nodeCountStack = new List<int>(_nodeCountStack);

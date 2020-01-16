@@ -25,6 +25,11 @@
 #ifndef _FILESYSTEM_HPP_
 #define _FILESYSTEM_HPP_
 
+#ifdef __cplusplus_cli
+// "boost/filesystem/path.hpp" uses "generic" as an identifier which is a reserved word in C++/CLI
+#define generic __identifier(generic)
+#endif
+
 #include "Export.hpp"
 #include "String.hpp"
 #include "Container.hpp"
@@ -64,6 +69,19 @@ namespace bfs = boost::filesystem;
 
 namespace pwiz {
 namespace util {
+
+
+/// returns true iff process is Windows executable running under Wine
+PWIZ_API_DECL bool running_on_wine();
+
+
+/// on Windows, closes all file handles and memory mapped sections relating to the given filepath
+PWIZ_API_DECL void force_close_handles_to_filepath(const std::string& filepath, bool closeMemoryMappedSections = false) noexcept(true);
+
+
+/// adds utf8_codecvt_facet to boost::filesystem::path's default behavior so it works with UTF-8 std::strings;
+/// uses a singleton so the imbuement is only done once
+PWIZ_API_DECL void enable_utf8_path_operations();
 
 
 /// expands (aka globs) a pathmask to zero or more matching paths and returns the number of matching paths

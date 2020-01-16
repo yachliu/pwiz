@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Original author: Nicholas Shulman <nicksh .at. u.washington.edu>,
  *                  MacCoss Lab, Department of Genome Sciences, UW
  *
@@ -28,11 +28,11 @@ using pwiz.Common.SystemUtil;
 
 namespace pwiz.Common.DataBinding.Layout
 {
-    public class RowFilter : Immutable, IRowTransform
+    public class RowFilter : Immutable, IRowTransform, IAuditLogComparable
     {
         public static readonly RowFilter Empty = new RowFilter();
-        private const string SORT_DESC = "-"; // Not L10N
-        private const string SORT_ASC = "+"; // Not L10N
+        private const string SORT_DESC = "-";
+        private const string SORT_ASC = "+";
         private string _normalizedText;
 
         private RowFilter()
@@ -76,7 +76,9 @@ namespace pwiz.Common.DataBinding.Layout
         public bool CaseSensitive { get; private set; }
         public bool IsEmptyFilter { get { return null == Text && 0 == ColumnFilters.Count; } }
         public bool IsEmpty { get { return IsEmptyFilter && 0 == ColumnSorts.Count; } }
+        [TrackChildren]
         public ImmutableList<ColumnFilter> ColumnFilters { get; private set; }
+        [TrackChildren]
         public ImmutableList<ColumnSort> ColumnSorts { get; private set; }
 
         public RowFilter SetColumnFilters(IEnumerable<ColumnFilter> columnFilters)
@@ -191,6 +193,11 @@ namespace pwiz.Common.DataBinding.Layout
             }
         }
 
+        public object GetDefaultObject(ObjectInfo<object> info)
+        {
+            return Empty;
+        }
+
         public static PropertyPath GetPropertyPath(PropertyDescriptor propertyDescriptor)
         {
             var columnPropertyDescriptor = propertyDescriptor as ColumnPropertyDescriptor;
@@ -208,7 +215,9 @@ namespace pwiz.Common.DataBinding.Layout
                 ColumnId = columnId;
                 Predicate = predicate;
             }
+            [Track]
             public ColumnId ColumnId { get; private set; }
+            [TrackChildren(ignoreName:true)]
             public FilterPredicate Predicate { get; private set; }
 
             protected bool Equals(ColumnFilter other)
@@ -244,7 +253,9 @@ namespace pwiz.Common.DataBinding.Layout
                 ListSortDirection = listSortDirection;
             }
 
+            [Track]
             public ColumnId ColumnId { get; private set; }
+            [Track]
             public ListSortDirection ListSortDirection { get; private set; }
 
             protected bool Equals(ColumnSort other)
@@ -315,7 +326,7 @@ namespace pwiz.Common.DataBinding.Layout
             }
             foreach (var columnFilter in ColumnFilters)
             {
-                parts.Add(columnFilter.ColumnId + " " + columnFilter.Predicate.FilterOperation.OpName + " " // Not L10N
+                parts.Add(columnFilter.ColumnId + @" " + columnFilter.Predicate.FilterOperation.OpName + @" "
                     + columnFilter.Predicate.GetOperandDisplayText(dataSchema, typeof(object)));
             }
             string strOrderBy = Resources.RowFilter_GetDescription_Order_by_;
@@ -327,7 +338,7 @@ namespace pwiz.Common.DataBinding.Layout
             }
             return string.Join(Environment.NewLine, parts);
         }
-        // ReSharper disable NonLocalizedString
+        // ReSharper disable LocalizableElement
         public void WriteXml(XmlWriter writer)
         {
             if (!string.IsNullOrEmpty(Text))
@@ -417,6 +428,6 @@ namespace pwiz.Common.DataBinding.Layout
             rowFilter.ColumnSorts = ImmutableList.ValueOf(columnSorts);
             return rowFilter;
         }
-        // ReSharper enable NonLocalizedString
+        // ReSharper restore LocalizableElement
     }
 }

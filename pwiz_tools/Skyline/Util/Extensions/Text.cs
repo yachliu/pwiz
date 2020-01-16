@@ -35,8 +35,8 @@ namespace pwiz.Skyline.Util.Extensions
     /// </summary>
     public static class TextUtil
     {
-        public const string EXT_CSV = ".csv"; // Not L10N
-        public const string EXT_TSV = ".tsv"; // Not L10N
+        public const string EXT_CSV = ".csv";
+        public const string EXT_TSV = ".tsv";
 
         public static string FILTER_CSV
         {
@@ -48,13 +48,13 @@ namespace pwiz.Skyline.Util.Extensions
             get { return FileDialogFilter(Resources.TextUtil_DESCRIPTION_TSV_TSV__Tab_delimited_, EXT_TSV); }
         }
 
-        public const char SEPARATOR_CSV = ','; // Not L10N
-        public const char SEPARATOR_CSV_INTL = ';'; // International CSV for comma-decimal locales // Not L10N
-        public const char SEPARATOR_TSV = '\t'; // Not L10N
+        public const char SEPARATOR_CSV = ',';
+        public const char SEPARATOR_CSV_INTL = ';'; // International CSV for comma-decimal locales
+        public const char SEPARATOR_TSV = '\t';
         public static readonly string SEPARATOR_TSV_STR = SEPARATOR_TSV.ToString(); 
-        public const char SEPARATOR_SPACE = ' '; // Not L10N
+        public const char SEPARATOR_SPACE = ' ';
 
-        public const string EXCEL_NA = "#N/A"; // Not L10N
+        public const string EXCEL_NA = "#N/A";
 
         /// <summary>
         /// The CSV separator character for the current culture.  Like Excel, a comma
@@ -72,9 +72,14 @@ namespace pwiz.Skyline.Util.Extensions
         /// files to be imported directly into Excel on the same system.
         /// <param name="cultureInfo">The culture for which the separator is requested.</param>
         /// </summary>
-        public static char GetCsvSeparator(CultureInfo cultureInfo)
+        public static char GetCsvSeparator(IFormatProvider cultureInfo)
         {
-            return (Equals(SEPARATOR_CSV.ToString(CultureInfo.InvariantCulture), cultureInfo.NumberFormat.NumberDecimalSeparator) ? SEPARATOR_CSV_INTL : SEPARATOR_CSV);
+            var numberFormat = cultureInfo.GetFormat(typeof(NumberFormatInfo)) as NumberFormatInfo;
+            if (numberFormat != null && Equals(SEPARATOR_CSV.ToString(CultureInfo.InvariantCulture), numberFormat.NumberDecimalSeparator))
+            {
+                return SEPARATOR_CSV_INTL;
+            }
+            return SEPARATOR_CSV;
         }
 
         /// <summary>
@@ -100,12 +105,14 @@ namespace pwiz.Skyline.Util.Extensions
         {
             if (text == null)
                 return string.Empty;
-            var unwanted = new[] { '"', separator, '\r', '\n' }; // Not L10N
+            var unwanted = new[] { '"', separator, '\r', '\n' };
             if (text.IndexOfAny(unwanted) == -1) 
                 return text;
             if (!string.IsNullOrEmpty(replace))
                 return string.Join(replace, text.Split(unwanted));
-            return '"' + text.Replace("\"", "\"\"") + '"'; // Not L10N
+            // ReSharper disable LocalizableElement
+            return '"' + text.Replace("\"", "\"\"") + '"';
+            // ReSharper restore LocalizableElement
         }
 
         /// <summary>
@@ -164,7 +171,7 @@ namespace pwiz.Skyline.Util.Extensions
                 var ch = line[chIndex];
                 if (inQuotes)
                 {
-                    if (ch == '"')  // Not L10N
+                    if (ch == '"')
                     {
                         // Is this the closing quote, or is this an escaped quote?
                         if (chIndex + 1 < line.Length && line[chIndex + 1] == '"')
@@ -182,7 +189,7 @@ namespace pwiz.Skyline.Util.Extensions
                         sbField.Append(ch);
                     }
                 }
-                else if (ch == '"')  // Not L10N
+                else if (ch == '"')
                 {
                     if (sbField.Length == 0) // Quote at start of field is special case
                     {
@@ -218,6 +225,81 @@ namespace pwiz.Skyline.Util.Extensions
             listFields.Add(sbField.ToString());
             return listFields.ToArray();
         }
+
+        /// <summary>
+        /// Parses out a particular single DSV field from a line avoiding the expense of parsing all fields into an array
+        /// The function correctly handles quotation marks.
+        /// (N.B. our quotation mark handling now differs from the (March 2018) behavior of Excel and Google Spreadsheets
+        /// when dealing with somewhat absurd uses of quotes as found in our tests, but that seems to be OK for  general use.
+        /// </summary>
+        /// <param name="line">The line containing delimiter separated fields</param>
+        /// <param name="separator">The separator being used</param>
+        /// <param name="index">The index of the field</param>
+        /// <returns>An array of field strings</returns>
+        public static string ParseDsvField(this string line, char separator, int index)
+        {
+            var sbField = new StringBuilder();
+            bool inQuotes = false;
+            for (var chIndex = 0; chIndex < line.Length && index >= 0; chIndex++)
+            {
+                var ch = line[chIndex];
+                if (inQuotes)
+                {
+                    if (ch == '"')
+                    {
+                        // Is this the closing quote, or is this an escaped quote?
+                        if (chIndex + 1 < line.Length && line[chIndex + 1] == '"')
+                        {
+                            if (index == 0)
+                                sbField.Append(ch); // Treat "" as an escaped quote
+                            chIndex++; // Consume both quotes
+                        }
+                        else
+                        {
+                            inQuotes = false;
+                        }
+                    }
+                    else if (index == 0)
+                    {
+                        sbField.Append(ch);
+                    }
+                }
+                else if (ch == '"')
+                {
+                    if (sbField.Length == 0) // Quote at start of field is special case
+                    {
+                        inQuotes = true;
+                    }
+                    else
+                    {
+                        if (chIndex + 1 < line.Length && line[chIndex + 1] == '"')
+                        {
+                            if (index == 0)
+                                sbField.Append(ch); // Treat "" as an escaped quote
+                            chIndex++; // Consume both quotes
+                        }
+                        else
+                        {
+                            // N.B. we effectively ignore a bare quote in an unquoted string. 
+                            // This is technically an undefined behavior, so that's probably OK.
+                            // Excel and Google sheets treat it as a literal quote, but that 
+                            // would be a change in our established behavior
+                            inQuotes = true;
+                        }
+                    }
+                }
+                else if (ch == separator)
+                {
+                    index--;
+                }
+                else if (index == 0)
+                {
+                    sbField.Append(ch);
+                }
+            }
+            return sbField.ToString();
+        }
+
 
         /// <summary>
         /// Converts an invariant format DSV file to a locale-specific DSV file
@@ -258,7 +340,7 @@ namespace pwiz.Skyline.Util.Extensions
                              CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
                 double fieldValue;
                 // Convert if the field is numeric or contains modifications
-                if (double.TryParse(fieldConverted, out fieldValue) || new Regex(@"\[[+-]\d+\.\d\]").IsMatch(field))    // Not L10N
+                if (double.TryParse(fieldConverted, out fieldValue) || new Regex(@"\[[+-]\d+\.\d\]").IsMatch(field))
                     fields[i] = fieldConverted;
             }
             return string.Join(separator.ToString(), fields);
@@ -277,7 +359,7 @@ namespace pwiz.Skyline.Util.Extensions
         /// </summary>
         public static string Quote(this string text)
         {
-            return '"' + text + '"'; // Not L10N
+            return '"' + text + '"';
         }
 
         /// <summary>
@@ -444,10 +526,10 @@ namespace pwiz.Skyline.Util.Extensions
             foreach (var ext in exts)
             {
                 if (sb.Length > 0)
-                    sb.Append(';'); // Not L10N
-                sb.Append('*').Append(ext); // Not L10N
+                    sb.Append(';');
+                sb.Append('*').Append(ext);
             }
-            return string.Format("{0} ({1})|{1}", description, sb); // Not L10N
+            return string.Format(@"{0} ({1})|{1}", description, sb);
         }
 
         /// <summary>
@@ -468,7 +550,7 @@ namespace pwiz.Skyline.Util.Extensions
         /// <param name="filters">Filters to be joined</param>
         public static string FileDialogFilters(params string[] filters)
         {
-            return string.Join("|", filters); // Not L10N
+            return string.Join(@"|", filters);
         }
 
         /// <summary>
@@ -479,8 +561,8 @@ namespace pwiz.Skyline.Util.Extensions
         public static string FileDialogFiltersAll(params string[] filters)
         {
             var listFilters = filters.ToList();
-            listFilters.Add(FileDialogFilter(Resources.TextUtil_FileDialogFiltersAll_All_Files, ".*")); // Not L10N
-            return string.Join("|", listFilters); // Not L10N
+            listFilters.Add(FileDialogFilter(Resources.TextUtil_FileDialogFiltersAll_All_Files, @".*"));
+            return string.Join(@"|", listFilters);
         }
 
         /// <summary>
@@ -617,21 +699,26 @@ namespace pwiz.Skyline.Util.Extensions
                 // replace with made up column names
                 for (int i = 0; i < fields.Length; ++i)
                 {
-                    fields[i] = string.Format("{0}", i ); // Not L10N
+                    fields[i] = string.Format(@"{0}", i );
                 }
             }
             for (int i = 0; i < fields.Length; ++i)
             {
-                FieldNames.Add(fields[i]);
-                FieldDict[fields[i]] = i;
+                var fieldName = fields[i].Trim();
+                FieldNames.Add(fieldName);
+                FieldDict[fieldName] = i;
                 // Check to see if the given column name is actually a synonym for the internal canonical (no spaces, serialized) name
-                string syn;
-                if (headerSynonyms != null && headerSynonyms.TryGetValue(fields[i], out syn))
+                if (headerSynonyms != null)
                 {
-                    if (!FieldDict.ContainsKey(syn))
+                    var key = headerSynonyms.Keys.FirstOrDefault(k => string.Compare(k, fieldName, StringComparison.OrdinalIgnoreCase)==0); // Case insensitive
+                    if (!string.IsNullOrEmpty(key))
                     {
-                        // Note the internal name for this field
-                        FieldDict.Add(syn, i);
+                        var syn = headerSynonyms[key];
+                        if (!FieldDict.ContainsKey(syn))
+                        {
+                            // Note the internal name for this field
+                            FieldDict.Add(syn, i);
+                        }
                     }
                 }
             }

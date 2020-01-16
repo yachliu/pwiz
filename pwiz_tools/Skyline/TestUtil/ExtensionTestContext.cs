@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Original author: Brendan MacLean <brendanx .at. u.washington.edu>,
  *                  MacCoss Lab, Department of Genome Sciences, UW
  *
@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -35,7 +36,7 @@ namespace pwiz.SkylineTestUtil
         {
             get
             {
-                return !(Program.NoVendorReaders || ("1").Equals(Environment.GetEnvironmentVariable("COR_ENABLE_PROFILING"))); // Not L10N
+                return !(Program.NoVendorReaders || (@"1").Equals(Environment.GetEnvironmentVariable(@"COR_ENABLE_PROFILING")));
             }
         }
 
@@ -44,19 +45,29 @@ namespace pwiz.SkylineTestUtil
             return Path.Combine(testContext.TestDir, relativePath);
         }
 
-        public static String GetProjectDirectory(this TestContext testContext, string relativePath)
+        public static String GetProjectDirectory(string relativePath)
         {
             for (String directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                    directory != null && directory.Length > 10;
-                    directory = Path.GetDirectoryName(directory))
+                directory != null && directory.Length > 10;
+                directory = Path.GetDirectoryName(directory))
             {
                 var testZipFiles = Path.Combine(directory, "TestZipFiles");
                 if (Directory.Exists(testZipFiles))
                     return Path.Combine(testZipFiles, relativePath);
-                if (File.Exists(Path.Combine(directory, Program.Name + ".sln")))
+                if (File.Exists(Path.Combine(directory, "Skyline.sln")))
                     return Path.Combine(directory, relativePath);
             }
+
+            // as last resort, check if current directory is the pwiz repository root (e.g. when running TestRunner in Docker container)
+            if (File.Exists(Path.Combine("pwiz_tools", "Skyline", "Skyline.sln")))
+                return Path.Combine("pwiz_tools", "Skyline", relativePath);
+
             return null;
+        }
+
+        public static String GetProjectDirectory(this TestContext testContext, string relativePath)
+        {
+            return GetProjectDirectory(relativePath);
         }
 
         public static void ExtractTestFiles(this TestContext testContext, string relativePathZip, string destDir, string[] persistentFiles, string persistentFilesDir)
@@ -89,6 +100,27 @@ namespace pwiz.SkylineTestUtil
             return persistentFiles != null && persistentFiles.Any(f => zipEntryFileName.Replace('\\', '/').Contains(f.Replace('\\', '/')));
         }
 
+        public static string ExtMzml
+        {
+            get
+            {
+                return ".mzML"; //DataSourceUtil.EXT_MZML; ** Tests rely on capitalization
+            }
+        }
+
+        public static bool CanImportMz5
+        {
+            get
+            {
+                return false;    // TODO: mz5 leaks and increases total memory variance
+            }
+        }
+
+        public static string ExtMz5
+        {
+            get { return CanImportMz5 ? DataSourceUtil.EXT_MZ5 : ExtMzml; }
+        }
+
         public static bool CanImportThermoRaw
         {
             get
@@ -97,19 +129,9 @@ namespace pwiz.SkylineTestUtil
             }
         }
 
-        public static string ExtMz5
-        {
-            get { return ".mz5"; }
-        }
-
-        public static string ExtMzml
-        {
-            get { return ".mzML"; }
-        }
-
         public static string ExtThermoRaw
         {
-            get { return CanImportThermoRaw ? ".RAW" : ExtMzml; }
+            get { return CanImportThermoRaw ? DataSourceUtil.EXT_THERMO_RAW.ToUpperInvariant() : ExtMzml; } // *** Case matters to ConsoleImportNonSRMFile
         }
 
         public static bool CanImportAgilentRaw
@@ -123,7 +145,7 @@ namespace pwiz.SkylineTestUtil
 
         public static string ExtAbWiff
         {
-            get { return CanImportAbWiff ? ".wiff" : ExtMzml; }
+            get { return CanImportAbWiff ? DataSourceUtil.EXT_WIFF : ExtMzml; }
         }
 
         public static bool CanImportAbWiff
@@ -135,9 +157,39 @@ namespace pwiz.SkylineTestUtil
             }
         }
 
+        public static string ExtAbWiff2
+        {
+            get { return CanImportAbWiff2 ? DataSourceUtil.EXT_WIFF2 : ExtMzml; }
+        }
+
+        public static bool CanImportAbWiff2
+        {
+            get
+            {
+                // return false to import mzML
+                return (Environment.Is64BitProcess && !Program.SkylineOffscreen &&  /* wiff2 access leaks thread and event handles, so avoid it during nightly tests when offscreen */
+                        (CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator != "," || /* wiff2 access fails under french language settings */
+                         CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator != "\xA0")) /* no break space */ ;
+            }
+        }
+
         public static string ExtAgilentRaw
         {
-            get { return CanImportAgilentRaw ? ".d" : ExtMzml; }
+            get { return CanImportAgilentRaw ? DataSourceUtil.EXT_AGILENT_BRUKER_RAW : ExtMzml; }
+        }
+
+        public static bool CanImportShimadzuRaw
+        {
+            get
+            {
+                // return false to import mzML
+                return !Program.SkylineOffscreen;    // currently leaks to process heap, so avoid it during nightly tests when offscreen
+            }
+        }
+
+        public static string ExtShimadzuRaw
+        {
+            get { return CanImportShimadzuRaw ? DataSourceUtil.EXT_SHIMADZU_RAW : ExtMzml; }
         }
 
         public static bool CanImportWatersRaw
@@ -145,13 +197,13 @@ namespace pwiz.SkylineTestUtil
             get
             {
                 // return false to import mzML
-                return AllowVendorReaders && !IsDebugMode;  // no waters library for debug build
+                return AllowVendorReaders;
             }
         }
 
         public static string ExtWatersRaw
         {
-            get { return CanImportWatersRaw ? ".raw" : ExtMzml; }
+            get { return CanImportWatersRaw ? DataSourceUtil.EXT_WATERS_RAW : ExtMzml; }
         }
 
         public static bool IsDebugMode

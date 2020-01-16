@@ -27,7 +27,6 @@ using pwiz.Common.Chemistry;
 using pwiz.Common.Collections;
 using pwiz.Common.SystemUtil;
 using pwiz.ProteomeDatabase.API;
-using pwiz.ProteowizardWrapper;
 using pwiz.Skyline.Model.AuditLog;
 using pwiz.Skyline.Model.DocSettings;
 using pwiz.Skyline.Model.GroupComparison;
@@ -42,9 +41,9 @@ namespace pwiz.Skyline.Model.Serialization
     public class DocumentReader : DocumentSerializer
     {
         private readonly StringPool _stringPool = new StringPool();
+        private AnnotationScrubber _annotationScrubber;
         public DocumentFormat FormatVersion { get; private set; }
         public PeptideGroupDocNode[] Children { get; private set; }
-        public AuditLogList AuditLog { get; private set; }
 
         private readonly Dictionary<string, string> _uniqueSpecies = new Dictionary<string, string>();
 
@@ -53,6 +52,8 @@ namespace pwiz.Skyline.Model.Serialization
         /// so our current C12H5[M+2H] would have been C12H7 - this requires special handling on read
         /// </summary>
         public bool DocumentMayContainMoleculesWithEmbeddedIons { get { return FormatVersion <= DocumentFormat.VERSION_3_71; } }
+
+        public bool RemoveCalculatedAnnotationValues { get; set; } = true;
 
         /// <summary>
         /// Avoids duplication of species strings
@@ -105,7 +106,7 @@ namespace pwiz.Skyline.Model.Serialization
             float? ionMobilityMS1 = reader.GetNullableFloatAttribute(ATTR.drift_time_ms1);
             float? ionMobilityFragment = reader.GetNullableFloatAttribute(ATTR.drift_time_fragment);
             float? ionMobilityWindow = reader.GetNullableFloatAttribute(ATTR.drift_time_window);
-            var ionMobilityUnits = MsDataFileImpl.eIonMobilityUnits.drift_time_msec;
+            var ionMobilityUnits = eIonMobilityUnits.drift_time_msec;
             if (!ionMobilityWindow.HasValue)
             {
                 ionMobilityUnits = GetAttributeMobilityUnits(reader, ATTR.ion_mobility_type, fileInfo);
@@ -129,7 +130,7 @@ namespace pwiz.Skyline.Model.Serialization
             if (!reader.IsEmptyElement)
             {
                 reader.ReadStartElement();
-                annotations = ReadAnnotations(reader, _stringPool);
+                annotations = ReadTargetAnnotations(reader, AnnotationDef.AnnotationTarget.precursor_result);
                 // Convert q value and mProphet score annotations to numbers for the ChromInfo object
                 annotations = ReadAndRemoveScoreAnnotation(annotations, MProphetResultsHandler.AnnotationName, ref qvalue);
                 annotations = ReadAndRemoveScoreAnnotation(annotations, MProphetResultsHandler.MAnnotationName, ref zscore);
@@ -164,13 +165,13 @@ namespace pwiz.Skyline.Model.Serialization
                 userSet);
         }
 
-        private static MsDataFileImpl.eIonMobilityUnits GetAttributeMobilityUnits(XmlReader reader, string attrName, ChromFileInfo fileInfo)
+        private static eIonMobilityUnits GetAttributeMobilityUnits(XmlReader reader, string attrName, ChromFileInfo fileInfo)
         {
             string ionMobilityUnitsString = reader.GetAttribute(attrName);
-            MsDataFileImpl.eIonMobilityUnits ionMobilityUnits =
+            eIonMobilityUnits ionMobilityUnits =
               string.IsNullOrEmpty( ionMobilityUnitsString) ?
-              (fileInfo == null ? MsDataFileImpl.eIonMobilityUnits.none : fileInfo.IonMobilityUnits) : // Use the file-level declaration if no local declaration
-              TypeSafeEnum.Parse<MsDataFileImpl.eIonMobilityUnits>(ionMobilityUnitsString);
+              (fileInfo == null ? eIonMobilityUnits.none : fileInfo.IonMobilityUnits) : // Use the file-level declaration if no local declaration
+              TypeSafeEnum.Parse<eIonMobilityUnits>(ionMobilityUnitsString);
             return ionMobilityUnits;
         }
 
@@ -185,13 +186,18 @@ namespace pwiz.Skyline.Model.Serialization
             return annotations.RemoveAnnotation(annotationName);
         }
 
+        public Annotations ReadTargetAnnotations(XmlReader reader, AnnotationDef.AnnotationTarget target)
+        {
+            var annotations = ReadAnnotations(reader);
+            return _annotationScrubber.ScrubAnnotations(annotations, target);
+        }
+
         /// <summary>
-        /// Reads annotations without ensuring that they use a single unique key string. This
-        /// is currently only used for <see cref="ChromatogramSet"/>, because it is difficult to
-        /// get it to use the version with a non-null context and the possible level of repetition
-        /// is much smaller than with the document nodes and results objects.
+        /// Reads annotations from XML. The annotations should later be passed through
+        /// <see cref="AnnotationScrubber.ScrubAnnotations"/> to ensure that the keys use a single
+        /// string object and also that calculated annotations are removed.
         /// </summary>
-        private static Annotations ReadAnnotations(XmlReader reader, StringPool stringPool)
+        public static Annotations ReadAnnotations(XmlReader reader)
         {
             string note = null;
             int color = Annotations.EMPTY.ColorIndex;
@@ -207,19 +213,12 @@ namespace pwiz.Skyline.Model.Serialization
                 string name = reader.GetAttribute(ATTR.name);
                 if (name == null)
                     throw new InvalidDataException(Resources.SrmDocument_ReadAnnotations_Annotation_found_without_name);
-                if (stringPool != null)
-                    name = stringPool.GetString(name);
                 annotations[name] = reader.ReadElementString();
             }
 
             return note != null || annotations.Count > 0
                 ? new Annotations(note, annotations, color)
                 : Annotations.EMPTY;
-        }
-
-        public static Annotations ReadAnnotations(XmlReader reader)
-        {
-            return ReadAnnotations(reader, null);
         }
 
         /// <summary>
@@ -249,14 +248,15 @@ namespace pwiz.Skyline.Model.Serialization
             public Results<TransitionChromInfo> Results { get; private set; }
             public MeasuredIon MeasuredIon { get; private set; }
             public bool Quantitative { get; private set; }
+            public ExplicitTransitionValues ExplicitValues { get; private set; }
 
-            public void ReadXml(XmlReader reader, out double? declaredMz)
+        public void ReadXml(XmlReader reader, DocumentFormat formatVersion, out double? declaredMz, ExplicitTransitionValues pre422ExplicitTransitionValues)
             {
-                ReadXmlAttributes(reader);
+                ReadXmlAttributes(reader, formatVersion, pre422ExplicitTransitionValues);
                 ReadXmlElements(reader, out declaredMz);
             }
 
-            public void ReadXmlAttributes(XmlReader reader)
+            public void ReadXmlAttributes(XmlReader reader, DocumentFormat formatVersion, ExplicitTransitionValues pre422ExplicitTransitionValues)
             {
                 // Accept uppercase and lowercase for backward compatibility with v0.1
                 IonType = reader.GetEnumAttribute(ATTR.fragment_type, IonType.y, XmlUtil.EnumCase.lower);
@@ -277,6 +277,8 @@ namespace pwiz.Skyline.Model.Serialization
                         throw new InvalidDataException(String.Format(Resources.TransitionInfo_ReadXmlAttributes_The_reporter_ion__0__was_not_found_in_the_transition_filter_settings_, measuredIonName));
                     IonType = IonType.custom;
                 }
+
+                ExplicitValues = pre422ExplicitTransitionValues ?? ReadExplicitTransitionValuesAttributes(reader, formatVersion);
             }
 
             public void ReadXmlElements(XmlReader reader, out double? declaredProductMz)
@@ -289,7 +291,7 @@ namespace pwiz.Skyline.Model.Serialization
                 else
                 {
                     reader.ReadStartElement();
-                    Annotations = ReadAnnotations(reader, _documentReader._stringPool); // This is reliably first in all versions
+                    Annotations = _documentReader.ReadTargetAnnotations(reader, AnnotationDef.AnnotationTarget.transition); // This is reliably first in all versions
                     while (reader.IsStartElement())
                     {  // The order of these elements may depend on the version of the file being read
                         if (reader.IsStartElement(EL.losses))
@@ -372,7 +374,7 @@ namespace pwiz.Skyline.Model.Serialization
                     byte[] data = Convert.FromBase64String(strContent);
                     var protoTransitionResults = new SkylineDocumentProto.Types.TransitionResults();
                     protoTransitionResults.MergeFrom(data);
-                    return TransitionChromInfo.FromProtoTransitionResults(_documentReader._stringPool, Settings, protoTransitionResults);
+                    return TransitionChromInfo.FromProtoTransitionResults(_documentReader._annotationScrubber, Settings, protoTransitionResults);
                 }
                 if (reader.IsStartElement(EL.transition_results))
                     return _documentReader.ReadResults(reader, EL.transition_peak, ReadTransitionPeak);
@@ -405,7 +407,7 @@ namespace pwiz.Skyline.Model.Serialization
                 UserSet userSet = reader.GetEnumAttribute(ATTR.user_set, UserSetFastLookup.Dict,
                     UserSet.FALSE, XmlUtil.EnumCase.upper);
                 double? ionMobility = reader.GetNullableDoubleAttribute(ATTR.drift_time);
-                MsDataFileImpl.eIonMobilityUnits ionMobilityUnits = MsDataFileImpl.eIonMobilityUnits.drift_time_msec;
+                eIonMobilityUnits ionMobilityUnits = eIonMobilityUnits.drift_time_msec;
                 if (!ionMobility.HasValue)
                 {
                     ionMobility = reader.GetNullableDoubleAttribute(ATTR.ion_mobility);
@@ -418,7 +420,7 @@ namespace pwiz.Skyline.Model.Serialization
                 if (!reader.IsEmptyElement)
                 {
                     reader.ReadStartElement();
-                    annotations = ReadAnnotations(reader, _documentReader._stringPool);
+                    annotations = _documentReader.ReadTargetAnnotations(reader, AnnotationDef.AnnotationTarget.transition_result);
                 }
                 int countRatios = _documentReader.Settings.PeptideSettings.Modifications.RatioInternalStandardTypes.Count;
                 return new TransitionChromInfo(fileInfo.FileId,
@@ -531,10 +533,11 @@ namespace pwiz.Skyline.Model.Serialization
             }
 
             reader.ReadStartElement();  // Start document element
-            Settings = reader.DeserializeElement<SrmSettings>() ?? SrmSettingsList.GetDefault();
-
-            AuditLog = new AuditLogList();
-
+            var srmSettings = reader.DeserializeElement<SrmSettings>() ?? SrmSettingsList.GetDefault();
+            _annotationScrubber = AnnotationScrubber.MakeAnnotationScrubber(_stringPool, srmSettings.DataSettings, RemoveCalculatedAnnotationValues);
+            srmSettings = _annotationScrubber.ScrubSrmSettings(srmSettings);
+            Settings = srmSettings;
+            
             if (reader.IsStartElement())
             {
                 // Support v0.1 naming
@@ -550,7 +553,7 @@ namespace pwiz.Skyline.Model.Serialization
                 }
 
                 if (reader.IsStartElement(AuditLogList.XML_ROOT))
-                    AuditLog = reader.DeserializeElement<AuditLogList>();
+                    reader.Skip();
             }
 
             reader.ReadEndElement();    // End document element
@@ -580,7 +583,7 @@ namespace pwiz.Skyline.Model.Serialization
 
         private ProteinMetadata ReadProteinMetadataXML(XmlReader reader, bool labelNameAndDescription)
         {
-            var labelPrefix = labelNameAndDescription ? "label_" : string.Empty; // Not L10N
+            var labelPrefix = labelNameAndDescription ? @"label_" : string.Empty;
             return new ProteinMetadata(
                 reader.GetAttribute(labelPrefix + ATTR.name),
                 reader.GetAttribute(labelPrefix + ATTR.description),
@@ -610,7 +613,7 @@ namespace pwiz.Skyline.Model.Serialization
 
             reader.ReadStartElement();
 
-            var annotations = ReadAnnotations(reader, _stringPool);
+            var annotations = ReadTargetAnnotations(reader, AnnotationDef.AnnotationTarget.protein);
 
             ProteinMetadata[] alternatives;
             if (!reader.IsStartElement(EL.alternatives) || reader.IsEmptyElement)
@@ -628,7 +631,7 @@ namespace pwiz.Skyline.Model.Serialization
 
             // Support v0.1 documents, where peptide lists were saved as proteins,
             // pre-v0.1 documents, which may not have identified peptide lists correctly.
-            if (sequence.StartsWith("X") && sequence.EndsWith("X")) // Not L10N
+            if (sequence.StartsWith(@"X") && sequence.EndsWith(@"X"))
                 peptideList = true;
 
             // All v0.1 peptide lists should have a settable label
@@ -729,7 +732,7 @@ namespace pwiz.Skyline.Model.Serialization
             else
             {
                 reader.ReadStartElement();
-                annotations = ReadAnnotations(reader, _stringPool);
+                annotations = ReadTargetAnnotations(reader, AnnotationDef.AnnotationTarget.protein);
 
                 if (!reader.IsStartElement(EL.selected_peptides))
                     children = ReadPeptideListXml(reader, group);
@@ -767,33 +770,47 @@ namespace pwiz.Skyline.Model.Serialization
         }
 
         /// <summary>
-        /// Deserialize any explictly set CE, DT, etc information from attributes
+        /// Deserialize any explictly set CE, DT, etc information from transition attributes
         /// </summary>
-        private ExplicitTransitionGroupValues ReadExplicitTransitionValuesAttributes(XmlReader reader)
+        private static ExplicitTransitionValues ReadExplicitTransitionValuesAttributes(XmlReader reader, DocumentFormat formatVersion )
         {
             double? importedCollisionEnergy = reader.GetNullableDoubleAttribute(ATTR.explicit_collision_energy);
-            double? importedDriftTimeMsec = reader.GetNullableDoubleAttribute(ATTR.explicit_drift_time_msec);
             double? importedIonMobilityHighEnergyOffset =
                 reader.GetNullableDoubleAttribute(ATTR.explicit_drift_time_high_energy_offset_msec) ??
                 reader.GetNullableDoubleAttribute(ATTR.explicit_ion_mobility_high_energy_offset);
-            var importedIonMobilityUnits = MsDataFileImpl.eIonMobilityUnits.none;
+            double? importedSLens = reader.GetNullableDoubleAttribute(formatVersion.CompareTo(DocumentFormat.VERSION_3_52) < 0 ? ATTR.s_lens_obsolete : ATTR.explicit_s_lens);
+            double? importedConeVoltage = reader.GetNullableDoubleAttribute(formatVersion.CompareTo(DocumentFormat.VERSION_3_52) < 0 ? ATTR.cone_voltage_obsolete : ATTR.explicit_cone_voltage);
+            double? importedDeclusteringPotential = reader.GetNullableDoubleAttribute(ATTR.explicit_declustering_potential);
+            return ExplicitTransitionValues.Create(importedCollisionEnergy,
+                importedIonMobilityHighEnergyOffset, importedSLens, importedConeVoltage, importedDeclusteringPotential);
+        }
+
+
+        /// <summary>
+        /// Deserialize any explictly set CE, DT, etc information from precursor attributes
+        /// </summary>
+        private static ExplicitTransitionGroupValues ReadExplicitTransitionGroupValuesAttributes(XmlReader reader, DocumentFormat formatVersion, out ExplicitTransitionValues pre422ExplicitValues)
+        {
+            double? importedCompensationVoltage = reader.GetNullableDoubleAttribute(ATTR.explicit_compensation_voltage); // Found in older formats, obsolete as of 4.22. Now a combination of ion mobility and ion mobility units values.
+            double? importedDriftTimeMsec = reader.GetNullableDoubleAttribute(ATTR.explicit_drift_time_msec);
+            var importedIonMobilityUnits = eIonMobilityUnits.none;
             if (importedDriftTimeMsec.HasValue)
             {
-                importedIonMobilityUnits = MsDataFileImpl.eIonMobilityUnits.drift_time_msec;
+                importedIonMobilityUnits = eIonMobilityUnits.drift_time_msec;
+            }
+            else if (importedCompensationVoltage.HasValue)
+            {
+                importedIonMobilityUnits = eIonMobilityUnits.compensation_V;
             }
             else
             {
                 var attr = reader.GetAttribute(ATTR.explicit_ion_mobility_units);
                 importedIonMobilityUnits = SmallMoleculeTransitionListReader.IonMobilityUnitsFromAttributeValue(attr);
             }
-            double? importedIonMobility = importedDriftTimeMsec ?? reader.GetNullableDoubleAttribute(ATTR.explicit_ion_mobility);
+            double? importedIonMobility = importedDriftTimeMsec ?? importedCompensationVoltage ?? reader.GetNullableDoubleAttribute(ATTR.explicit_ion_mobility);
             double? importedCCS = reader.GetNullableDoubleAttribute(ATTR.explicit_ccs_sqa);
-            double? importedSLens = reader.GetNullableDoubleAttribute(FormatVersion.CompareTo(DocumentFormat.VERSION_3_52) < 0 ? ATTR.s_lens_obsolete : ATTR.explicit_s_lens);
-            double? importedConeVoltage = reader.GetNullableDoubleAttribute(FormatVersion.CompareTo(DocumentFormat.VERSION_3_52) < 0 ? ATTR.cone_voltage_obsolete : ATTR.explicit_cone_voltage);
-            double? importedCompensationVoltage = reader.GetNullableDoubleAttribute(ATTR.explicit_compensation_voltage);
-            double? importedDeclusteringPotential = reader.GetNullableDoubleAttribute(ATTR.explicit_declustering_potential);
-            return new ExplicitTransitionGroupValues(importedCollisionEnergy, importedIonMobility, importedIonMobilityHighEnergyOffset, importedIonMobilityUnits, importedCCS, importedSLens, importedConeVoltage,
-                importedDeclusteringPotential, importedCompensationVoltage);
+            pre422ExplicitValues = formatVersion >= DocumentFormat.VERSION_4_22 ? null : ReadExplicitTransitionValuesAttributes(reader, formatVersion); // Formerly (pre-4.22) these per-transition values were serialized at peptide level
+            return ExplicitTransitionGroupValues.Create(importedIonMobility,importedIonMobilityUnits, importedCCS);
         }
 
         /// <summary>
@@ -824,6 +841,7 @@ namespace pwiz.Skyline.Model.Serialization
             double? internalStandardConcentration =
                 reader.GetNullableDoubleAttribute(ATTR.internal_standard_concentration);
             string normalizationMethod = reader.GetAttribute(ATTR.normalization_method);
+            string attributeGroupId = reader.GetAttribute(ATTR.attribute_group_id);
             bool autoManageChildren = reader.GetBoolAttribute(ATTR.auto_manage_children, true);
             bool isDecoy = reader.GetBoolAttribute(ATTR.decoy);
             var standardType = StandardType.FromName(reader.GetAttribute(ATTR.standard_type));
@@ -866,7 +884,7 @@ namespace pwiz.Skyline.Model.Serialization
                 }
                 reader.ReadStartElement();
                 if (reader.IsStartElement())
-                    annotations = ReadAnnotations(reader, _stringPool);
+                    annotations = ReadTargetAnnotations(reader, AnnotationDef.AnnotationTarget.peptide);
                 if (!isCustomMolecule)
                 {
                     mods = ReadExplicitMods(reader, peptide);
@@ -904,7 +922,9 @@ namespace pwiz.Skyline.Model.Serialization
             peptideDocNode = peptideDocNode
                 .ChangeConcentrationMultiplier(concentrationMultiplier)
                 .ChangeInternalStandardConcentration(internalStandardConcentration)
-                .ChangeNormalizationMethod(NormalizationMethod.FromName(normalizationMethod));
+                .ChangeNormalizationMethod(NormalizationMethod.FromName(normalizationMethod))
+                .ChangeAttributeGroupId(attributeGroupId);
+
             return peptideDocNode;
         }
 
@@ -1054,7 +1074,7 @@ namespace pwiz.Skyline.Model.Serialization
             var typedMods = ReadLabelType(reader, IsotopeLabelType.light);
 
             int? decoyMassShift = reader.GetNullableIntAttribute(ATTR.decoy_mass_shift);
-            var explicitTransitionGroupValues = ReadExplicitTransitionValuesAttributes(reader);
+            var explicitTransitionGroupValues = ReadExplicitTransitionGroupValuesAttributes(reader, FormatVersion, out var pre422ExplicitValues);
             if (peptide.IsCustomMolecule)
             {
                 var ionFormula = reader.GetAttribute(ATTR.ion_formula);
@@ -1072,24 +1092,26 @@ namespace pwiz.Skyline.Model.Serialization
                 }
                 else
                 {
-                    Assume.Fail("Unable to determine adduct in " + ionFormula);  // Not L10N
+                    Assume.Fail(@"Unable to determine adduct in " + ionFormula);
                 }
                 if (!string.IsNullOrEmpty(neutralFormula))
                 {
                     var ionString = precursorAdduct.ApplyToFormula(neutralFormula);
                     var moleculeWithAdduct = precursorAdduct.ApplyToFormula(peptide.CustomMolecule.Formula);
-                    Assume.IsTrue(Equals(ionString, moleculeWithAdduct), "Expected precursor ion formula to match parent molecule with adduct applied");  // Not L10N
+                    Assume.IsTrue(Equals(ionString, moleculeWithAdduct), @"Expected precursor ion formula to match parent molecule with adduct applied");
                 }
             }
             var group = new TransitionGroup(peptide, precursorAdduct, typedMods.LabelType, false, decoyMassShift);
             var children = new TransitionDocNode[0];    // Empty until proven otherwise
             bool autoManageChildren = reader.GetBoolAttribute(ATTR.auto_manage_children, true);
+            double? precursorConcentration = reader.GetNullableDoubleAttribute(ATTR.precursor_concentration);
 
+            TransitionGroupDocNode nodeGroup;
             if (reader.IsEmptyElement)
             {
                 reader.Read();
 
-                return new TransitionGroupDocNode(group,
+                nodeGroup = new TransitionGroupDocNode(group,
                                                   Annotations.EMPTY,
                                                   Settings,
                                                   mods,
@@ -1102,11 +1124,11 @@ namespace pwiz.Skyline.Model.Serialization
             else
             {
                 reader.ReadStartElement();
-                var annotations = ReadAnnotations(reader, _stringPool);
+                var annotations = ReadTargetAnnotations(reader, AnnotationDef.AnnotationTarget.precursor);
                 var libInfo = ReadTransitionGroupLibInfo(reader);
                 var results = ReadTransitionGroupResults(reader);
 
-                var nodeGroup = new TransitionGroupDocNode(group,
+                nodeGroup = new TransitionGroupDocNode(group,
                                                   annotations,
                                                   Settings,
                                                   mods,
@@ -1115,12 +1137,14 @@ namespace pwiz.Skyline.Model.Serialization
                                                   results,
                                                   children,
                                                   autoManageChildren);
-                children = ReadTransitionListXml(reader, nodeGroup, mods);
+                children = ReadTransitionListXml(reader, nodeGroup, mods, pre422ExplicitValues);
 
                 reader.ReadEndElement();
 
-                return (TransitionGroupDocNode)nodeGroup.ChangeChildrenChecked(children);
+                nodeGroup = (TransitionGroupDocNode)nodeGroup.ChangeChildrenChecked(children);
             }
+            nodeGroup = nodeGroup.ChangePrecursorConcentration(precursorConcentration);
+            return nodeGroup;
         }
 
         private TypedModifications ReadLabelType(XmlReader reader, IsotopeLabelType labelTypeDefault)
@@ -1166,7 +1190,7 @@ namespace pwiz.Skyline.Model.Serialization
             {
                 // Read a transition tag.
                 double? declaredProductMz;
-                info.ReadXml(reader, out declaredProductMz);
+                info.ReadXml(reader, FormatVersion, out declaredProductMz, null);
 
                 // If the transition is not in the current group
                 if (curGroup == null || curGroup.PrecursorAdduct != info.PrecursorAdduct)
@@ -1200,7 +1224,7 @@ namespace pwiz.Skyline.Model.Serialization
                 // No heavy transition support in v0.1, and no full-scan filtering
                 var massH = Settings.GetFragmentMass(null, mods, transition, null);
 
-                var node = new TransitionDocNode(transition, info.Losses, massH, TransitionDocNode.TransitionQuantInfo.DEFAULT);
+                var node = new TransitionDocNode(transition, info.Losses, massH, TransitionDocNode.TransitionQuantInfo.DEFAULT, ExplicitTransitionValues.EMPTY);
                 curList.Add(node);
                 ValidateSerializedVsCalculatedProductMz(declaredProductMz, node); // Sanity check
             }
@@ -1222,9 +1246,10 @@ namespace pwiz.Skyline.Model.Serialization
         /// <param name="reader">The reader positioned at the first element</param>
         /// <param name="nodeGroup">A previously read parent <see cref="Identity"/></param>
         /// <param name="mods">Explicit modifications for the peptide</param>
+        /// <param name="pre422ExplicitTransitionValues">Explicit transition values that may have been serialzied at precursor level in older formats</param>
         /// <returns>A new array of <see cref="TransitionDocNode"/></returns>
         private TransitionDocNode[] ReadTransitionListXml(XmlReader reader, 
-            TransitionGroupDocNode nodeGroup, ExplicitMods mods)
+            TransitionGroupDocNode nodeGroup, ExplicitMods mods, ExplicitTransitionValues pre422ExplicitTransitionValues)
         {
             var group = nodeGroup.TransitionGroup;
             var isotopeDist = nodeGroup.IsotopeDist;
@@ -1237,13 +1262,13 @@ namespace pwiz.Skyline.Model.Serialization
                 transitionData.MergeFrom(data);
                 foreach (var transitionProto in transitionData.Transitions)
                 {
-                    list.Add(TransitionDocNode.FromTransitionProto(_stringPool, Settings, group, mods, isotopeDist, transitionProto));
+                    list.Add(TransitionDocNode.FromTransitionProto(_annotationScrubber, Settings, group, mods, isotopeDist, pre422ExplicitTransitionValues, transitionProto));
                 }
             }
             else
             {
                 while (reader.IsStartElement(EL.transition))
-                    list.Add(ReadTransitionXml(reader, group, mods, isotopeDist));
+                    list.Add(ReadTransitionXml(reader, group, mods, isotopeDist, pre422ExplicitTransitionValues));
             }
             return list.ToArray();
         }
@@ -1256,14 +1281,15 @@ namespace pwiz.Skyline.Model.Serialization
         /// <param name="group">A previously read parent <see cref="Identity"/></param>
         /// <param name="mods">Explicit mods for the peptide</param>
         /// <param name="isotopeDist">Isotope peak distribution to use for assigning M+N m/z values</param>
+        /// <param name="pre422ExplicitTransitionValues">Items that may have been saved at precursor level in older formats</param>
         /// <returns>A new <see cref="TransitionDocNode"/></returns>
         private TransitionDocNode ReadTransitionXml(XmlReader reader, TransitionGroup group,
-            ExplicitMods mods, IsotopeDistInfo isotopeDist)
+            ExplicitMods mods, IsotopeDistInfo isotopeDist, ExplicitTransitionValues pre422ExplicitTransitionValues)
         {
             TransitionInfo info = new TransitionInfo(this);
 
             // Read all the XML attributes before the reader advances through the elements
-            info.ReadXmlAttributes(reader);
+            info.ReadXmlAttributes(reader, FormatVersion, pre422ExplicitTransitionValues);
             var isPrecursor = Transition.IsPrecursor(info.IonType);
             var isCustom = Transition.IsCustom(info.IonType, group);
             CustomMolecule customMolecule = null;
@@ -1299,14 +1325,14 @@ namespace pwiz.Skyline.Model.Serialization
                 }
                 // Watch all-mass declaration with mz same as mass with a charge-only adduct, which older versions don't describe succinctly
                 if (!isPrecursor && isPre362NonReporterCustom &&
-                    Math.Abs(declaredProductMz.Value - customMolecule.MonoisotopicMass) < .001)
+                    Math.Abs(declaredProductMz.Value - customMolecule.MonoisotopicMass / Math.Abs(adduct.AdductCharge)) < .001)
                 {
                     string newFormula = null;
                     if (!string.IsNullOrEmpty(customMolecule.Formula) &&
                         Math.Abs(customMolecule.MonoisotopicMass - Math.Abs(adduct.AdductCharge) * declaredProductMz.Value) < .01)
                     {
                         // Adjust hydrogen count to get a molecular mass that makes sense for charge and mz
-                        newFormula = Molecule.AdjustElementCount(customMolecule.Formula, "H", -adduct.AdductCharge); // Not L10N
+                        newFormula = Molecule.AdjustElementCount(customMolecule.Formula, @"H", -adduct.AdductCharge);
                     }
                     if (!string.IsNullOrEmpty(newFormula))
                     {
@@ -1335,7 +1361,7 @@ namespace pwiz.Skyline.Model.Serialization
             else if (isPrecursor)
             {
                 transition = new Transition(group, info.IonType, group.Peptide.Length - 1, info.MassIndex,
-                    group.PrecursorAdduct, info.DecoyMassShift);
+                    adduct.IsEmpty ? group.PrecursorAdduct : adduct, info.DecoyMassShift);
             }
             else
             {
@@ -1352,7 +1378,7 @@ namespace pwiz.Skyline.Model.Serialization
             if (group.DecoyMassShift.HasValue && !info.DecoyMassShift.HasValue)
                 throw new InvalidDataException(Resources.SrmDocument_ReadTransitionXml_All_transitions_of_decoy_precursors_must_have_a_decoy_mass_shift);
             var node = new TransitionDocNode(transition, info.Annotations, losses,
-                mass, new TransitionDocNode.TransitionQuantInfo(isotopeDistInfo, info.LibInfo, info.Quantitative), info.Results);
+                mass, new TransitionDocNode.TransitionQuantInfo(isotopeDistInfo, info.LibInfo, info.Quantitative), info.ExplicitValues, info.Results);
             ValidateSerializedVsCalculatedProductMz(declaredProductMz, node);  // Sanity check
             return node;
         }
@@ -1368,7 +1394,7 @@ namespace pwiz.Skyline.Model.Serialization
                     FormatVersion.CompareTo(DocumentFormat.VERSION_3_6) <= 0 && node.Transition.IonType == IonType.z ? 1.007826 : // Known issue fixed in SVN 7007
                         (FormatVersion.CompareTo(DocumentFormat.VERSION_1_7) <= 0 ? .005 : .0025); // Unsure if 1.7 is the precise watershed, but this gets a couple of older tests passing
                 Assume.IsTrue(Math.Abs(declaredProductMz.Value - node.Mz.Value) < toler,
-                    string.Format("error reading mz values - declared mz value {0} does not match calculated value {1}", // Not L10N
+                    string.Format(@"error reading mz values - declared mz value {0} does not match calculated value {1}",
                         declaredProductMz.Value, node.Mz.Value));
             }
         }

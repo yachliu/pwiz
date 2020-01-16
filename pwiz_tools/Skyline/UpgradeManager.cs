@@ -56,7 +56,7 @@ namespace pwiz.Skyline
 
         private readonly Control _parentWindow;
         private readonly bool _startup;
-        private readonly AutoResetEvent _endUpdateEvent;
+        private AutoResetEvent _endUpdateEvent;
         private UpdateCheckDetails _updateInfo;
         private UpdateCompletedDetails _completeArgs;
 
@@ -79,7 +79,6 @@ namespace pwiz.Skyline
         {
             _parentWindow = parentWindow;
             _startup = startup;
-            _endUpdateEvent = new AutoResetEvent(false);
         }
 
         private Control ParentWindow
@@ -141,12 +140,33 @@ namespace pwiz.Skyline
                     ProgressValue = 0
                 })
                 {
-                    longWaitUpdate.PerformWork(ParentWindow, 500, broker =>
+                    AutoResetEvent endUpdateEvent = null;
+                    try
                     {
-                        BeginUpdate(broker);
-                        _endUpdateEvent.WaitOne();
-                        broker.ProgressValue = 100;
-                    });
+                        lock (this)
+                        {
+                            Assume.IsNull(_endUpdateEvent);
+                            _endUpdateEvent = endUpdateEvent = new AutoResetEvent(false);
+                        }
+
+                        longWaitUpdate.PerformWork(ParentWindow, 500, broker =>
+                        {
+                            BeginUpdate(broker);
+                            endUpdateEvent.WaitOne();
+                            broker.ProgressValue = 100;
+                        });
+                    }
+                    finally
+                    {
+                        lock (this)
+                        {
+                            if (endUpdateEvent != null)
+                            {
+                                _endUpdateEvent = null;
+                            }
+                        }
+                        endUpdateEvent?.Dispose();
+                    }
                 }
                 if (_completeArgs == null || _completeArgs.Cancelled)
                     return;
@@ -202,7 +222,7 @@ namespace pwiz.Skyline
         private static string GetVersionDiff(Version versionCurrent, Version versionAvailable)
         {
             if (versionCurrent.Major != versionAvailable.Major || versionCurrent.Minor != versionAvailable.Minor)
-                return string.Format("{0}.{1}", versionAvailable.Major, versionAvailable.Minor); // Not L10N
+                return string.Format(@"{0}.{1}", versionAvailable.Major, versionAvailable.Minor);
             return versionAvailable.ToString();
         }
 
@@ -228,7 +248,10 @@ namespace pwiz.Skyline
         private void update_Complete(UpdateCompletedDetails e)
         {
             _completeArgs = e;
-            _endUpdateEvent.Set();
+            lock (this)
+            {
+                _endUpdateEvent?.Set();
+            }
         }
 
         public interface IDeployment
@@ -352,7 +375,8 @@ namespace pwiz.Skyline
                 {
                     var webClient = new WebClient();
                     string applicationPage = webClient.DownloadString(_applicationDeployment.UpdateLocation);
-                    Match match = Regex.Match(applicationPage, "<assemblyIdentity .*version=\"([^\"]*)\"");  // Not L10N
+                    // ReSharper disable once LocalizableElement
+                    Match match = Regex.Match(applicationPage, "<assemblyIdentity .*version=\"([^\"]*)\"");
                     if (match.Success)
                         return new Version(match.Groups[1].Value);
                 }
@@ -367,8 +391,8 @@ namespace pwiz.Skyline
             {
                 bool is64 = Environment.Is64BitOperatingSystem;
                 string shorNameInstall = Install.Type == Install.InstallType.release
-                    ? (is64 ? "skyline64" : "skyline32") // Not L10N
-                    : (is64 ? "skyline-daily64" : "skyline-daily32"); // Not L10N : Keep -daily
+                    ? (is64 ? @"skyline64" : @"skyline32")
+                    : (is64 ? @"skyline-daily64" : @"skyline-daily32"); // Keep -daily
 
                 WebHelpers.OpenSkylineShortLink(parentWindow, shorNameInstall);
             }

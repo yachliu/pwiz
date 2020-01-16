@@ -23,7 +23,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using NHibernate.Util;
 using pwiz.Skyline.Controls.Graphs;
 using pwiz.Skyline.Model;
 using pwiz.Skyline.Model.Irt;
@@ -60,21 +59,28 @@ namespace pwiz.Skyline.SettingsUI.Irt
             var successStyle = new DataGridViewCellStyle { BackColor = Color.LightGreen };
             var failStyle = new DataGridViewCellStyle { BackColor = Color.LightCoral };
 
-            foreach (var kvp in processed.ProviderData)
+            foreach (var data in processed.ProviderData)
             {
-                var file = kvp.Key;
-                var data = kvp.Value;
+                var missingIndices = new HashSet<int>();
+                var outlierIndices = new HashSet<int>();
+                for (var i = 0; i < data.Peptides.Count; i++)
+                {
+                    if (data.Peptides[i].Missing)
+                        missingIndices.Add(i);
+                    else if (data.Peptides[i].Outlier)
+                        outlierIndices.Add(i);
+                }
 
                 var graphData = new RegressionGraphData
                 {
-                    Title = file,
+                    Title = data.RetentionTimeProvider.Name,
                     LabelX = Resources.AddIrtsResultsDlg_dataGridView_CellContentClick_Measured,
                     LabelY = Resources.AddIrtPeptidesDlg_dataGridView_CellContentClick_iRT,
-                    XValues = data.Times,
-                    YValues = data.Irts,
-                    Tooltips = Enumerable.Range(0, data.Peptides.Length).ToDictionary(i => i, i => data.Peptides[i].ToString()),
-                    MissingIndices = data.MissingIndices,
-                    OutlierIndices = data.OutlierIndices,
+                    XValues = data.Peptides.Select(peptide => peptide.RetentionTime.GetValueOrDefault()).ToArray(),
+                    YValues = data.Peptides.Select(peptide => peptide.Irt).ToArray(),
+                    Tooltips = Enumerable.Range(0, data.Peptides.Count).ToDictionary(i => i, i => data.Peptides[i].Target.ToString()),
+                    MissingIndices = missingIndices,
+                    OutlierIndices = outlierIndices,
                     RegressionLine = data.RegressionRefined,
                     RegressionLineCurrent = data.Regression,
                     RegressionName = data.RegressionSuccess
@@ -88,18 +94,18 @@ namespace pwiz.Skyline.SettingsUI.Irt
                 string filename;
                 try
                 {
-                    filename = Path.GetFileName(file);
+                    filename = Path.GetFileName(data.RetentionTimeProvider.Name);
                 }
                 catch (Exception)
                 {
-                    filename = file;
+                    filename = data.RetentionTimeProvider.Name;
                 }
                 dataGridView.Rows.Add(
                     filename,
                     graphData.RegularPoints.Count,
-                    data.RegressionRefined != null ? data.RegressionRefined.Slope.ToString("F04") : string.Empty, // Not L10N
-                    data.RegressionRefined != null ? data.RegressionRefined.Intercept.ToString("F04") : string.Empty, // Not L10N
-                    graphData.R.ToString("F03"), // Not L10N
+                    data.RegressionRefined != null ? data.RegressionRefined.Slope.ToString(@"F04") : string.Empty,
+                    data.RegressionRefined != null ? data.RegressionRefined.Intercept.ToString(@"F04") : string.Empty,
+                    graphData.R.ToString(@"F03"),
                     data.RegressionSuccess ? Resources.AddIrtPeptidesDlg_AddIrtPeptidesDlg_Success : Resources.AddIrtPeptidesDlg_AddIrtPeptidesDlg_Failed);
                 var lastRow = dataGridView.Rows[dataGridView.RowCount - 1];
                 lastRow.DefaultCellStyle = data.RegressionSuccess ? successStyle : failStyle;
@@ -109,7 +115,7 @@ namespace pwiz.Skyline.SettingsUI.Irt
             }
 
             PeptidesCount = processed.DbIrtPeptides.Count() - existingPeptides.Count - overwritePeptides.Count - keepPeptides.Count;
-            RunsConvertedCount = processed.ProviderData.Count(data => data.Value.RegressionSuccess);
+            RunsConvertedCount = processed.ProviderData.Count(data => data.RegressionSuccess);
             RunsFailedCount = processed.ProviderData.Count - RunsConvertedCount;
 
             string locationStr;
@@ -185,7 +191,7 @@ namespace pwiz.Skyline.SettingsUI.Irt
                 Height -= panelExisting.Height;
             }
 
-            if (!listOverwrite.Items.Any() && !listKeep.Items.Any() && !listExisting.Items.Any())
+            if (!listOverwrite.Items.OfType<object>().Any() && !listKeep.Items.OfType<object>().Any() && !listExisting.Items.OfType<object>().Any())
             {
                 if (processed.ProviderData.Any())
                     dataGridView.Anchor |= AnchorStyles.Bottom;

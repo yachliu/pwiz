@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Original author: Brendan MacLean <brendanx .at. u.washington.edu>,
  *                  MacCoss Lab, Department of Genome Sciences, UW
  *
@@ -79,7 +79,6 @@ namespace pwiz.Skyline.Model
         public bool IsDecoy { get; private set; }
 
         public CustomMolecule CustomMolecule { get { return Target.Molecule; } }
-
         public string Sequence { get { return Target.Sequence; } }
         public bool IsCustomMolecule { get { return !Target.IsProteomic; }}
         public int Length { get { return Target.IsProteomic ? Target.Sequence.Length : 0; }}
@@ -97,9 +96,9 @@ namespace pwiz.Skyline.Model
             get
             {
                 if (!Begin.HasValue)
-                    return 'X'; // Not L10N
+                    return 'X';
                 int begin = Begin.Value;
-                return (begin == 0 ? '-' : _fastaSequence.Sequence[begin - 1]); // Not L10N
+                return (begin == 0 ? '-' : _fastaSequence.Sequence[begin - 1]);
             }
         }
 
@@ -110,7 +109,7 @@ namespace pwiz.Skyline.Model
                 if (!End.HasValue)
                     return 'X';
                 int end = End.Value;
-                return (end == _fastaSequence.Sequence.Length ? '-' : _fastaSequence.Sequence[end]); // Not L10N
+                return (end == _fastaSequence.Sequence.Length ? '-' : _fastaSequence.Sequence[end]);
             }
         }
 
@@ -420,7 +419,7 @@ namespace pwiz.Skyline.Model
             }
             else
             {
-                string format = "{0}.{1}.{2} [{3}, {4}]"; // Not L10N
+                string format = @"{0}.{1}.{2} [{3}, {4}]";
                 if (MissedCleavages > 0)
                     format = TextUtil.SpaceSeparate(format, Resources.Peptide_ToString__missed__5__);
                 return string.Format(format, PrevAA, Target, NextAA, Begin.Value, End.Value - 1, MissedCleavages);
@@ -703,6 +702,7 @@ namespace pwiz.Skyline.Model
     /// </summary>
     public class Target : IComparable<Target>, IEquatable<Target>, IAuditLogObject
     {
+        public static readonly Target EMPTY = new Target(string.Empty);
         public Target(string sequence)
         {
             Sequence = sequence;
@@ -714,7 +714,7 @@ namespace pwiz.Skyline.Model
 
         public Target(SmallMoleculeLibraryAttributes molecule) 
         {
-            Molecule = new CustomMolecule(molecule);
+            Molecule = CustomMolecule.FromSmallMoleculeLibraryAttributes(molecule);
         }
 
         public string Sequence { get; private set; }
@@ -815,12 +815,12 @@ namespace pwiz.Skyline.Model
 
         public static Target FromSerializableString(string val)
         {
-            if (!val.StartsWith("#")) // Not L10N
+            if (!val.StartsWith(@"#"))
                 return new Target(val);
             return new Target(CustomMolecule.FromSerializableString(val));
         }
 
-        public string AuditLogText { get { return Sequence; } }
+        public string AuditLogText { get { return ToSerializableString(); } }
         public bool IsName { get { return true; } }
     }
 }

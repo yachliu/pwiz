@@ -13,15 +13,73 @@ namespace pwiz.Skyline.FileUI.PeptideSearch
 {
     public partial class TransitionSettingsControl : UserControl
     {
-        public TransitionSettingsControl(SkylineWindow skylineWindow)
+        private readonly IModifyDocumentContainer _documentContainer;
+
+        public TransitionSettingsControl(IModifyDocumentContainer documentContainer)
         {
-            SkylineWindow = skylineWindow;
+            _documentContainer = documentContainer;
             InitializeComponent();
-            SetFields(SkylineWindow.DocumentUI.Settings.TransitionSettings);
+            SetFields(_documentContainer.Document.Settings.TransitionSettings);
             PeptideIonTypes = PeptideIonTypes.Union(new[] { IonType.precursor, IonType.y }).ToArray(); // Add p, y if not already set
+            InitialPeptideIonTypes = PeptideIonTypes.ToArray();
         }
 
-        private SkylineWindow SkylineWindow { get; set; }
+        public TransitionFilterAndLibrariesSettings FilterAndLibrariesSettings
+        {
+            get { return new TransitionFilterAndLibrariesSettings(this); }
+        }
+
+        public class TransitionFilterAndLibrariesSettings
+        {
+            private static string FixWhitespace(string adducts)
+            {
+                return string.Join(@", ", adducts.Split(',').Select(s => s.Trim()));
+            }
+
+            public TransitionFilterAndLibrariesSettings(TransitionSettingsControl control)
+                : this(FixWhitespace(control.txtPeptidePrecursorCharges.Text),
+                    FixWhitespace(control.txtPrecursorIonCharges.Text), FixWhitespace(control.txtIonTypes.Text),
+                    control.ExclusionUseDIAWindow, control.IonMatchTolerance, control.MinIonCount, control.IonCount)
+            {
+            }
+
+            public TransitionFilterAndLibrariesSettings(string peptidePrecursorCharges, string peptideIonCharges,
+                string peptideIonTypes, bool exclusionUseDiaWindow, double ionMatchTolerance, int minIonCount,
+                int ionCount)
+            {
+                PeptidePrecursorCharges = peptidePrecursorCharges;
+                PeptideIonCharges = peptideIonCharges;
+                PeptideIonTypes = peptideIonTypes;
+                ExclusionUseDIAWindow = exclusionUseDiaWindow;
+                IonMatchTolerance = ionMatchTolerance;
+                MinIonCount = minIonCount;
+                IonCount = ionCount;
+            }
+
+            public static TransitionFilterAndLibrariesSettings GetDefault(TransitionSettings transitionSettings)
+            {
+                return new TransitionFilterAndLibrariesSettings(transitionSettings.Filter.PeptidePrecursorChargesString,
+                    transitionSettings.Filter.PeptideProductChargesString,
+                    transitionSettings.Filter.PeptideIonTypesString, transitionSettings.Filter.ExclusionUseDIAWindow,
+                    transitionSettings.Libraries.IonMatchTolerance, transitionSettings.Libraries.MinIonCount,
+                    transitionSettings.Libraries.IonCount);
+            }
+
+            [Track]
+            public string PeptidePrecursorCharges { get; private set; }
+            [Track]
+            public string PeptideIonCharges { get; private set; }
+            [Track]
+            public string PeptideIonTypes { get; private set; }
+            [Track]
+            public bool ExclusionUseDIAWindow { get; private set; }
+            [Track]
+            public double IonMatchTolerance { get; private set; }
+            [Track]
+            public int MinIonCount { get; private set; }
+            [Track]
+            public int IonCount { get; private set; }
+        }
 
         public void SetFields(TransitionSettings settings)
         {
@@ -36,12 +94,17 @@ namespace pwiz.Skyline.FileUI.PeptideSearch
 
         public Adduct[] PeptidePrecursorCharges
         {
-            set { txtPeptidePrecursorCharges.Text = value.ToString(", "); } // Not L10N
+            set { txtPeptidePrecursorCharges.Text = value.ToString(@", "); }
         }
 
         public Adduct[] PeptideIonCharges
         {
-            set { txtPrecursorIonCharges.Text = value.ToString(", "); } // Not L10N
+            set { txtPrecursorIonCharges.Text = value.ToString(@", "); }
+        }
+
+        public IonType[] InitialPeptideIonTypes // For recovering inital settings when user is messing with Full Scan MS1 settings
+        {
+            get;
         }
 
         public IonType[] PeptideIonTypes
@@ -56,9 +119,23 @@ namespace pwiz.Skyline.FileUI.PeptideSearch
             set { cbExclusionUseDIAWindow.Checked = value; }
         }
 
-        public double IonMatchTolerance { set { txtTolerance.Text = value.ToString(LocalizationHelper.CurrentCulture); } }
-        public int MinIonCount { set { txtMinIonCount.Text = value != 0 ? value.ToString(LocalizationHelper.CurrentCulture) : string.Empty; } }
-        public int IonCount { set { txtIonCount.Text = value.ToString(LocalizationHelper.CurrentCulture); } }
+        public double IonMatchTolerance
+        {
+            get { return double.Parse(txtTolerance.Text, LocalizationHelper.CurrentCulture); }
+            set { txtTolerance.Text = value.ToString(LocalizationHelper.CurrentCulture); }
+        }
+
+        public int MinIonCount
+        {
+            get { return txtMinIonCount.Text == string.Empty ? 0 : int.Parse(txtMinIonCount.Text, LocalizationHelper.CurrentCulture); }
+            set { txtMinIonCount.Text = value != 0 ? value.ToString(LocalizationHelper.CurrentCulture) : string.Empty; }
+        }
+
+        public int IonCount
+        {
+            get { return int.Parse(txtIonCount.Text, LocalizationHelper.CurrentCulture); }
+            set { txtIonCount.Text = value.ToString(LocalizationHelper.CurrentCulture); }
+        }
 
         public void Initialize(ImportPeptideSearchDlg.Workflow workflow)
         {
@@ -71,7 +148,7 @@ namespace pwiz.Skyline.FileUI.PeptideSearch
             // If these are just the document defaults, use something more appropriate for DIA
             else
             {
-                var settingsCurrent = SkylineWindow.DocumentUI.Settings.TransitionSettings;
+                var settingsCurrent = _documentContainer.Document.Settings.TransitionSettings;
                 var settings = settingsCurrent;
                 var defSettings = SrmSettingsList.GetDefault().TransitionSettings;
                 if (Equals(settings.Filter, defSettings.Filter))
@@ -98,31 +175,30 @@ namespace pwiz.Skyline.FileUI.PeptideSearch
             val = proteomic ?
                 ArrayUtil.Parse(control.Text, Adduct.FromStringAssumeProtonated, TextUtil.SEPARATOR_CSV, new Adduct[0]) : // Treat "1" as protonated, proteomic [M+H]
                 ArrayUtil.Parse(control.Text, Adduct.FromStringAssumeChargeOnly, TextUtil.SEPARATOR_CSV, new Adduct[0]);  // Treat "1" as [M+]
-            if (val.Length > 0 && !val.Contains(i => minCharge > Math.Abs(i.AdductCharge) || Math.Abs(i.AdductCharge) > maxCharge))
+            if (val.Length > 0 && val.All(adduct=>TransitionFilter.IsChargeInRange(adduct, minCharge, maxCharge, proteomic)))
             {
                 return true;
             }
-            helper.ShowTextBoxError(control, Resources.MessageBoxHelper_ValidateAdductListTextBox__0__must_contain_a_comma_separated_list_of_adducts_or_integers_describing_charge_states_with_absolute_values_from__1__to__2__,
-                null, minCharge, maxCharge);
+
+            string message;
+            if (proteomic)
+            {
+                message = Resources.TransitionSettingsControl_ValidateAdductListTextBox__0__must_contain_a_comma_separated_list_of_integers_describing_charge_states_between__1__and__2__;
+            }
+            else
+            {
+                message = Resources
+                    .MessageBoxHelper_ValidateAdductListTextBox__0__must_contain_a_comma_separated_list_of_adducts_or_integers_describing_charge_states_with_absolute_values_from__1__to__2__;
+            }
+            helper.ShowTextBoxError(control, message, null, minCharge, maxCharge);
             val = new Adduct[0];
             return false;
-        }
-        public static bool ValidateAdductListTextBox(MessageBoxHelper helper, TabControl tabControl, int tabIndex,
-            TextBox control, bool proteomic, int min, int max, out Adduct[] val)
-        {
-            bool valid = ValidateAdductListTextBox(helper, control, proteomic, min, max, out val);
-            if (!valid && tabControl.SelectedIndex != tabIndex)
-            {
-                tabControl.SelectedIndex = tabIndex;
-                control.Focus();
-            }
-            return valid;
         }
 
         public TransitionSettings GetTransitionSettings(Form parent)
         {
             var helper = new MessageBoxHelper(parent);
-            TransitionSettings settings = SkylineWindow.DocumentUI.Settings.TransitionSettings;
+            TransitionSettings settings = _documentContainer.Document.Settings.TransitionSettings;
 
             // Validate and store filter settings
             Adduct[] peptidePrecursorCharges;

@@ -109,27 +109,14 @@ namespace seems
 
             DialogResult = DialogResult.Cancel;
 
-            string[] sourceTypes = new string[]
-            {
-                "Any spectra format",
-				"mzML",
-				//"mzData",
-				"mzXML",
-                "mz5",
-				"Thermo RAW",
-                "Waters RAW",
-				"ABSciex WIFF",
-				//"Bruker/Agilent YEP",
-                //"Bruker BAF",
-                //"Bruker FID",
-                "Bruker Analysis",
-                "Agilent MassHunter",
-				"Mascot Generic",
-                "Bruker Data Exchange",
-				//"Sequest DTA"
-            };
+            var sourceTypes = new List<string>();
+            foreach (var typeExtsPair in ReaderList.FullReaderList.getFileExtensionsByType())
+                if (typeExtsPair.Value.Count > 0) // e.g. exclude UNIFI
+                    sourceTypes.Add(typeExtsPair.Key);
+            sourceTypes.Sort();
+            sourceTypes.Insert(0, "Any spectra format");
 
-            sourceTypeComboBox.Items.AddRange( sourceTypes );
+            sourceTypeComboBox.Items.AddRange( sourceTypes.ToArray() );
             sourceTypeComboBox.SelectedIndex = 0;
 
             ImageList smallImageList = new ImageList();
@@ -842,28 +829,31 @@ namespace seems
                 if( !String.IsNullOrEmpty( sourceType ) &&
                     sourceType != "File Folder" )
                 {
-                    using (MSDataFile msData = new MSDataFile( sourcePath ))
-                    using (ChromatogramList cl = msData.run.chromatogramList)
+                    using (MSData msd = new MSData())
                     {
-                        if( cl != null && !cl.empty() && cl.find( "TIC" ) != cl.size() )
+                        ReaderList.FullReaderList.read(sourcePath, msd, 0, SpectrumSource.GetReaderConfig());
+                        using (ChromatogramList cl = msd.run.chromatogramList)
                         {
-                            ticGraphControl.Visible = true;
-                            pwiz.CLI.msdata.Chromatogram tic = cl.chromatogram( cl.find( "TIC" ), true );
-                            Map<double, double> sortedFullPointList = new Map<double, double>();
-                            IList<double> timeList = tic.binaryDataArrays[0].data;
-                            IList<double> intensityList = tic.binaryDataArrays[1].data;
-                            int arrayLength = timeList.Count;
-                            for( int i = 0; i < arrayLength; ++i )
-                                sortedFullPointList[timeList[i]] = intensityList[i];
-                            ZedGraph.PointPairList points = new ZedGraph.PointPairList(
-                                new List<double>( sortedFullPointList.Keys ).ToArray(),
-                                new List<double>( sortedFullPointList.Values ).ToArray() );
-                            ZedGraph.LineItem item = ticGraphControl.GraphPane.AddCurve( "TIC", points, Color.Black, ZedGraph.SymbolType.None );
-                            item.Line.IsAntiAlias = true;
-                            ticGraphControl.AxisChange();
-                            ticGraphControl.Refresh();
-                        } else
-                            ticGraphControl.Visible = false;
+                            if( cl != null && !cl.empty() && cl.find( "TIC" ) != cl.size() )
+                            {
+                                ticGraphControl.Visible = true;
+                                pwiz.CLI.msdata.Chromatogram tic = cl.chromatogram( cl.find( "TIC" ), true );
+                                Map<double, double> sortedFullPointList = new Map<double, double>();
+                                IList<double> timeList = tic.binaryDataArrays[0].data;
+                                IList<double> intensityList = tic.binaryDataArrays[1].data;
+                                int arrayLength = timeList.Count;
+                                for( int i = 0; i < arrayLength; ++i )
+                                    sortedFullPointList[timeList[i]] = intensityList[i];
+                                ZedGraph.PointPairList points = new ZedGraph.PointPairList(
+                                    new List<double>( sortedFullPointList.Keys ).ToArray(),
+                                    new List<double>( sortedFullPointList.Values ).ToArray() );
+                                ZedGraph.LineItem item = ticGraphControl.GraphPane.AddCurve( "TIC", points, Color.Black, ZedGraph.SymbolType.None );
+                                item.Line.IsAntiAlias = true;
+                                ticGraphControl.AxisChange();
+                                ticGraphControl.Refresh();
+                            } else
+                                ticGraphControl.Visible = false;
+                        }
                     }
                 } else
                     ticGraphControl.Visible = false;

@@ -24,7 +24,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using NHibernate.Util;
 using pwiz.Common.DataBinding;
 using pwiz.Skyline.Alerts;
 using pwiz.Skyline.Controls;
@@ -191,7 +190,7 @@ namespace pwiz.Skyline.EditUI
             }
             else
             {
-                throw new InvalidDataException("Unrecognized y axis scaling option");  // Not L10N
+                throw new InvalidDataException(@"Unrecognized y axis scaling option");
             }
         }
 
@@ -470,7 +469,7 @@ namespace pwiz.Skyline.EditUI
                 {
                     comboBox.Items.Add(comparer);
                 }
-                comboBox.SelectedIndex = comboBox.Items.Any() ? 0 : -1;
+                comboBox.SelectedIndex = comboBox.Items.OfType<object>().Any() ? 0 : -1;
             }
         }
 
@@ -690,9 +689,9 @@ namespace pwiz.Skyline.EditUI
             {
                 double y = closestPointToCutoff.Y;
                 string labelText = closestPointToCutoff.Tag == null
-                    ? string.Format("{0:F04}", y) // Not L10N
-                    : string.Format("{0:0.##} (q: {1:F04})", y, closestPointToCutoff.Tag); // Not L10N
-                TextObj text = new TextObj(labelText, cutoff, y) // Not L10N
+                    ? string.Format(@"{0:F04}", y)
+                    : string.Format(@"{0:0.##} (q: {1:F04})", y, closestPointToCutoff.Tag);
+                TextObj text = new TextObj(labelText, cutoff, y)
                 {
                     FontSpec = {FontColor = Color.Black, StringAlignment = StringAlignment.Center, Size = 11.0F}
                 };
@@ -842,7 +841,7 @@ namespace pwiz.Skyline.EditUI
                         return;
                     }
                 }
-                throw new InvalidDataException("Invalid Y-axis selection");    // Not L10N
+                throw new InvalidDataException(@"Invalid Y-axis selection");
             }
         }
 
@@ -939,6 +938,11 @@ namespace pwiz.Skyline.EditUI
         public IEnumerable<ComparePeakBoundaries> GetDefaults(int revisionIndex)
         {
             return new List<ComparePeakBoundaries>();
+        }
+
+        public string GetDisplayName(ComparePeakBoundaries item)
+        {
+            return item.GetKey();
         }
 
         public int RevisionIndexCurrent {get { return 1; } }

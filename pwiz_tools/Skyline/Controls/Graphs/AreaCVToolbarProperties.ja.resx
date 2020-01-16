@@ -201,8 +201,7 @@
     <value>4</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>
-CVカットオフ(&amp;C):</value>
+    <value>CVカットオフ(&amp;C)：</value>
   </data>
   <data name="&gt;&gt;label2.Name" xml:space="preserve">
     <value>label2</value>
@@ -256,7 +255,7 @@ CVカットオフ(&amp;C):</value>
     <value>0</value>
   </data>
   <data name="checkShowCvCutoff.Text" xml:space="preserve">
-    <value>CV のカットオフを表示します(&amp;S)。</value>
+    <value>CV のカットオフを表示(&amp;S)</value>
   </data>
   <data name="&gt;&gt;checkShowCvCutoff.Name" xml:space="preserve">
     <value>checkShowCvCutoff</value>
@@ -401,7 +400,7 @@ CVカットオフ(&amp;C):</value>
     <value>12</value>
   </data>
   <data name="labelMaxFrequency.Text" xml:space="preserve">
-    <value>最大周波数(&amp;F):</value>
+    <value>最大周波数(&amp;F)：</value>
   </data>
   <data name="&gt;&gt;labelMaxFrequency.Name" xml:space="preserve">
     <value>labelMaxFrequency</value>

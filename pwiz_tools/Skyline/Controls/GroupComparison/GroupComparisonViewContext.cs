@@ -91,7 +91,7 @@ namespace pwiz.Skyline.Controls.GroupComparison
                 showLabelType = false;
                 showMsLevel = false;
             }
-            // ReSharper disable NonLocalizedString
+            // ReSharper disable LocalizableElement
             var columns = new List<PropertyPath>
             {
                 PropertyPath.Root.Property("Protein")
@@ -110,7 +110,7 @@ namespace pwiz.Skyline.Controls.GroupComparison
             }
             columns.Add(PropertyPath.Root.Property("FoldChangeResult"));
             columns.Add(PropertyPath.Root.Property("FoldChangeResult").Property("AdjustedPValue"));
-            // ReSharper restore NonLocalizedString
+            // ReSharper restore LocalizableElement
 
             var viewSpec = new ViewSpec()
                 .SetName(DefaultViewName)
@@ -128,7 +128,7 @@ namespace pwiz.Skyline.Controls.GroupComparison
                 return rows;
             }
             var rowSet = new HashSet<TRow>();
-            var selectedRows = dataGridView.SelectedRows.Cast<DataGridViewRow>()
+            var selectedRows = dataGridView.SelectedCells.Cast<DataGridViewCell>().Select(cell => dataGridView.Rows[cell.RowIndex]).Distinct()
                 .Select(row => (RowItem) bindingSource[row.Index]).ToArray();
             if (!selectedRows.Any())
             {

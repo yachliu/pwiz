@@ -90,20 +90,38 @@ void testWrap()
 
 void testWrapScanTimeRange()
 {
-    MSData msd;
-    examples::initializeTiny(msd);
+    {
+        MSData msd;
+        examples::initializeTiny(msd);
 
-    SpectrumListPtr& sl = msd.run.spectrumListPtr;
-    unit_assert(sl.get());
-    unit_assert(sl->size() > 2);
+        SpectrumListPtr& sl = msd.run.spectrumListPtr;
+        unit_assert(sl.get());
+        unit_assert(sl->size() > 2);
 
-    double timeHighInSeconds = 5.9 * 60; // between first and second scan
-    ostringstream oss;
-    oss << "scanTime [0," << timeHighInSeconds << "]";
-    SpectrumListFactory::wrap(msd, oss.str());
-    unit_assert(sl->size() == 2);
-    unit_assert(sl->spectrumIdentity(0).id == "scan=19");
-    unit_assert(sl->spectrumIdentity(1).id == "sample=1 period=1 cycle=23 experiment=1"); // not in scan time order (42 seconds)
+        double timeHighInSeconds = 5.9 * 60; // between first and second scan
+        ostringstream oss;
+        oss << "scanTime [0," << timeHighInSeconds << "]";
+        SpectrumListFactory::wrap(msd, oss.str());
+        unit_assert(sl->size() == 1);
+        unit_assert(sl->spectrumIdentity(0).id == "scan=19");
+    }
+
+    {
+        MSData msd;
+        examples::initializeTiny(msd);
+
+        SpectrumListPtr& sl = msd.run.spectrumListPtr;
+        unit_assert(sl.get());
+        unit_assert(sl->size() > 2);
+
+        double timeHighInSeconds = 5.9 * 60; // between first and second scan
+        ostringstream oss;
+        oss << "scanTime [0," << timeHighInSeconds << "] false";
+        SpectrumListFactory::wrap(msd, oss.str());
+        unit_assert(sl->size() == 2);
+        unit_assert(sl->spectrumIdentity(0).id == "scan=19");
+        unit_assert(sl->spectrumIdentity(1).id == "sample=1 period=1 cycle=23 experiment=1"); // not in scan time order (42 seconds)
+    }
 }
 
 
@@ -660,6 +678,24 @@ void testWrapMZPresent()
 }
 
 
+void testWrapETDFilter()
+{
+    MSData msd;
+    examples::initializeTiny(msd);
+    auto originalSL = msd.run.spectrumListPtr;
+
+    // test that filter parser works
+    {
+        SpectrumListFactory::wrap(msd, "ETDFilter");
+        SpectrumListFactory::wrap(msd, "ETDFilter true");
+        SpectrumListFactory::wrap(msd, "ETDFilter true true");
+        SpectrumListFactory::wrap(msd, "ETDFilter true true false");
+        SpectrumListFactory::wrap(msd, "ETDFilter true true false false");
+        SpectrumListFactory::wrap(msd, "ETDFilter true true false false 50.0 PPM");
+    }
+}
+
+
 void test()
 {
     testUsage(); 
@@ -678,6 +714,7 @@ void test()
     testWrapThermoScanFilter();
     testWrapPrecursorMzSet();
     testWrapMZPresent();
+    testWrapETDFilter();
 }
 
 

@@ -34,14 +34,16 @@ struct SpecData{
     double retentionTime; // in minutes
     double startTime;
     double endTime;
+    double totalIonCurrent;
     double mz;
+    int charge;
     int numPeaks;
     double* mzs;
     float* intensities;
     float* productIonMobilities; // In Waters machines, product ions have kinetic energy added after the drift tube and thus slightly faster time than the precursor from there to the detector.
     
     SpecData():
-        id(0), ionMobility(0), ionMobilityType(IONMOBILITY_NONE), ccs(0), retentionTime(0), startTime(0), endTime(0), mz(0), numPeaks(-1){
+        id(0), ionMobility(0), ionMobilityType(IONMOBILITY_NONE), ccs(0), retentionTime(0), startTime(0), endTime(0), mz(0), charge(0), numPeaks(-1){
         mzs = NULL;
         intensities = NULL;
         productIonMobilities = NULL;
@@ -62,6 +64,7 @@ struct SpecData{
         startTime = rhs.startTime;
         endTime = rhs.endTime;
         mz = rhs.mz;
+        charge = rhs.charge;
         numPeaks = rhs.numPeaks;
 
         // clear any existing peaks

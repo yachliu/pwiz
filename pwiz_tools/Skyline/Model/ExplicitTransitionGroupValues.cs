@@ -17,12 +17,12 @@
  * limitations under the License.
  */
 
+using pwiz.Common.Chemistry;
 using pwiz.Common.SystemUtil;
-using pwiz.ProteowizardWrapper;
 
 namespace pwiz.Skyline.Model
 {
-    public class ExplicitTransitionGroupValues : Immutable
+    public class ExplicitTransitionGroupValues : Immutable, IAuditLogComparable
     {
         /// <summary>
         /// Helper class of attributes we normally calculate or get from a library, but which may
@@ -31,62 +31,46 @@ namespace pwiz.Skyline.Model
 
         public static readonly ExplicitTransitionGroupValues EMPTY = new ExplicitTransitionGroupValues(null);
 
-        public ExplicitTransitionGroupValues(double? explicitCollisionEnergy,
-            double? explicitIonMobility,
-            double? explicitIonMobilityHighEnergyOffset,
-            MsDataFileImpl.eIonMobilityUnits explicitIonMobilityUnits,
-            double? explicitCollisionalCrossSectionSqA,
-            double? explicitSLens,
-            double? explicitConeVoltage,
-            double? explicitDeclusteringPotential,
-            double? explicitCompensationVoltage)
+        public static ExplicitTransitionGroupValues Create(double? explicitIonMobility,
+            eIonMobilityUnits explicitIonMobilityUnits,
+            double? explicitCollisionalCrossSectionSqA)
         {
-            CollisionEnergy = explicitCollisionEnergy;
+            if (explicitIonMobility.HasValue || explicitCollisionalCrossSectionSqA.HasValue)
+            {
+                return new ExplicitTransitionGroupValues(explicitIonMobility, explicitIonMobilityUnits,
+                    explicitCollisionalCrossSectionSqA);
+            }
+
+            return EMPTY;
+        }
+
+        private ExplicitTransitionGroupValues(double? explicitIonMobility,
+            eIonMobilityUnits explicitIonMobilityUnits,
+            double? explicitCollisionalCrossSectionSqA) 
+        {
             IonMobility = explicitIonMobility;
-            IonMobilityHighEnergyOffset = explicitIonMobilityHighEnergyOffset;
             IonMobilityUnits = explicitIonMobilityUnits;
             CollisionalCrossSectionSqA = explicitCollisionalCrossSectionSqA;
-            SLens = explicitSLens;
-            ConeVoltage = explicitConeVoltage;
-            DeclusteringPotential = explicitDeclusteringPotential;
-            CompensationVoltage = explicitCompensationVoltage;
         }
 
         public ExplicitTransitionGroupValues(ExplicitTransitionGroupValues other)
             : this(
-                (other == null) ? null : other.CollisionEnergy,
                 (other == null) ? null : other.IonMobility,
-                (other == null) ? null : other.IonMobility,
-                (other == null) ? MsDataFileImpl.eIonMobilityUnits.none : other.IonMobilityUnits,
-                (other == null) ? null : other.CollisionalCrossSectionSqA,
-                (other == null) ? null : other.SLens,
-                (other == null) ? null : other.ConeVoltage,
-                (other == null) ? null : other.DeclusteringPotential,
-                (other == null) ? null : other.CompensationVoltage)
+                (other == null) ? eIonMobilityUnits.none : other.IonMobilityUnits,
+                (other == null) ? null : other.CollisionalCrossSectionSqA)
         {
         }
 
-        public double? CollisionEnergy { get; private set; } // For import formats with explicit values for CE
-        public double? IonMobility { get; private set; } // For import formats with explicit values for DT
-        public double? IonMobilityHighEnergyOffset { get; private set; } // For import formats with explicit values for DT
-        public MsDataFileImpl.eIonMobilityUnits IonMobilityUnits { get; private set; } // For import formats with explicit values for DT
+        [Track]
         public double? CollisionalCrossSectionSqA { get; private set; } // For import formats with explicit values for CCS
-        public double? SLens { get; private set; } // For Thermo
-        public double? ConeVoltage { get; private set; } // For Waters
-        public double? DeclusteringPotential { get; private set; } // For import formats with explicit values for DP
-        public double? CompensationVoltage { get; private set; } // For import formats with explicit values for CV
+        [Track]
+        public double? IonMobility { get; private set; } // For import formats with explicit values for DT
+        [Track]
+        public eIonMobilityUnits IonMobilityUnits { get; private set; } // For import formats with explicit values for DT
 
-        public ExplicitTransitionGroupValues ChangeCollisionEnergy(double? ce)
-        {
-            return ChangeProp(ImClone(this), (im, v) => im.CollisionEnergy = v, ce);
-        }
+        public double? CompensationVoltage { get { return Equals(IonMobilityUnits, eIonMobilityUnits.compensation_V) ? IonMobility : null; } } // For backward compatibility, back when we didn't have general ion mobility
 
-        public ExplicitTransitionGroupValues ChangeIonMobilityHighEnergyOffset(double? dtOffset)
-        {
-            return ChangeProp(ImClone(this), (im, v) => im.IonMobilityHighEnergyOffset = v, dtOffset);
-        }
-
-        public ExplicitTransitionGroupValues ChangeIonMobility(double? imNew, MsDataFileImpl.eIonMobilityUnits unitsNew)
+        public ExplicitTransitionGroupValues ChangeIonMobility(double? imNew, eIonMobilityUnits unitsNew)
         {
             var explicitTransitionGroupValues = ChangeProp(ImClone(this), (im, v) => im.IonMobility = v, imNew);
             return ChangeProp(ImClone(explicitTransitionGroupValues), (im, v) => im.IonMobilityUnits = v, unitsNew);
@@ -97,37 +81,11 @@ namespace pwiz.Skyline.Model
             return ChangeProp(ImClone(this), (im, v) => im.CollisionalCrossSectionSqA = v, ccs);
         }
 
-        public ExplicitTransitionGroupValues ChangeSLens(double? slens)
-        {
-            return ChangeProp(ImClone(this), (im, v) => im.SLens = v, slens);
-        }
-
-        public ExplicitTransitionGroupValues ChangeConeVoltage(double? coneVoltage)
-        {
-            return ChangeProp(ImClone(this), (im, v) => im.ConeVoltage = v, coneVoltage);
-        }
-
-        public ExplicitTransitionGroupValues ChangeDeclusteringPotential(double? dp)
-        {
-            return ChangeProp(ImClone(this), (im, v) => im.DeclusteringPotential = v, dp);
-        }
-
-        public ExplicitTransitionGroupValues ChangeCompensationVoltage(double? cv)
-        {
-            return ChangeProp(ImClone(this), (im, v) => im.CompensationVoltage = v, cv);
-        }
-
         protected bool Equals(ExplicitTransitionGroupValues other)
         {
-            return Equals(CollisionEnergy, other.CollisionEnergy) &&
-                   Equals(IonMobility, other.IonMobility) &&
-                   Equals(IonMobilityHighEnergyOffset, other.IonMobilityHighEnergyOffset) &&
+            return Equals(IonMobility, other.IonMobility) &&
                    Equals(IonMobilityUnits, other.IonMobilityUnits) &&
-                   Equals(CollisionalCrossSectionSqA, other.CollisionalCrossSectionSqA) &&
-                   Equals(SLens, other.SLens) &&
-                   Equals(ConeVoltage, other.ConeVoltage) &&
-                   CompensationVoltage.Equals(other.CompensationVoltage) &&
-                   DeclusteringPotential.Equals(other.DeclusteringPotential);
+                   Equals(CollisionalCrossSectionSqA, other.CollisionalCrossSectionSqA);
         }
 
         public override bool Equals(object obj)
@@ -142,17 +100,16 @@ namespace pwiz.Skyline.Model
         {
             unchecked
             {
-                int hashCode = CollisionEnergy.GetHashCode();
-                hashCode = (hashCode * 397) ^ IonMobility.GetHashCode();
-                hashCode = (hashCode * 397) ^ IonMobilityHighEnergyOffset.GetHashCode();
+                int hashCode = IonMobility.GetHashCode();
                 hashCode = (hashCode * 397) ^ IonMobilityUnits.GetHashCode();
                 hashCode = (hashCode * 397) ^ CollisionalCrossSectionSqA.GetHashCode();
-                hashCode = (hashCode * 397) ^ SLens.GetHashCode();
-                hashCode = (hashCode * 397) ^ ConeVoltage.GetHashCode();
-                hashCode = (hashCode * 397) ^ DeclusteringPotential.GetHashCode();
-                hashCode = (hashCode * 397) ^ CompensationVoltage.GetHashCode();
                 return hashCode;
             }
+        }
+
+        public object GetDefaultObject(ObjectInfo<object> info)
+        {
+            return EMPTY;
         }
     }
 }

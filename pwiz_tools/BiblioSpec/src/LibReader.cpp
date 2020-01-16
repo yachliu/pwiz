@@ -24,7 +24,6 @@
 #include "LibReader.h"
 #include <map>
 
-using namespace std;
 
 namespace BiblioSpec {
 
@@ -342,7 +341,7 @@ RefSpectrum LibReader::getRefSpec(int libID)
 {
     char szSqlStmt[8192];
     sprintf(szSqlStmt, "select id, peptideSeq,precursorMZ, precursorCharge,"
-            "peptideModSeq,prevAA, nextAA, copies, numPeaks, peakMZ, peakIntensity "
+            "peptideModSeq,prevAA, nextAA, copies, numPeaks, peakMZ, peakIntensity, retentionTime "
             "from RefSpectra, RefSpectraPeaks where id=%d AND id=RefSpectraID", libID);
 
     RefSpectrum tmpRef;
@@ -375,6 +374,7 @@ RefSpectrum LibReader::getRefSpec(int libID)
         int numBytes2=sqlite3_column_bytes(pStmt,10);
         Byte* comprI = (Byte*)sqlite3_column_blob(pStmt,10);
 
+        tmpRef.setRetentionTime(sqlite3_column_double(pStmt, 11));
 
         tmpRef.setRawPeaks(getUncompressedPeaks(numPeaks, numBytes1,comprM, numBytes2,comprI));
 
@@ -394,7 +394,7 @@ bool LibReader::getRefSpec(int libID, RefSpectrum& spec)
     char szSqlStmt[8192];
     sprintf(szSqlStmt, "SELECT id, peptideSeq,precursorMZ, precursorCharge,"
             "peptideModSeq,prevAA, nextAA, copies, numPeaks, peakMZ, "
-            "peakIntensity "
+            "peakIntensity, retentionTime "
             "FROM RefSpectra, RefSpectraPeaks where id=%d "
             "AND id=RefSpectraID", libID);
 
@@ -425,6 +425,8 @@ bool LibReader::getRefSpec(int libID, RefSpectrum& spec)
         Byte* comprM = (Byte*)sqlite3_column_blob(pStmt,9);
         int numBytes2=sqlite3_column_bytes(pStmt,10);
         Byte* comprI = (Byte*)sqlite3_column_blob(pStmt,10);
+
+        spec.setRetentionTime(sqlite3_column_double(pStmt, 11));
 
         spec.setRawPeaks(getUncompressedPeaks(numPeaks, numBytes1, comprM, numBytes2, comprI));
 
@@ -526,7 +528,7 @@ vector<RefSpectrum> LibReader::getRefSpecsInRange(int lowLibID, int highLibID)
 
     char szSqlStmt[8192];
     sprintf(szSqlStmt, "select id, peptideSeq, precursorMZ,precursorCharge, "
-            "peptideModSeq, prevAA, nextAA, copies, numPeaks, peakMZ, peakIntensity "
+            "peptideModSeq, prevAA, nextAA, copies, numPeaks, peakMZ, peakIntensity, retentionTime "
             "from RefSpectra,RefSpectraPeaks where "
             "id >= %d and id <=%d AND id=RefSpectraID",
             lowLibID,
@@ -564,6 +566,8 @@ vector<RefSpectrum> LibReader::getRefSpecsInRange(int lowLibID, int highLibID)
         int numBytes2=sqlite3_column_bytes(pStmt,10);
         Byte* comprI = (Byte*)sqlite3_column_blob(pStmt,10);
 
+        tmpRef.setRetentionTime(sqlite3_column_double(pStmt, 11));
+
         tmpRef.setRawPeaks(getUncompressedPeaks(numPeaks, numBytes1,comprM, numBytes2,comprI));
         specs.push_back(tmpRef);
 
@@ -594,7 +598,7 @@ int LibReader::getAllRefSpec(vector<RefSpectrum*>& specs)
     sprintf(szSqlStmt, 
             "select id, peptideSeq, precursorMZ, precursorCharge, "
             "peptideModSeq, prevAA, nextAA, copies, numPeaks, peakMZ, "
-            "peakIntensity "
+            "peakIntensity, retentionTime "
             "from RefSpectra, RefSpectraPeaks "
             "where precursorMZ >= %f and precursorMZ <= %f",
             expLowMZ_,
@@ -642,6 +646,8 @@ int LibReader::getAllRefSpec(vector<RefSpectrum*>& specs)
         Byte* comprM = (Byte*)sqlite3_column_blob(pStmt,9);
         int numBytes2 = sqlite3_column_bytes(pStmt,10);
         Byte* comprI = (Byte*)sqlite3_column_blob(pStmt,10);
+
+        tmpRef->setRetentionTime(sqlite3_column_double(pStmt, 11));
 
         tmpRef->setRawPeaks(getUncompressedPeaks(numPeaks, numBytes1, comprM, 
                                               numBytes2, comprI));

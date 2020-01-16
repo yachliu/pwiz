@@ -392,8 +392,8 @@ BinaryDataArray::BinaryDataArray()
 DataProcessing^ BinaryDataArray::dataProcessing::get() {return NATIVE_SHARED_PTR_TO_CLI(b::DataProcessingPtr, DataProcessing, (*base_)->dataProcessingPtr);}
 void BinaryDataArray::dataProcessing::set(DataProcessing^ value) {(*base_)->dataProcessingPtr = CLI_TO_NATIVE_SHARED_PTR(b::DataProcessingPtr, value);}
 
-BinaryData^ BinaryDataArray::data::get() {return base_->get() ? gcnew BinaryData(&(*base_)->data, this) : nullptr;}
-void BinaryDataArray::data::set(BinaryData^ value) {(*base_)->data = *value->base_;}
+pwiz::CLI::util::BinaryData^ BinaryDataArray::data::get() {return gcnew pwiz::CLI::util::BinaryData(base_, this);}
+void BinaryDataArray::data::set(pwiz::CLI::util::BinaryData^ value) {(*base_)->data = (*value->base_)->data;}
 
 bool BinaryDataArray::empty()
 {
@@ -620,6 +620,26 @@ void Chromatogram::setTimeIntensityPairs(TimeIntensityPairList^ input, CVID time
     try {(*base_)->setTimeIntensityPairs(*input->base_, (pwiz::cv::CVID) timeUnits, (pwiz::cv::CVID) intensityUnits);} CATCH_AND_FORWARD
 }
 
+BinaryDataArray^ Chromatogram::getTimeArray()
+{
+    try
+    {
+        auto arrayPtr = (*base_)->getTimeArray();
+        return arrayPtr ? gcnew BinaryDataArray(new b::BinaryDataArrayPtr(arrayPtr)) : nullptr;
+    }
+    CATCH_AND_FORWARD
+}
+
+BinaryDataArray^ Chromatogram::getIntensityArray()
+{
+    try
+    {
+        auto arrayPtr = (*base_)->getIntensityArray();
+        return arrayPtr ? gcnew BinaryDataArray(new b::BinaryDataArrayPtr(arrayPtr)) : nullptr;
+    }
+    CATCH_AND_FORWARD
+}
+
 bool Chromatogram::empty()
 {
     return (*base_)->empty();
@@ -761,6 +781,11 @@ Chromatogram^ ChromatogramList::chromatogram(int index)
 Chromatogram^ ChromatogramList::chromatogram(int index, bool getBinaryData)
 {
     try {return gcnew Chromatogram(new b::ChromatogramPtr((*base_)->chromatogram((size_t) index, getBinaryData)));} CATCH_AND_FORWARD
+}
+
+Chromatogram^ ChromatogramList::chromatogram(int index, DetailLevel detailLevel)
+{
+    try { return gcnew Chromatogram(new b::ChromatogramPtr((*base_)->chromatogram((size_t)index, (b::DetailLevel) detailLevel))); } CATCH_AND_FORWARD
 }
 
 DataProcessing^ ChromatogramList::dataProcessing()

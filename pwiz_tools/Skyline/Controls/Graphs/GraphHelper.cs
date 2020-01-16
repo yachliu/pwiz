@@ -32,7 +32,8 @@ namespace pwiz.Skyline.Controls.Graphs
     {
         private DisplayState _displayState;
         private bool _zoomLocked;
-        public const string scientificNotationFormatString = "0.0#####e0"; // Not L10N
+
+        public const string SCIENTIFIC_NOTATION_FORMAT_STRING = "0.0#####e0";
 
         public GraphHelper(MSGraphControl msGraphControl)
         {
@@ -232,12 +233,12 @@ namespace pwiz.Skyline.Controls.Graphs
             {
                 if (chromDisplayState.MinIntensity == 0)
                 {
-                    graphPane.LockYAxisAtZero = true;
+                    graphPane.LockYAxisMinAtZero = true;
                     graphPane.YAxis.Scale.MinAuto = true;
                 }
                 else
                 {
-                    graphPane.LockYAxisAtZero = false;
+                    graphPane.LockYAxisMinAtZero = false;
                     graphPane.YAxis.Scale.MinAuto = false;
                     graphPane.YAxis.Scale.Min = chromDisplayState.MinIntensity;
                 }
@@ -312,14 +313,15 @@ namespace pwiz.Skyline.Controls.Graphs
             return _displayState.GetGraphPane(GraphControl, paneKey);
         }
 
-        public CurveItem AddSpectrum(AbstractSpectrumGraphItem item)
+        public CurveItem AddSpectrum(AbstractSpectrumGraphItem item, bool refresh=true)
         {
             var pane = _displayState.GetOrCreateGraphPane(GraphControl, PaneKey.DEFAULT);
             pane.Title.Text = item.Title;
             var curveItem = GraphControl.AddGraphItem(pane, item);
             curveItem.Label.IsVisible = false;
             pane.Legend.IsVisible = false;
-            GraphControl.Refresh();
+            if (refresh)
+                GraphControl.Refresh();
             return curveItem;
         }
 
@@ -512,13 +514,13 @@ namespace pwiz.Skyline.Controls.Graphs
             {
                 if (Settings.Default.UsePowerOfTen)
                 {
-                    zedGraphPane.YAxis.Scale.Format = scientificNotationFormatString;
+                    zedGraphPane.YAxis.Scale.Format = SCIENTIFIC_NOTATION_FORMAT_STRING;
                     zedGraphPane.YAxis.Scale.MagAuto = false;
                     zedGraphPane.YAxis.Scale.Mag = 0;
                 }
                 else
                 {
-                    zedGraphPane.YAxis.Scale.Format = "g"; // Not L10N
+                    zedGraphPane.YAxis.Scale.Format = @"g";
                     zedGraphPane.YAxis.Scale.MagAuto = true;
                 }
             }

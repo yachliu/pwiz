@@ -117,19 +117,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <metadata name="modeUIHandler.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="btnOk.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Bottom, Right</value>
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="btnOk.Location" type="System.Drawing.Point, System.Drawing">
-    <value>303, 623</value>
-  </data>
-  <data name="btnOk.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>227, 506</value>
   </data>
   <data name="btnOk.Size" type="System.Drawing.Size, System.Drawing">
-    <value>100, 28</value>
+    <value>75, 23</value>
   </data>
   <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="btnOk.TabIndex" type="System.Int32, mscorlib">
@@ -154,13 +154,10 @@
     <value>Bottom, Right</value>
   </data>
   <data name="btnCancel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>411, 623</value>
-  </data>
-  <data name="btnCancel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>308, 506</value>
   </data>
   <data name="btnCancel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>100, 28</value>
+    <value>75, 23</value>
   </data>
   <data name="btnCancel.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -181,16 +178,13 @@
     <value>2</value>
   </data>
   <metadata name="helpTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>284, 17</value>
+    <value>386, 17</value>
   </metadata>
   <data name="comboStandardType.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 486</value>
-  </data>
-  <data name="comboStandardType.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 395</value>
   </data>
   <data name="comboStandardType.Size" type="System.Drawing.Size, System.Drawing">
-    <value>235, 24</value>
+    <value>177, 21</value>
   </data>
   <data name="comboStandardType.TabIndex" type="System.Int32, mscorlib">
     <value>13</value>
@@ -212,13 +206,10 @@ in peak area ratios.</value>
     <value>4</value>
   </data>
   <data name="comboLabelType.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 274</value>
-  </data>
-  <data name="comboLabelType.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 223</value>
   </data>
   <data name="comboLabelType.Size" type="System.Drawing.Size, System.Drawing">
-    <value>235, 24</value>
+    <value>177, 21</value>
   </data>
   <data name="comboLabelType.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
@@ -240,13 +231,10 @@ modifications are being chosen.</value>
     <value>7</value>
   </data>
   <data name="listHeavyMods.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 331</value>
-  </data>
-  <data name="listHeavyMods.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 269</value>
   </data>
   <data name="listHeavyMods.Size" type="System.Drawing.Size, System.Drawing">
-    <value>235, 89</value>
+    <value>177, 94</value>
   </data>
   <data name="listHeavyMods.TabIndex" type="System.Int32, mscorlib">
     <value>10</value>
@@ -269,13 +257,10 @@ molecules, with no impact on structure.</value>
     <value>10</value>
   </data>
   <data name="listStaticMods.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 44</value>
-  </data>
-  <data name="listStaticMods.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 36</value>
   </data>
   <data name="listStaticMods.Size" type="System.Drawing.Size, System.Drawing">
-    <value>235, 89</value>
+    <value>177, 94</value>
   </data>
   <data name="listStaticMods.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -298,13 +283,10 @@ structure of the peptide.</value>
     <value>13</value>
   </data>
   <data name="listStandardTypes.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 486</value>
-  </data>
-  <data name="listStandardTypes.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 395</value>
   </data>
   <data name="listStandardTypes.Size" type="System.Drawing.Size, System.Drawing">
-    <value>235, 38</value>
+    <value>177, 49</value>
   </data>
   <data name="listStandardTypes.TabIndex" type="System.Int32, mscorlib">
     <value>14</value>
@@ -326,13 +308,10 @@ in peak area ratios calculated for other types.</value>
     <value>14</value>
   </data>
   <data name="textMaxVariableMods.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 201</value>
-  </data>
-  <data name="textMaxVariableMods.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 163</value>
   </data>
   <data name="textMaxVariableMods.Size" type="System.Drawing.Size, System.Drawing">
-    <value>119, 22</value>
+    <value>90, 20</value>
   </data>
   <data name="textMaxVariableMods.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -354,13 +333,10 @@ to occur in combination on any peptide instance.</value>
     <value>3</value>
   </data>
   <data name="textMaxNeutralLosses.Location" type="System.Drawing.Point, System.Drawing">
-    <value>207, 201</value>
-  </data>
-  <data name="textMaxNeutralLosses.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>155, 163</value>
   </data>
   <data name="textMaxNeutralLosses.Size" type="System.Drawing.Size, System.Drawing">
-    <value>119, 22</value>
+    <value>90, 20</value>
   </data>
   <data name="textMaxNeutralLosses.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -382,13 +358,10 @@ to occur in combination on any fragment instance.</value>
     <value>1</value>
   </data>
   <data name="comboMissedCleavages.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 107</value>
-  </data>
-  <data name="comboMissedCleavages.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 87</value>
   </data>
   <data name="comboMissedCleavages.Size" type="System.Drawing.Size, System.Drawing">
-    <value>57, 24</value>
+    <value>44, 21</value>
   </data>
   <data name="comboMissedCleavages.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -410,13 +383,10 @@ considering protein digestion.</value>
     <value>3</value>
   </data>
   <data name="comboEnzyme.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 44</value>
-  </data>
-  <data name="comboEnzyme.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 36</value>
   </data>
   <data name="comboEnzyme.Size" type="System.Drawing.Size, System.Drawing">
-    <value>224, 24</value>
+    <value>169, 21</value>
   </data>
   <data name="comboEnzyme.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -439,13 +409,10 @@ to injection into the mass spectrometer
     <value>5</value>
   </data>
   <data name="comboBackgroundProteome.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 231</value>
-  </data>
-  <data name="comboBackgroundProteome.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 188</value>
   </data>
   <data name="comboBackgroundProteome.Size" type="System.Drawing.Size, System.Drawing">
-    <value>224, 24</value>
+    <value>169, 21</value>
   </data>
   <data name="comboBackgroundProteome.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -468,13 +435,10 @@ injected into the mass spectrometer.</value>
     <value>7</value>
   </data>
   <data name="textMeasureRTWindow.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 164</value>
-  </data>
-  <data name="textMeasureRTWindow.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 133</value>
   </data>
   <data name="textMeasureRTWindow.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
+    <value>100, 20</value>
   </data>
   <data name="textMeasureRTWindow.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -499,13 +463,10 @@ used in scheduling future peptide measurements.</value>
     <value>True</value>
   </data>
   <data name="cbUseMeasuredRT.Location" type="System.Drawing.Point, System.Drawing">
-    <value>41, 106</value>
-  </data>
-  <data name="cbUseMeasuredRT.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>31, 86</value>
   </data>
   <data name="cbUseMeasuredRT.Size" type="System.Drawing.Size, System.Drawing">
-    <value>308, 21</value>
+    <value>232, 17</value>
   </data>
   <data name="cbUseMeasuredRT.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -530,13 +491,10 @@ to predict retention times for scheduling of future peptide measurements.</value
     <value>14</value>
   </data>
   <data name="comboRetentionTime.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 44</value>
-  </data>
-  <data name="comboRetentionTime.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 36</value>
   </data>
   <data name="comboRetentionTime.Size" type="System.Drawing.Size, System.Drawing">
-    <value>224, 24</value>
+    <value>169, 21</value>
   </data>
   <data name="comboRetentionTime.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -561,13 +519,10 @@ times from a peptide specific hydrophobicity score.</value>
     <value>True</value>
   </data>
   <data name="cbAutoSelect.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 366</value>
-  </data>
-  <data name="cbAutoSelect.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 323</value>
   </data>
   <data name="cbAutoSelect.Size" type="System.Drawing.Size, System.Drawing">
-    <value>238, 21</value>
+    <value>181, 17</value>
   </data>
   <data name="cbAutoSelect.TabIndex" type="System.Int32, mscorlib">
     <value>12</value>
@@ -593,13 +548,10 @@ selection must be done by manual document editing.</value>
     <value>0</value>
   </data>
   <data name="textExcludeAAs.Location" type="System.Drawing.Point, System.Drawing">
-    <value>39, 106</value>
-  </data>
-  <data name="textExcludeAAs.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>29, 86</value>
   </data>
   <data name="textExcludeAAs.Size" type="System.Drawing.Size, System.Drawing">
-    <value>57, 22</value>
+    <value>44, 20</value>
   </data>
   <data name="textExcludeAAs.TabIndex" type="System.Int32, mscorlib">
     <value>7</value>
@@ -624,13 +576,10 @@ in each protein</value>
     <value>True</value>
   </data>
   <data name="cbRaggedEnds.Location" type="System.Drawing.Point, System.Drawing">
-    <value>39, 151</value>
-  </data>
-  <data name="cbRaggedEnds.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>29, 123</value>
   </data>
   <data name="cbRaggedEnds.Size" type="System.Drawing.Size, System.Drawing">
-    <value>221, 21</value>
+    <value>169, 17</value>
   </data>
   <data name="cbRaggedEnds.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
@@ -655,13 +604,10 @@ preceding or following cleavage sites. e.g. RR, KK, RK, KR for trypsin</value>
     <value>3</value>
   </data>
   <data name="btnEditExlusions.Location" type="System.Drawing.Point, System.Drawing">
-    <value>281, 217</value>
-  </data>
-  <data name="btnEditExlusions.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>211, 176</value>
   </data>
   <data name="btnEditExlusions.Size" type="System.Drawing.Size, System.Drawing">
-    <value>100, 28</value>
+    <value>75, 23</value>
   </data>
   <data name="btnEditExlusions.TabIndex" type="System.Int32, mscorlib">
     <value>11</value>
@@ -685,13 +631,10 @@ preceding or following cleavage sites. e.g. RR, KK, RK, KR for trypsin</value>
     <value>4</value>
   </data>
   <data name="listboxExclusions.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 217</value>
-  </data>
-  <data name="listboxExclusions.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 176</value>
   </data>
   <data name="listboxExclusions.Size" type="System.Drawing.Size, System.Drawing">
-    <value>227, 89</value>
+    <value>171, 124</value>
   </data>
   <data name="listboxExclusions.TabIndex" type="System.Int32, mscorlib">
     <value>10</value>
@@ -712,13 +655,10 @@ preceding or following cleavage sites. e.g. RR, KK, RK, KR for trypsin</value>
     <value>5</value>
   </data>
   <data name="textMaxLength.Location" type="System.Drawing.Point, System.Drawing">
-    <value>153, 44</value>
-  </data>
-  <data name="textMaxLength.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>115, 36</value>
   </data>
   <data name="textMaxLength.Size" type="System.Drawing.Size, System.Drawing">
-    <value>59, 22</value>
+    <value>45, 20</value>
   </data>
   <data name="textMaxLength.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -740,13 +680,10 @@ this filter</value>
     <value>9</value>
   </data>
   <data name="textMinLength.Location" type="System.Drawing.Point, System.Drawing">
-    <value>39, 44</value>
-  </data>
-  <data name="textMinLength.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>29, 36</value>
   </data>
   <data name="textMinLength.Size" type="System.Drawing.Size, System.Drawing">
-    <value>59, 22</value>
+    <value>45, 20</value>
   </data>
   <data name="textMinLength.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -768,19 +705,16 @@ this filter</value>
     <value>10</value>
   </data>
   <data name="btnExplore.Location" type="System.Drawing.Point, System.Drawing">
-    <value>363, 155</value>
-  </data>
-  <data name="btnExplore.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>272, 126</value>
   </data>
   <data name="btnExplore.Size" type="System.Drawing.Size, System.Drawing">
-    <value>100, 28</value>
+    <value>75, 23</value>
   </data>
   <data name="btnExplore.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
   </data>
   <data name="btnExplore.Text" xml:space="preserve">
-    <value>&amp;Explore...</value>
+    <value>E&amp;xplore...</value>
   </data>
   <data name="btnExplore.ToolTip" xml:space="preserve">
     <value>Open the MS/MS spectral library explorer</value>
@@ -798,13 +732,10 @@ this filter</value>
     <value>1</value>
   </data>
   <data name="btnBuildLibrary.Location" type="System.Drawing.Point, System.Drawing">
-    <value>363, 81</value>
-  </data>
-  <data name="btnBuildLibrary.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>272, 66</value>
   </data>
   <data name="btnBuildLibrary.Size" type="System.Drawing.Size, System.Drawing">
-    <value>100, 28</value>
+    <value>75, 23</value>
   </data>
   <data name="btnBuildLibrary.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -829,13 +760,10 @@ from various peptide search engines.</value>
     <value>2</value>
   </data>
   <data name="comboRank.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 107</value>
-  </data>
-  <data name="comboRank.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>25, 87</value>
   </data>
   <data name="comboRank.Size" type="System.Drawing.Size, System.Drawing">
-    <value>189, 24</value>
+    <value>143, 21</value>
   </data>
   <data name="comboRank.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -858,13 +786,10 @@ same values for ranking.</value>
     <value>0</value>
   </data>
   <data name="textPeptideCount.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 192</value>
-  </data>
-  <data name="textPeptideCount.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>25, 156</value>
   </data>
   <data name="textPeptideCount.Size" type="System.Drawing.Size, System.Drawing">
-    <value>89, 22</value>
+    <value>68, 20</value>
   </data>
   <data name="textPeptideCount.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -897,13 +822,10 @@ same values for ranking.</value>
     <value>Library or Filter</value>
   </data>
   <data name="comboMatching.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 37</value>
-  </data>
-  <data name="comboMatching.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>25, 30</value>
   </data>
   <data name="comboMatching.Size" type="System.Drawing.Size, System.Drawing">
-    <value>189, 24</value>
+    <value>143, 21</value>
   </data>
   <data name="comboMatching.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -931,13 +853,10 @@ Library or Filter - picks peptides that match either a library spectrum or the f
     <value>True</value>
   </data>
   <data name="cbLimitPeptides.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 162</value>
-  </data>
-  <data name="cbLimitPeptides.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>25, 132</value>
   </data>
   <data name="cbLimitPeptides.Size" type="System.Drawing.Size, System.Drawing">
-    <value>190, 21</value>
+    <value>143, 17</value>
   </data>
   <data name="cbLimitPeptides.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -962,13 +881,10 @@ picked for each protein.</value>
     <value>5</value>
   </data>
   <data name="editLibraries.Location" type="System.Drawing.Point, System.Drawing">
-    <value>363, 44</value>
-  </data>
-  <data name="editLibraries.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>272, 36</value>
   </data>
   <data name="editLibraries.Size" type="System.Drawing.Size, System.Drawing">
-    <value>100, 28</value>
+    <value>75, 23</value>
   </data>
   <data name="editLibraries.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -992,13 +908,10 @@ picked for each protein.</value>
     <value>4</value>
   </data>
   <data name="listLibraries.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 44</value>
-  </data>
-  <data name="listLibraries.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 36</value>
   </data>
   <data name="listLibraries.Size" type="System.Drawing.Size, System.Drawing">
-    <value>300, 123</value>
+    <value>226, 139</value>
   </data>
   <data name="listLibraries.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -1026,13 +939,10 @@ modifications tab.</value>
     <value>6</value>
   </data>
   <data name="btnUpdateCalculator.Location" type="System.Drawing.Point, System.Drawing">
-    <value>272, 42</value>
-  </data>
-  <data name="btnUpdateCalculator.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>204, 34</value>
   </data>
   <data name="btnUpdateCalculator.Size" type="System.Drawing.Size, System.Drawing">
-    <value>33, 30</value>
+    <value>25, 24</value>
   </data>
   <data name="btnUpdateCalculator.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -1053,13 +963,10 @@ modifications tab.</value>
     <value>11</value>
   </data>
   <data name="comboPeakScoringModel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 44</value>
-  </data>
-  <data name="comboPeakScoringModel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 36</value>
   </data>
   <data name="comboPeakScoringModel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>224, 24</value>
+    <value>169, 21</value>
   </data>
   <data name="comboPeakScoringModel.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -1084,13 +991,10 @@ times from a peptide specific hydrophobicity score.</value>
     <value>NoControl</value>
   </data>
   <data name="btnUpdateIonMobilityLibraries.Location" type="System.Drawing.Point, System.Drawing">
-    <value>272, 263</value>
-  </data>
-  <data name="btnUpdateIonMobilityLibraries.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>204, 214</value>
   </data>
   <data name="btnUpdateIonMobilityLibraries.Size" type="System.Drawing.Size, System.Drawing">
-    <value>33, 30</value>
+    <value>25, 24</value>
   </data>
   <data name="btnUpdateIonMobilityLibraries.TabIndex" type="System.Int32, mscorlib">
     <value>9</value>
@@ -1111,13 +1015,10 @@ times from a peptide specific hydrophobicity score.</value>
     <value>8</value>
   </data>
   <data name="comboDriftTimePredictor.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 265</value>
-  </data>
-  <data name="comboDriftTimePredictor.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 215</value>
   </data>
   <data name="comboDriftTimePredictor.Size" type="System.Drawing.Size, System.Drawing">
-    <value>224, 24</value>
+    <value>169, 21</value>
   </data>
   <data name="comboDriftTimePredictor.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
@@ -1138,13 +1039,10 @@ times from a peptide specific hydrophobicity score.</value>
     <value>9</value>
   </data>
   <data name="textSpectralLibraryDriftTimesResolvingPower.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 382</value>
-  </data>
-  <data name="textSpectralLibraryDriftTimesResolvingPower.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 310</value>
   </data>
   <data name="textSpectralLibraryDriftTimesResolvingPower.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
+    <value>100, 20</value>
   </data>
   <data name="textSpectralLibraryDriftTimesResolvingPower.TabIndex" type="System.Int32, mscorlib">
     <value>12</value>
@@ -1173,13 +1071,10 @@ W = 2T/R</value>
     <value>NoControl</value>
   </data>
   <data name="cbUseSpectralLibraryDriftTimes.Location" type="System.Drawing.Point, System.Drawing">
-    <value>41, 322</value>
-  </data>
-  <data name="cbUseSpectralLibraryDriftTimes.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>31, 262</value>
   </data>
   <data name="cbUseSpectralLibraryDriftTimes.Size" type="System.Drawing.Size, System.Drawing">
-    <value>360, 21</value>
+    <value>270, 17</value>
   </data>
   <data name="cbUseSpectralLibraryDriftTimes.TabIndex" type="System.Int32, mscorlib">
     <value>10</value>
@@ -1215,13 +1110,10 @@ W = 2T/R</value>
     <value>Species</value>
   </data>
   <data name="comboBoxPeptideUniquenessConstraint.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 293</value>
-  </data>
-  <data name="comboBoxPeptideUniquenessConstraint.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 238</value>
   </data>
   <data name="comboBoxPeptideUniquenessConstraint.Size" type="System.Drawing.Size, System.Drawing">
-    <value>115, 24</value>
+    <value>87, 21</value>
   </data>
   <data name="comboBoxPeptideUniquenessConstraint.TabIndex" type="System.Int32, mscorlib">
     <value>7</value>
@@ -1244,13 +1136,10 @@ W = 2T/R</value>
     <value>1</value>
   </data>
   <data name="textSpectralLibraryDriftTimesWidthAtDtMax.Location" type="System.Drawing.Point, System.Drawing">
-    <value>372, 382</value>
-  </data>
-  <data name="textSpectralLibraryDriftTimesWidthAtDtMax.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>279, 310</value>
   </data>
   <data name="textSpectralLibraryDriftTimesWidthAtDtMax.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
+    <value>100, 20</value>
   </data>
   <data name="textSpectralLibraryDriftTimesWidthAtDtMax.TabIndex" type="System.Int32, mscorlib">
     <value>17</value>
@@ -1277,13 +1166,10 @@ W = (W0 + M*(Wmax-W0)/imMax)
     <value>0</value>
   </data>
   <data name="textSpectralLibraryDriftTimesWidthAtDt0.Location" type="System.Drawing.Point, System.Drawing">
-    <value>183, 382</value>
-  </data>
-  <data name="textSpectralLibraryDriftTimesWidthAtDt0.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>137, 310</value>
   </data>
   <data name="textSpectralLibraryDriftTimesWidthAtDt0.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
+    <value>100, 20</value>
   </data>
   <data name="textSpectralLibraryDriftTimesWidthAtDt0.TabIndex" type="System.Int32, mscorlib">
     <value>15</value>
@@ -1313,13 +1199,10 @@ W = (W0 + M*(Wmax-W0)/imMax)
     <value>NoControl</value>
   </data>
   <data name="btnFilter.Location" type="System.Drawing.Point, System.Drawing">
-    <value>363, 118</value>
-  </data>
-  <data name="btnFilter.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>272, 96</value>
   </data>
   <data name="btnFilter.Size" type="System.Drawing.Size, System.Drawing">
-    <value>100, 28</value>
+    <value>75, 23</value>
   </data>
   <data name="btnFilter.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -1343,13 +1226,10 @@ W = (W0 + M*(Wmax-W0)/imMax)
     <value>0</value>
   </data>
   <data name="tbxMaxLoqBias.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 55</value>
-  </data>
-  <data name="tbxMaxLoqBias.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>12, 45</value>
   </data>
   <data name="tbxMaxLoqBias.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
+    <value>100, 20</value>
   </data>
   <data name="tbxMaxLoqBias.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -1372,13 +1252,10 @@ of quantification (LOQ)</value>
     <value>0</value>
   </data>
   <data name="comboLodMethod.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 117</value>
-  </data>
-  <data name="comboLodMethod.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>12, 95</value>
   </data>
   <data name="comboLodMethod.Size" type="System.Drawing.Size, System.Drawing">
-    <value>176, 24</value>
+    <value>133, 21</value>
   </data>
   <data name="comboLodMethod.TabIndex" type="System.Int32, mscorlib">
     <value>7</value>
@@ -1399,13 +1276,10 @@ of quantification (LOQ)</value>
     <value>1</value>
   </data>
   <data name="tbxMaxLoqCv.Location" type="System.Drawing.Point, System.Drawing">
-    <value>207, 55</value>
-  </data>
-  <data name="tbxMaxLoqCv.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>155, 45</value>
   </data>
   <data name="tbxMaxLoqCv.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
+    <value>100, 20</value>
   </data>
   <data name="tbxMaxLoqCv.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -1427,16 +1301,13 @@ the lower limit of quantification (LOQ)</value>
     <value>6</value>
   </data>
   <data name="tbxQuantUnits.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 276</value>
-  </data>
-  <data name="tbxQuantUnits.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 224</value>
   </data>
   <data name="tbxQuantUnits.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
+    <value>100, 20</value>
   </data>
   <data name="tbxQuantUnits.TabIndex" type="System.Int32, mscorlib">
-    <value>10</value>
+    <value>9</value>
   </data>
   <data name="tbxQuantUnits.ToolTip" xml:space="preserve">
     <value>Units to be applied to calibrated quantities</value>
@@ -1463,16 +1334,13 @@ the lower limit of quantification (LOQ)</value>
     <value>2</value>
   </data>
   <data name="comboQuantMsLevel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 218</value>
-  </data>
-  <data name="comboQuantMsLevel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 177</value>
   </data>
   <data name="comboQuantMsLevel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>168, 24</value>
+    <value>127, 21</value>
   </data>
   <data name="comboQuantMsLevel.TabIndex" type="System.Int32, mscorlib">
-    <value>8</value>
+    <value>7</value>
   </data>
   <data name="comboQuantMsLevel.ToolTip" xml:space="preserve">
     <value>Mass spectrum level (1, 2 or both) used to quantify</value>
@@ -1490,13 +1358,10 @@ the lower limit of quantification (LOQ)</value>
     <value>3</value>
   </data>
   <data name="comboNormalizationMethod.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 102</value>
-  </data>
-  <data name="comboNormalizationMethod.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 83</value>
   </data>
   <data name="comboNormalizationMethod.Size" type="System.Drawing.Size, System.Drawing">
-    <value>317, 24</value>
+    <value>239, 21</value>
   </data>
   <data name="comboNormalizationMethod.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -1517,13 +1382,10 @@ the lower limit of quantification (LOQ)</value>
     <value>5</value>
   </data>
   <data name="comboRegressionFit.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 44</value>
-  </data>
-  <data name="comboRegressionFit.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 36</value>
   </data>
   <data name="comboRegressionFit.Size" type="System.Drawing.Size, System.Drawing">
-    <value>168, 24</value>
+    <value>127, 21</value>
   </data>
   <data name="comboRegressionFit.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -1544,16 +1406,13 @@ the lower limit of quantification (LOQ)</value>
     <value>7</value>
   </data>
   <data name="comboWeighting.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 160</value>
-  </data>
-  <data name="comboWeighting.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 130</value>
   </data>
   <data name="comboWeighting.Size" type="System.Drawing.Size, System.Drawing">
-    <value>168, 24</value>
+    <value>127, 21</value>
   </data>
   <data name="comboWeighting.TabIndex" type="System.Int32, mscorlib">
-    <value>6</value>
+    <value>5</value>
   </data>
   <data name="comboWeighting.ToolTip" xml:space="preserve">
     <value>The equation used to weight the impact of points in calculating the regression</value>
@@ -1580,13 +1439,10 @@ the lower limit of quantification (LOQ)</value>
     <value>NoControl</value>
   </data>
   <data name="labelPeptideUniquenessConstraint.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 273</value>
-  </data>
-  <data name="labelPeptideUniquenessConstraint.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 222</value>
   </data>
   <data name="labelPeptideUniquenessConstraint.Size" type="System.Drawing.Size, System.Drawing">
-    <value>208, 17</value>
+    <value>156, 13</value>
   </data>
   <data name="labelPeptideUniquenessConstraint.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -1610,13 +1466,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 87</value>
-  </data>
-  <data name="label2.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 71</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>153, 17</value>
+    <value>117, 13</value>
   </data>
   <data name="label2.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -1640,13 +1493,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 25</value>
-  </data>
-  <data name="label1.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 20</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>62, 17</value>
+    <value>47, 13</value>
   </data>
   <data name="label1.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -1670,13 +1520,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label15.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 212</value>
-  </data>
-  <data name="label15.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 172</value>
   </data>
   <data name="label15.Size" type="System.Drawing.Size, System.Drawing">
-    <value>152, 17</value>
+    <value>115, 13</value>
   </data>
   <data name="label15.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -1697,16 +1544,13 @@ the lower limit of quantification (LOQ)</value>
     <value>6</value>
   </data>
   <data name="tabDigestion.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 25</value>
-  </data>
-  <data name="tabDigestion.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>4, 22</value>
   </data>
   <data name="tabDigestion.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>3, 3, 3, 3</value>
   </data>
   <data name="tabDigestion.Size" type="System.Drawing.Size, System.Drawing">
-    <value>487, 569</value>
+    <value>363, 460</value>
   </data>
   <data name="tabDigestion.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -1733,13 +1577,10 @@ the lower limit of quantification (LOQ)</value>
     <value>NoControl</value>
   </data>
   <data name="labelWidthDtMax.Location" type="System.Drawing.Point, System.Drawing">
-    <value>368, 362</value>
-  </data>
-  <data name="labelWidthDtMax.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>276, 294</value>
   </data>
   <data name="labelWidthDtMax.Size" type="System.Drawing.Size, System.Drawing">
-    <value>107, 17</value>
+    <value>83, 13</value>
   </data>
   <data name="labelWidthDtMax.TabIndex" type="System.Int32, mscorlib">
     <value>16</value>
@@ -1766,13 +1607,10 @@ the lower limit of quantification (LOQ)</value>
     <value>NoControl</value>
   </data>
   <data name="labelWidthDtZero.Location" type="System.Drawing.Point, System.Drawing">
-    <value>179, 362</value>
-  </data>
-  <data name="labelWidthDtZero.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>134, 294</value>
   </data>
   <data name="labelWidthDtZero.Size" type="System.Drawing.Size, System.Drawing">
-    <value>90, 17</value>
+    <value>69, 13</value>
   </data>
   <data name="labelWidthDtZero.TabIndex" type="System.Int32, mscorlib">
     <value>14</value>
@@ -1799,13 +1637,10 @@ the lower limit of quantification (LOQ)</value>
     <value>NoControl</value>
   </data>
   <data name="cbLinear.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 415</value>
-  </data>
-  <data name="cbLinear.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>28, 337</value>
   </data>
   <data name="cbLinear.Size" type="System.Drawing.Size, System.Drawing">
-    <value>141, 21</value>
+    <value>110, 17</value>
   </data>
   <data name="cbLinear.TabIndex" type="System.Int32, mscorlib">
     <value>13</value>
@@ -1832,13 +1667,10 @@ the lower limit of quantification (LOQ)</value>
     <value>NoControl</value>
   </data>
   <data name="labelResolvingPower.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 359</value>
-  </data>
-  <data name="labelResolvingPower.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>28, 292</value>
   </data>
   <data name="labelResolvingPower.Size" type="System.Drawing.Size, System.Drawing">
-    <value>116, 17</value>
+    <value>89, 13</value>
   </data>
   <data name="labelResolvingPower.TabIndex" type="System.Int32, mscorlib">
     <value>11</value>
@@ -1865,13 +1697,10 @@ the lower limit of quantification (LOQ)</value>
     <value>NoControl</value>
   </data>
   <data name="label19.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 246</value>
-  </data>
-  <data name="label19.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 200</value>
   </data>
   <data name="label19.Size" type="System.Drawing.Size, System.Drawing">
-    <value>142, 17</value>
+    <value>106, 13</value>
   </data>
   <data name="label19.TabIndex" type="System.Int32, mscorlib">
     <value>7</value>
@@ -1895,13 +1724,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label14.Location" type="System.Drawing.Point, System.Drawing">
-    <value>179, 167</value>
-  </data>
-  <data name="label14.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>134, 136</value>
   </data>
   <data name="label14.Size" type="System.Drawing.Size, System.Drawing">
-    <value>30, 17</value>
+    <value>23, 13</value>
   </data>
   <data name="label14.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -1925,13 +1751,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label13.Location" type="System.Drawing.Point, System.Drawing">
-    <value>37, 143</value>
-  </data>
-  <data name="label13.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>28, 116</value>
   </data>
   <data name="label13.Size" type="System.Drawing.Size, System.Drawing">
-    <value>92, 17</value>
+    <value>72, 13</value>
   </data>
   <data name="label13.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -1955,13 +1778,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label9.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 25</value>
-  </data>
-  <data name="label9.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 20</value>
   </data>
   <data name="label9.Size" type="System.Drawing.Size, System.Drawing">
-    <value>163, 17</value>
+    <value>122, 13</value>
   </data>
   <data name="label9.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -1982,13 +1802,10 @@ the lower limit of quantification (LOQ)</value>
     <value>17</value>
   </data>
   <data name="tabPrediction.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 25</value>
-  </data>
-  <data name="tabPrediction.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>4, 22</value>
   </data>
   <data name="tabPrediction.Size" type="System.Drawing.Size, System.Drawing">
-    <value>487, 569</value>
+    <value>363, 460</value>
   </data>
   <data name="tabPrediction.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -2012,13 +1829,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label3.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 86</value>
-  </data>
-  <data name="label3.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 70</value>
   </data>
   <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>159, 17</value>
+    <value>120, 13</value>
   </data>
   <data name="label3.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -2042,13 +1856,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label6.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 197</value>
-  </data>
-  <data name="label6.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 160</value>
   </data>
   <data name="label6.Size" type="System.Drawing.Size, System.Drawing">
-    <value>188, 17</value>
+    <value>143, 13</value>
   </data>
   <data name="label6.TabIndex" type="System.Int32, mscorlib">
     <value>9</value>
@@ -2072,13 +1883,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label5.Location" type="System.Drawing.Point, System.Drawing">
-    <value>149, 25</value>
-  </data>
-  <data name="label5.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>112, 20</value>
   </data>
   <data name="label5.Size" type="System.Drawing.Size, System.Drawing">
-    <value>80, 17</value>
+    <value>62, 13</value>
   </data>
   <data name="label5.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -2102,13 +1910,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 25</value>
-  </data>
-  <data name="label4.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 20</value>
   </data>
   <data name="label4.Size" type="System.Drawing.Size, System.Drawing">
-    <value>77, 17</value>
+    <value>59, 13</value>
   </data>
   <data name="label4.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -2129,16 +1934,13 @@ the lower limit of quantification (LOQ)</value>
     <value>8</value>
   </data>
   <data name="tabFilter.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 25</value>
-  </data>
-  <data name="tabFilter.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>4, 22</value>
   </data>
   <data name="tabFilter.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>3, 3, 3, 3</value>
   </data>
   <data name="tabFilter.Size" type="System.Drawing.Size, System.Drawing">
-    <value>487, 569</value>
+    <value>363, 460</value>
   </data>
   <data name="tabFilter.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -2162,13 +1964,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="labelPeptides.Location" type="System.Drawing.Point, System.Drawing">
-    <value>132, 196</value>
-  </data>
-  <data name="labelPeptides.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>99, 159</value>
   </data>
   <data name="labelPeptides.Size" type="System.Drawing.Size, System.Drawing">
-    <value>63, 17</value>
+    <value>48, 13</value>
   </data>
   <data name="labelPeptides.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -2192,13 +1991,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label12.Location" type="System.Drawing.Point, System.Drawing">
-    <value>29, 17</value>
-  </data>
-  <data name="label12.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>22, 14</value>
   </data>
   <data name="label12.Size" type="System.Drawing.Size, System.Drawing">
-    <value>157, 17</value>
+    <value>120, 13</value>
   </data>
   <data name="label12.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -2222,13 +2018,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label7.Location" type="System.Drawing.Point, System.Drawing">
-    <value>29, 87</value>
-  </data>
-  <data name="label7.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>22, 71</value>
   </data>
   <data name="label7.Size" type="System.Drawing.Size, System.Drawing">
-    <value>122, 17</value>
+    <value>93, 13</value>
   </data>
   <data name="label7.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -2249,13 +2042,10 @@ the lower limit of quantification (LOQ)</value>
     <value>6</value>
   </data>
   <data name="panelPick.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 204</value>
-  </data>
-  <data name="panelPick.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>3, 181</value>
   </data>
   <data name="panelPick.Size" type="System.Drawing.Size, System.Drawing">
-    <value>476, 234</value>
+    <value>357, 190</value>
   </data>
   <data name="panelPick.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -2276,13 +2066,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label11.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 25</value>
-  </data>
-  <data name="label11.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 20</value>
   </data>
   <data name="label11.Size" type="System.Drawing.Size, System.Drawing">
-    <value>67, 17</value>
+    <value>49, 13</value>
   </data>
   <data name="label11.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -2303,13 +2090,10 @@ the lower limit of quantification (LOQ)</value>
     <value>5</value>
   </data>
   <data name="tabLibrary.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 25</value>
-  </data>
-  <data name="tabLibrary.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>4, 22</value>
   </data>
   <data name="tabLibrary.Size" type="System.Drawing.Size, System.Drawing">
-    <value>487, 569</value>
+    <value>363, 460</value>
   </data>
   <data name="tabLibrary.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -2333,19 +2117,16 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label18.Location" type="System.Drawing.Point, System.Drawing">
-    <value>203, 178</value>
-  </data>
-  <data name="label18.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>152, 145</value>
   </data>
   <data name="label18.Size" type="System.Drawing.Size, System.Drawing">
-    <value>129, 17</value>
+    <value>62, 13</value>
   </data>
   <data name="label18.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
   </data>
   <data name="label18.Text" xml:space="preserve">
-    <value>Max &amp;neutral losses:</value>
+    <value>Max &amp;losses:</value>
   </data>
   <data name="&gt;&gt;label18.Name" xml:space="preserve">
     <value>label18</value>
@@ -2363,13 +2144,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label17.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 178</value>
-  </data>
-  <data name="label17.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 145</value>
   </data>
   <data name="label17.Size" type="System.Drawing.Size, System.Drawing">
-    <value>129, 17</value>
+    <value>98, 13</value>
   </data>
   <data name="label17.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -2393,13 +2171,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="labelStandardType.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 466</value>
-  </data>
-  <data name="labelStandardType.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 379</value>
   </data>
   <data name="labelStandardType.Size" type="System.Drawing.Size, System.Drawing">
-    <value>150, 17</value>
+    <value>112, 13</value>
   </data>
   <data name="labelStandardType.TabIndex" type="System.Int32, mscorlib">
     <value>12</value>
@@ -2423,13 +2198,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label16.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 255</value>
-  </data>
-  <data name="label16.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 207</value>
   </data>
   <data name="label16.Size" type="System.Drawing.Size, System.Drawing">
-    <value>123, 17</value>
+    <value>93, 13</value>
   </data>
   <data name="label16.TabIndex" type="System.Int32, mscorlib">
     <value>7</value>
@@ -2450,13 +2222,10 @@ the lower limit of quantification (LOQ)</value>
     <value>6</value>
   </data>
   <data name="btnEditHeavyMods.Location" type="System.Drawing.Point, System.Drawing">
-    <value>281, 331</value>
-  </data>
-  <data name="btnEditHeavyMods.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>211, 269</value>
   </data>
   <data name="btnEditHeavyMods.Size" type="System.Drawing.Size, System.Drawing">
-    <value>100, 28</value>
+    <value>75, 23</value>
   </data>
   <data name="btnEditHeavyMods.TabIndex" type="System.Int32, mscorlib">
     <value>11</value>
@@ -2480,13 +2249,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label10.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 311</value>
-  </data>
-  <data name="label10.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 253</value>
   </data>
   <data name="label10.Size" type="System.Drawing.Size, System.Drawing">
-    <value>144, 17</value>
+    <value>109, 13</value>
   </data>
   <data name="label10.TabIndex" type="System.Int32, mscorlib">
     <value>9</value>
@@ -2507,13 +2273,10 @@ the lower limit of quantification (LOQ)</value>
     <value>9</value>
   </data>
   <data name="btnEditStaticMods.Location" type="System.Drawing.Point, System.Drawing">
-    <value>281, 44</value>
-  </data>
-  <data name="btnEditStaticMods.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>211, 36</value>
   </data>
   <data name="btnEditStaticMods.Size" type="System.Drawing.Size, System.Drawing">
-    <value>100, 28</value>
+    <value>75, 23</value>
   </data>
   <data name="btnEditStaticMods.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -2537,13 +2300,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="label8.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 25</value>
-  </data>
-  <data name="label8.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 20</value>
   </data>
   <data name="label8.Size" type="System.Drawing.Size, System.Drawing">
-    <value>159, 17</value>
+    <value>119, 13</value>
   </data>
   <data name="label8.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -2564,13 +2324,10 @@ the lower limit of quantification (LOQ)</value>
     <value>12</value>
   </data>
   <data name="tabModifications.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 25</value>
-  </data>
-  <data name="tabModifications.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>4, 22</value>
   </data>
   <data name="tabModifications.Size" type="System.Drawing.Size, System.Drawing">
-    <value>487, 569</value>
+    <value>363, 460</value>
   </data>
   <data name="tabModifications.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -2590,6 +2347,108 @@ the lower limit of quantification (LOQ)</value>
   <data name="&gt;&gt;tabModifications.ZOrder" xml:space="preserve">
     <value>4</value>
   </data>
+  <data name="buttonEditListSmallMolInternalStandardTypes.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="buttonEditListSmallMolInternalStandardTypes.Location" type="System.Drawing.Point, System.Drawing">
+    <value>211, 39</value>
+  </data>
+  <data name="buttonEditListSmallMolInternalStandardTypes.Size" type="System.Drawing.Size, System.Drawing">
+    <value>75, 23</value>
+  </data>
+  <data name="buttonEditListSmallMolInternalStandardTypes.TabIndex" type="System.Int32, mscorlib">
+    <value>5</value>
+  </data>
+  <data name="buttonEditListSmallMolInternalStandardTypes.Text" xml:space="preserve">
+    <value>&amp;Edit list...</value>
+  </data>
+  <data name="&gt;&gt;buttonEditListSmallMolInternalStandardTypes.Name" xml:space="preserve">
+    <value>buttonEditListSmallMolInternalStandardTypes</value>
+  </data>
+  <data name="&gt;&gt;buttonEditListSmallMolInternalStandardTypes.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonEditListSmallMolInternalStandardTypes.Parent" xml:space="preserve">
+    <value>tabLabels</value>
+  </data>
+  <data name="&gt;&gt;buttonEditListSmallMolInternalStandardTypes.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="labelSmallMolInternalStandardTypes.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="labelSmallMolInternalStandardTypes.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="labelSmallMolInternalStandardTypes.Location" type="System.Drawing.Point, System.Drawing">
+    <value>25, 23</value>
+  </data>
+  <data name="labelSmallMolInternalStandardTypes.Size" type="System.Drawing.Size, System.Drawing">
+    <value>117, 13</value>
+  </data>
+  <data name="labelSmallMolInternalStandardTypes.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="labelSmallMolInternalStandardTypes.Text" xml:space="preserve">
+    <value>&amp;Internal standard types:</value>
+  </data>
+  <data name="&gt;&gt;labelSmallMolInternalStandardTypes.Name" xml:space="preserve">
+    <value>labelSmallMolInternalStandardTypes</value>
+  </data>
+  <data name="&gt;&gt;labelSmallMolInternalStandardTypes.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;labelSmallMolInternalStandardTypes.Parent" xml:space="preserve">
+    <value>tabLabels</value>
+  </data>
+  <data name="&gt;&gt;labelSmallMolInternalStandardTypes.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="listBoxSmallMolInternalStandardTypes.Location" type="System.Drawing.Point, System.Drawing">
+    <value>28, 39</value>
+  </data>
+  <data name="listBoxSmallMolInternalStandardTypes.Size" type="System.Drawing.Size, System.Drawing">
+    <value>177, 154</value>
+  </data>
+  <data name="listBoxSmallMolInternalStandardTypes.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="&gt;&gt;listBoxSmallMolInternalStandardTypes.Name" xml:space="preserve">
+    <value>listBoxSmallMolInternalStandardTypes</value>
+  </data>
+  <data name="&gt;&gt;listBoxSmallMolInternalStandardTypes.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckedListBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;listBoxSmallMolInternalStandardTypes.Parent" xml:space="preserve">
+    <value>tabLabels</value>
+  </data>
+  <data name="&gt;&gt;listBoxSmallMolInternalStandardTypes.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="tabLabels.Location" type="System.Drawing.Point, System.Drawing">
+    <value>4, 22</value>
+  </data>
+  <data name="tabLabels.Size" type="System.Drawing.Size, System.Drawing">
+    <value>363, 460</value>
+  </data>
+  <data name="tabLabels.TabIndex" type="System.Int32, mscorlib">
+    <value>5</value>
+  </data>
+  <data name="tabLabels.Text" xml:space="preserve">
+    <value>Labels</value>
+  </data>
+  <data name="&gt;&gt;tabLabels.Name" xml:space="preserve">
+    <value>tabLabels</value>
+  </data>
+  <data name="&gt;&gt;tabLabels.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tabLabels.Parent" xml:space="preserve">
+    <value>tabControl1</value>
+  </data>
+  <data name="&gt;&gt;tabLabels.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
   <data name="label36.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
@@ -2597,13 +2456,10 @@ the lower limit of quantification (LOQ)</value>
     <value>NoControl</value>
   </data>
   <data name="label36.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 25</value>
-  </data>
-  <data name="label36.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 20</value>
   </data>
   <data name="label36.Size" type="System.Drawing.Size, System.Drawing">
-    <value>136, 17</value>
+    <value>103, 13</value>
   </data>
   <data name="label36.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -2624,16 +2480,13 @@ the lower limit of quantification (LOQ)</value>
     <value>1</value>
   </data>
   <data name="tabIntegration.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 25</value>
-  </data>
-  <data name="tabIntegration.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>4, 22</value>
   </data>
   <data name="tabIntegration.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>3, 3, 3, 3</value>
   </data>
   <data name="tabIntegration.Size" type="System.Drawing.Size, System.Drawing">
-    <value>487, 569</value>
+    <value>363, 460</value>
   </data>
   <data name="tabIntegration.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -2651,7 +2504,7 @@ the lower limit of quantification (LOQ)</value>
     <value>tabControl1</value>
   </data>
   <data name="&gt;&gt;tabIntegration.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>6</value>
   </data>
   <data name="groupBoxFiguresOfMerit.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Left, Right</value>
@@ -2729,13 +2582,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="lblCaclulateLodBy.Location" type="System.Drawing.Point, System.Drawing">
-    <value>9, 110</value>
-  </data>
-  <data name="lblCaclulateLodBy.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>9, 79</value>
   </data>
   <data name="lblCaclulateLodBy.Size" type="System.Drawing.Size, System.Drawing">
-    <value>122, 17</value>
+    <value>93, 13</value>
   </data>
   <data name="lblCaclulateLodBy.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -2759,13 +2609,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="lblMaxLoqBias.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 33</value>
-  </data>
-  <data name="lblMaxLoqBias.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>9, 27</value>
   </data>
   <data name="lblMaxLoqBias.Size" type="System.Drawing.Size, System.Drawing">
-    <value>101, 17</value>
+    <value>77, 13</value>
   </data>
   <data name="lblMaxLoqBias.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -2789,13 +2636,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="lblMaxLoqBiasPct.Location" type="System.Drawing.Point, System.Drawing">
-    <value>149, 59</value>
-  </data>
-  <data name="lblMaxLoqBiasPct.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>112, 48</value>
   </data>
   <data name="lblMaxLoqBiasPct.Size" type="System.Drawing.Size, System.Drawing">
-    <value>20, 17</value>
+    <value>15, 13</value>
   </data>
   <data name="lblMaxLoqBiasPct.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -2822,13 +2666,10 @@ the lower limit of quantification (LOQ)</value>
     <value>NoControl</value>
   </data>
   <data name="lblMaxLoqCvPct.Location" type="System.Drawing.Point, System.Drawing">
-    <value>342, 58</value>
-  </data>
-  <data name="lblMaxLoqCvPct.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>256, 47</value>
   </data>
   <data name="lblMaxLoqCvPct.Size" type="System.Drawing.Size, System.Drawing">
-    <value>20, 17</value>
+    <value>15, 13</value>
   </data>
   <data name="lblMaxLoqCvPct.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -2873,13 +2714,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="lblMaxLoqCv.Location" type="System.Drawing.Point, System.Drawing">
-    <value>203, 33</value>
-  </data>
-  <data name="lblMaxLoqCv.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>152, 27</value>
   </data>
   <data name="lblMaxLoqCv.Size" type="System.Drawing.Size, System.Drawing">
-    <value>93, 17</value>
+    <value>72, 13</value>
   </data>
   <data name="lblMaxLoqCv.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -2912,10 +2750,10 @@ the lower limit of quantification (LOQ)</value>
     <value>4, 4, 4, 4</value>
   </data>
   <data name="groupBoxFiguresOfMerit.Size" type="System.Drawing.Size, System.Drawing">
-    <value>436, 169</value>
+    <value>327, 137</value>
   </data>
   <data name="groupBoxFiguresOfMerit.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
+    <value>10</value>
   </data>
   <data name="groupBoxFiguresOfMerit.Text" xml:space="preserve">
     <value>Figures of merit</value>
@@ -2939,16 +2777,13 @@ the lower limit of quantification (LOQ)</value>
     <value>NoControl</value>
   </data>
   <data name="lblQuantUnits.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 257</value>
-  </data>
-  <data name="lblQuantUnits.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 209</value>
   </data>
   <data name="lblQuantUnits.Size" type="System.Drawing.Size, System.Drawing">
-    <value>40, 17</value>
+    <value>31, 13</value>
   </data>
   <data name="lblQuantUnits.TabIndex" type="System.Int32, mscorlib">
-    <value>9</value>
+    <value>8</value>
   </data>
   <data name="lblQuantUnits.Text" xml:space="preserve">
     <value>&amp;Units</value>
@@ -2969,16 +2804,13 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="lblMsLevel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 199</value>
-  </data>
-  <data name="lblMsLevel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 162</value>
   </data>
   <data name="lblMsLevel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>61, 17</value>
+    <value>48, 13</value>
   </data>
   <data name="lblMsLevel.TabIndex" type="System.Int32, mscorlib">
-    <value>7</value>
+    <value>6</value>
   </data>
   <data name="lblMsLevel.Text" xml:space="preserve">
     <value>MS &amp;level</value>
@@ -2999,13 +2831,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="lblNormalizationMethod.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 83</value>
-  </data>
-  <data name="lblNormalizationMethod.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 67</value>
   </data>
   <data name="lblNormalizationMethod.Size" type="System.Drawing.Size, System.Drawing">
-    <value>149, 17</value>
+    <value>111, 13</value>
   </data>
   <data name="lblNormalizationMethod.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -3029,13 +2858,10 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="lblRegressionFit.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 25</value>
-  </data>
-  <data name="lblRegressionFit.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 20</value>
   </data>
   <data name="lblRegressionFit.Size" type="System.Drawing.Size, System.Drawing">
-    <value>99, 17</value>
+    <value>74, 13</value>
   </data>
   <data name="lblRegressionFit.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -3059,16 +2885,13 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </data>
   <data name="lblRegressionWeighting.Location" type="System.Drawing.Point, System.Drawing">
-    <value>33, 141</value>
-  </data>
-  <data name="lblRegressionWeighting.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 0, 4, 0</value>
+    <value>25, 115</value>
   </data>
   <data name="lblRegressionWeighting.Size" type="System.Drawing.Size, System.Drawing">
-    <value>147, 17</value>
+    <value>111, 13</value>
   </data>
   <data name="lblRegressionWeighting.TabIndex" type="System.Int32, mscorlib">
-    <value>5</value>
+    <value>4</value>
   </data>
   <data name="lblRegressionWeighting.Text" xml:space="preserve">
     <value>Regression &amp;weighting:</value>
@@ -3086,16 +2909,13 @@ the lower limit of quantification (LOQ)</value>
     <value>10</value>
   </data>
   <data name="tabQuantification.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 25</value>
-  </data>
-  <data name="tabQuantification.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>4, 22</value>
   </data>
   <data name="tabQuantification.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>3, 3, 3, 3</value>
   </data>
   <data name="tabQuantification.Size" type="System.Drawing.Size, System.Drawing">
-    <value>487, 569</value>
+    <value>363, 460</value>
   </data>
   <data name="tabQuantification.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -3113,16 +2933,13 @@ the lower limit of quantification (LOQ)</value>
     <value>tabControl1</value>
   </data>
   <data name="&gt;&gt;tabQuantification.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>7</value>
   </data>
   <data name="tabControl1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>16, 15</value>
-  </data>
-  <data name="tabControl1.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>12, 12</value>
   </data>
   <data name="tabControl1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>495, 598</value>
+    <value>371, 486</value>
   </data>
   <data name="tabControl1.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -3140,28 +2957,28 @@ the lower limit of quantification (LOQ)</value>
     <value>4</value>
   </data>
   <metadata name="contextMenuCalculator.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>387, 17</value>
+    <value>478, 17</value>
   </metadata>
   <data name="addCalculatorContextMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>165, 24</value>
+    <value>146, 22</value>
   </data>
   <data name="addCalculatorContextMenuItem.Text" xml:space="preserve">
     <value>Add...</value>
   </data>
   <data name="editCalculatorCurrentContextMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>165, 24</value>
+    <value>146, 22</value>
   </data>
   <data name="editCalculatorCurrentContextMenuItem.Text" xml:space="preserve">
     <value>Edit Current...</value>
   </data>
   <data name="editCalculatorListContextMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>165, 24</value>
+    <value>146, 22</value>
   </data>
   <data name="editCalculatorListContextMenuItem.Text" xml:space="preserve">
     <value>Edit List...</value>
   </data>
   <data name="contextMenuCalculator.Size" type="System.Drawing.Size, System.Drawing">
-    <value>166, 76</value>
+    <value>147, 70</value>
   </data>
   <data name="&gt;&gt;contextMenuCalculator.Name" xml:space="preserve">
     <value>contextMenuCalculator</value>
@@ -3170,28 +2987,28 @@ the lower limit of quantification (LOQ)</value>
     <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <metadata name="contextMenuIonMobilityLibraries.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>17, 17</value>
+    <value>155, 17</value>
   </metadata>
   <data name="addIonMobilityLibraryContextMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>165, 24</value>
+    <value>146, 22</value>
   </data>
   <data name="addIonMobilityLibraryContextMenuItem.Text" xml:space="preserve">
     <value>Add...</value>
   </data>
   <data name="editIonMobilityLibraryCurrentContextMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>165, 24</value>
+    <value>146, 22</value>
   </data>
   <data name="editIonMobilityLibraryCurrentContextMenuItem.Text" xml:space="preserve">
     <value>Edit Current...</value>
   </data>
   <data name="editIonMobilityLibraryListContextMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>165, 24</value>
+    <value>146, 22</value>
   </data>
   <data name="editIonMobilityLibraryListContextMenuItem.Text" xml:space="preserve">
     <value>Edit List...</value>
   </data>
   <data name="contextMenuIonMobilityLibraries.Size" type="System.Drawing.Size, System.Drawing">
-    <value>166, 76</value>
+    <value>147, 70</value>
   </data>
   <data name="&gt;&gt;contextMenuIonMobilityLibraries.Name" xml:space="preserve">
     <value>contextMenuIonMobilityLibraries</value>
@@ -3203,19 +3020,22 @@ the lower limit of quantification (LOQ)</value>
     <value>True</value>
   </metadata>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
-    <value>8, 16</value>
+    <value>6, 13</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>527, 666</value>
-  </data>
-  <data name="$this.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>4, 4, 4, 4</value>
+    <value>395, 541</value>
   </data>
   <data name="$this.StartPosition" type="System.Windows.Forms.FormStartPosition, System.Windows.Forms">
     <value>CenterParent</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
     <value>Peptide Settings</value>
+  </data>
+  <data name="&gt;&gt;modeUIHandler.Name" xml:space="preserve">
+    <value>modeUIHandler</value>
+  </data>
+  <data name="&gt;&gt;modeUIHandler.Type" xml:space="preserve">
+    <value>pwiz.Skyline.Util.Helpers+ModeUIExtender, Skyline, Version=19.1.1.299, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;helpTip.Name" xml:space="preserve">
     <value>helpTip</value>
@@ -3263,6 +3083,6 @@ the lower limit of quantification (LOQ)</value>
     <value>PeptideSettingsUI</value>
   </data>
   <data name="&gt;&gt;$this.Type" xml:space="preserve">
-    <value>pwiz.Skyline.Util.FormEx, Skyline-daily, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null</value>
+    <value>pwiz.Skyline.Util.FormEx, Skyline, Version=19.1.1.299, Culture=neutral, PublicKeyToken=null</value>
   </data>
 </root>

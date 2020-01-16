@@ -71,6 +71,20 @@ inline const char* cppTypeToNaturalLanguage(const string& T) { return "some text
 inline const char* cppTypeToNaturalLanguage(const MZTolerance& T) { return "a mass tolerance (e.g. '10 ppm', '2.5 Da')"; }
 inline const char* cppTypeToNaturalLanguage(const SpectrumList_Filter::Predicate::FilterMode& T) { return "a filter mode ('include' or 'exclude')"; }
 
+struct LocaleBool {
+    bool data;
+    LocaleBool() : data(true) {}
+    LocaleBool(bool data) : data(data) {}
+    operator bool() const { return data; }
+    friend std::ostream & operator << (std::ostream &out, LocaleBool b) {
+        out << std::boolalpha << b.data;
+        return out;
+    }
+    friend std::istream & operator >> (std::istream &in, LocaleBool &b) {
+        in >> std::boolalpha >> b.data;
+        return in;
+    }
+};
 
 /// parses a lexical-castable key=value pair from a string of arguments which may also include non-key-value strings;
 /// if the key is not in the argument string, defaultValue is returned;
@@ -196,11 +210,15 @@ SpectrumListPtr filterCreator_scanTime(const MSData& msd, const string& arg, pwi
 {
     double scanTimeLow = 0;
     double scanTimeHigh = 0;
+    LocaleBool assumeSorted = true;
 
     istringstream iss(arg);
     char open='\0', comma='\0', close='\0';
     iss >> open >> scanTimeLow >> comma >> scanTimeHigh >> close;
-
+    
+    if (iss.good())
+        iss >> assumeSorted;
+    cout << assumeSorted << endl;
     if (open!='[' || comma!=',' || close!=']')
     {
         cerr << "scanTime filter argument does not have form \"[\"<startTime>,<endTime>\"]\", ignored." << endl;
@@ -209,7 +227,7 @@ SpectrumListPtr filterCreator_scanTime(const MSData& msd, const string& arg, pwi
 
     return SpectrumListPtr(new
         SpectrumList_Filter(msd.run.spectrumListPtr, 
-                            SpectrumList_FilterPredicate_ScanTimeRange(scanTimeLow, scanTimeHigh)));
+                            SpectrumList_FilterPredicate_ScanTimeRange(scanTimeLow, scanTimeHigh, assumeSorted)));
 }
 UsageInfo usage_scanTime = {"<scan_time_range>",
     "This filter selects only spectra within a given time range.\n"
@@ -223,52 +241,21 @@ SpectrumListPtr filterCreator_sortScanTime(const MSData& msd, const string& arg,
 }
 UsageInfo usage_sortScanTime = {"","This filter reorders spectra, sorting them by ascending scan start time."};
 
-SpectrumListPtr filterCreator_scanSummer(const MSData& msd, const string& arg, pwiz::util::IterationListenerRegistry* ilr)
+SpectrumListPtr filterCreator_scanSummer(const MSData& msd, const string& carg, pwiz::util::IterationListenerRegistry* ilr)
 {
+    string arg = carg;
+    double precursorTol = parseKeyValuePair<double>(arg, "precursorTol=", 0.05); // m/z
+    double scanTimeTol = parseKeyValuePair<double>(arg, "scanTimeTol=", 10); // seconds
+    double ionMobilityTol = parseKeyValuePair<double>(arg, "ionMobilityTol=", 0.01); // ms for drift time or vs/cm^2 for TIMS
+    if (bal::icontains(arg, "="))
+        throw user_error("[SpectrumList_ScanSummer] unused argument (key=value) in " + arg);
 
-    // defaults
-    double precursorTol = 0.05; // m/z
-    double scanTimeTol = 10; // seconds
-
-    istringstream parser(arg);
-    string nextStr;
-
-    while ( parser >> nextStr )
-    {
-
-        if ( string::npos == nextStr.rfind('=') )
-                throw user_error("[filterCreator_scanSummer] = sign required after keyword argument");
-
-        string keyword = nextStr.substr(0,nextStr.rfind('='));
-        string paramVal = nextStr.substr(nextStr.rfind('=')+1);
-
-        if ( boost::iequals(keyword,"precursorTol") )
-        {
-            try { lexical_cast<double>(paramVal); }
-            catch (...) { throw user_error("[filterCreator_scanSummer] A numeric value must follow the precursorTol argument."); }
-            precursorTol = lexical_cast<double>(paramVal);
-            if ( precursorTol < 0 ) { throw user_error("[filterCreator_scanSummer] precursorTol must be greater than or equal to zero."); }
-        }
-        else if ( boost::iequals(keyword,"scanTimeTol") )
-        {
-            try { lexical_cast<double>(paramVal); }
-            catch (...) { throw user_error("[filterCreator_scanSummer] A numeric value must follow the scanTimeTol argument."); }
-            scanTimeTol = lexical_cast<double>(paramVal);
-            if ( scanTimeTol < 0 ) { throw user_error("[filterCreator_scanSummer] scanTimeTol must be greater than or equal to zero."); }
-        }
-        else
-        {
-            throw user_error("[filterCreator_scanSummer] Invalid keyword entered.");
-        }
-
-    }
-
-    return SpectrumListPtr(new SpectrumList_ScanSummer(msd.run.spectrumListPtr,precursorTol,scanTimeTol));
+    return SpectrumListPtr(new SpectrumList_ScanSummer(msd.run.spectrumListPtr, precursorTol, scanTimeTol, ionMobilityTol, ilr));
 }
-UsageInfo usage_scanSummer = {"[precursorTol=<precursor tolerance>] [scanTimeTol=<scan time tolerance>]",
-    "This filter sums MS2 sub-scans whose precursors are within <precursor tolerance>(default: 0.05 Th.)"
-    "and <scan time tolerance> (default: 10 secs.). Its use is intended for some Waters DDA data, where sub-scans " 
-    "should be summed together to increase the SNR. This filter has only been tested for Waters data."};
+UsageInfo usage_scanSummer = {"[precursorTol=<precursor tolerance>] [scanTimeTol=<scan time tolerance in seconds>] [ionMobilityTol=<ion mobility tolerance>]",
+    "This filter sums MS2 sub-scans whose precursors are within <precursor tolerance> (default: 0.05 m/z)"
+    ", <scan time tolerance> (default: 10 s), and for ion mobility data, <ion mobility tolerance> (default 0.01 ms or vs/cm^2). It is intended for some Waters DDA data and Bruker PASEF data, where sub-scans " 
+    "should be summed together to increase the SNR."};
 
 SpectrumListPtr filterCreator_nativeCentroid(const MSData& msd, const string& arg, pwiz::util::IterationListenerRegistry* ilr)
 {
@@ -658,12 +645,14 @@ struct StripIonTrapSurveyScans : public SpectrumList_Filter::Predicate
         if (massAnalyzerType == CVID_Unknown) return boost::logic::indeterminate;
         return !(spectrum.cvParam(MS_ms_level).value == "1" && cvIsA(massAnalyzerType, MS_ion_trap));
     }
+
+    virtual string describe() const { return "stripping ion trap MS1s"; }
 };
 
 SpectrumListPtr filterCreator_stripIT(const MSData& msd, const string& arg, pwiz::util::IterationListenerRegistry* ilr)
 {
     return SpectrumListPtr(new 
-        SpectrumList_Filter(msd.run.spectrumListPtr, StripIonTrapSurveyScans()));
+        SpectrumList_Filter(msd.run.spectrumListPtr, StripIonTrapSurveyScans(), ilr));
 }
 UsageInfo usage_stripIT={"","This filter rejects ion trap data spectra with MS level 1."};
 
@@ -689,6 +678,7 @@ SpectrumListPtr filterCreator_mzRefine(const MSData& msd, const string& arg, pwi
     string thresholdSet = "-1e-10";          // Remove this default?
     double thresholdStep = 0.0;
     int maxSteps = 0;
+    bool assumeHighRes = false;
     string msLevelSets = "1-";
 
     string nextStr;
@@ -733,6 +723,10 @@ SpectrumListPtr filterCreator_mzRefine(const MSData& msd, const string& arg, pwi
             {
                 maxSteps = boost::lexical_cast<int>(paramVal);
             }
+            else if (keyword == "assumeHighRes")
+            {
+                assumeHighRes = boost::lexical_cast<bool>(paramVal);
+            }
         }
     }
     // expand the filenames by globbing to handle wildcards
@@ -776,7 +770,7 @@ SpectrumListPtr filterCreator_mzRefine(const MSData& msd, const string& arg, pwi
         }
     }
 
-    return SpectrumListPtr(new SpectrumList_MZRefiner(msd, identFilePath, thresholdCV, thresholdSet, msLevelsToRefine, thresholdStep, maxSteps, ilr));
+    return SpectrumListPtr(new SpectrumList_MZRefiner(msd, identFilePath, thresholdCV, thresholdSet, msLevelsToRefine, thresholdStep, maxSteps, assumeHighRes, ilr));
 }
 UsageInfo usage_mzRefine = { "input1.pepXML input2.mzid [msLevels=<1->] [thresholdScore=<CV_Score_Name>] [thresholdValue=<floatset>] [thresholdStep=<float>] [maxSteps=<count>]", "This filter recalculates the m/z and charges, adjusting precursors for MS2 spectra and spectra masses for MS1 spectra. "
 "It uses an ident file with a threshold field and value to calculate the error and will then choose a shifting mechanism to correct masses throughout the file. "
@@ -812,15 +806,18 @@ SpectrumListPtr filterCreator_demux(const MSData& msd, const string& carg, pwiz:
 {
     string arg = carg;
 
+    const SpectrumList_Demux::Params k_defaultDemuxParams;
     SpectrumList_Demux::Params demuxParams;
-    demuxParams.massError = parseKeyValuePair<MZTolerance>(arg, "massError=", MZTolerance(10, MZTolerance::PPM));
-    demuxParams.nnlsMaxIter = (int) parseKeyValuePair<unsigned int>(arg, "nnlsMaxIter=", 50);
-    demuxParams.nnlsEps = parseKeyValuePair<double>(arg, "nnlsEps=", 1e-10);
-    demuxParams.applyWeighting = !parseKeyValuePair<bool>(arg, "noWeighting=", false);
-    demuxParams.demuxBlockExtra = parseKeyValuePair<double>(arg, "demuxBlockExtra=", 0);
-    demuxParams.variableFill = parseKeyValuePair<bool>(arg, "variableFill=", false);
-    demuxParams.regularizeSums = !parseKeyValuePair<bool>(arg, "noSumNormalize=", false);
+    demuxParams.massError = parseKeyValuePair<MZTolerance>(arg, "massError=", k_defaultDemuxParams.massError);
+    demuxParams.nnlsMaxIter = (int)parseKeyValuePair<unsigned int>(arg, "nnlsMaxIter=", k_defaultDemuxParams.nnlsMaxIter);
+    demuxParams.nnlsEps = parseKeyValuePair<double>(arg, "nnlsEps=", k_defaultDemuxParams.nnlsEps);
+    demuxParams.applyWeighting = !parseKeyValuePair<LocaleBool>(arg, "noWeighting=", !k_defaultDemuxParams.applyWeighting);
+    demuxParams.demuxBlockExtra = parseKeyValuePair<double>(arg, "demuxBlockExtra=", k_defaultDemuxParams.demuxBlockExtra);
+    demuxParams.variableFill = parseKeyValuePair<LocaleBool>(arg, "variableFill=", k_defaultDemuxParams.variableFill);
+    demuxParams.regularizeSums = !parseKeyValuePair<LocaleBool>(arg, "noSumNormalize=", !k_defaultDemuxParams.regularizeSums);
     string optimization = parseKeyValuePair<string>(arg, "optimization=", "none");
+    demuxParams.interpolateRetentionTime = parseKeyValuePair<LocaleBool>(arg, "interpolateRT=", k_defaultDemuxParams.interpolateRetentionTime);
+    demuxParams.minimumWindowSize = parseKeyValuePair<double>(arg, "minWindowSize=", k_defaultDemuxParams.minimumWindowSize);
     bal::trim(arg);
     if (!arg.empty())
         throw runtime_error("[demultiplex] unhandled text remaining in argument string: \"" + arg + "\"");
@@ -837,7 +834,16 @@ SpectrumListPtr filterCreator_demux(const MSData& msd, const string& carg, pwiz:
 
     return SpectrumListPtr(new SpectrumList_Demux(msd.run.spectrumListPtr, demuxParams));
 }
-UsageInfo usage_demux = { "massError=<tolerance and units, eg 0.5Da (default 10ppm)> nnlsMaxIter=<int (50)> nnlsEps=<real (1e-10)> noWeighting=<bool (false)> demuxBlockExtra=<real (0)> variableFill=<bool (false)> noSumNormalize=<bool (false)> optimization=<(none)|overlap_only>",
+UsageInfo usage_demux = { 
+    "massError=<tolerance and units, eg 0.5Da (default 10ppm)>"
+    " nnlsMaxIter=<int (50)> nnlsEps=<real (1e-10)>"
+    " noWeighting=<bool (false)>"
+    " demuxBlockExtra=<real (0)>"
+    " variableFill=<bool (false)>"
+    " noSumNormalize=<bool (false)>"
+    " optimization=<(none)|overlap_only>"
+    " interpolateRT=<bool (true)>"
+    " minWindowSize=<real (0.2)>",
     "Separates overlapping or MSX multiplexed spectra into several demultiplexed spectra by inferring from adjacent multiplexed spectra. Optionally handles variable fill times (for Thermo)." };
 
 SpectrumListPtr filterCreator_precursorRefine(const MSData& msd, const string& arg, pwiz::util::IterationListenerRegistry* ilr)
@@ -905,7 +911,7 @@ SpectrumListPtr filterCreator_mzPrecursors(const MSData& msd, const string& carg
 
     return SpectrumListPtr(new
         SpectrumList_Filter(msd.run.spectrumListPtr,
-                            SpectrumList_FilterPredicate_PrecursorMzSet(setMz, mzTol, mode, target)));
+                            SpectrumList_FilterPredicate_PrecursorMzSet(setMz, mzTol, mode, target), ilr));
 }
 UsageInfo usage_mzPrecursors = {"<precursor_mz_list> [mzTol=<mzTol (10 ppm)>] [target=<selected|isolated> (selected)] [mode=<include|exclude (include)>]",
     "Filters spectra based on precursor m/z values found in the <precursor_mz_list>, with <mzTol> m/z tolerance. To retain "
@@ -924,7 +930,7 @@ SpectrumListPtr filterCreator_msLevel(const MSData& msd, const string& arg, pwiz
 
     return SpectrumListPtr(new 
         SpectrumList_Filter(msd.run.spectrumListPtr, 
-                            SpectrumList_FilterPredicate_MSLevelSet(msLevelSet)));
+                            SpectrumList_FilterPredicate_MSLevelSet(msLevelSet), ilr));
 }
 UsageInfo usage_msLevel = {"<mslevels>",
     "This filter selects only spectra with the indicated <mslevels>, expressed as an int_set."}; 
@@ -985,7 +991,7 @@ SpectrumListPtr filterCreator_mzPresent(const MSData& msd, const string& carg, p
 
     return SpectrumListPtr(new
         SpectrumList_Filter(msd.run.spectrumListPtr,
-                        SpectrumList_FilterPredicate_MzPresent(mzTol, setMz, ThresholdFilter(byType, threshold, orientation), mode)));
+                        SpectrumList_FilterPredicate_MzPresent(mzTol, setMz, ThresholdFilter(byType, threshold, orientation), mode), ilr));
 }
 UsageInfo usage_mzPresent = {"<mz_list> [mzTol=<tolerance> (0.5 mz)] [type=<type> (count)] [threshold=<threshold> (10000)] [orientation=<orientation> (most-intense)] [mode=<include|exclude (include)>]",
     "This filter includes or excludes spectra depending on whether the specified peaks are present.\n"
@@ -1004,7 +1010,7 @@ SpectrumListPtr filterCreator_chargeState(const MSData& msd, const string& arg, 
 
     return SpectrumListPtr(new 
         SpectrumList_Filter(msd.run.spectrumListPtr, 
-                            SpectrumList_FilterPredicate_ChargeStateSet(chargeStateSet)));
+                            SpectrumList_FilterPredicate_ChargeStateSet(chargeStateSet), ilr));
 }
 UsageInfo usage_chargeState = {"<charge_states>",
     "This filter keeps spectra that match the listed charge state(s), expressed as an int_set.  Both known/single "
@@ -1017,7 +1023,7 @@ SpectrumListPtr filterCreator_defaultArrayLength(const MSData& msd, const string
 
     return SpectrumListPtr(new 
         SpectrumList_Filter(msd.run.spectrumListPtr, 
-                            SpectrumList_FilterPredicate_DefaultArrayLengthSet(defaultArrayLengthSet)));
+                            SpectrumList_FilterPredicate_DefaultArrayLengthSet(defaultArrayLengthSet), ilr));
 }
 UsageInfo usage_defaultArrayLength = { "<peak_count_range>",
     "Keeps only spectra with peak counts within <peak_count_range>, expressed as an int_set. (In mzML the peak list "
@@ -1075,12 +1081,12 @@ SpectrumListPtr filterCreator_chargeStatePredictor(const MSData& msd, const stri
     const string makeMS2Token("makeMS2=");
 
     string arg = carg;
-    bool overrideExistingCharge = parseKeyValuePair<bool>(arg, overrideExistingChargeToken, false);
+    bool overrideExistingCharge = parseKeyValuePair<LocaleBool>(arg, overrideExistingChargeToken, false);
     int maxMultipleCharge = parseKeyValuePair<int>(arg, maxMultipleChargeToken, 3);
     int minMultipleCharge = parseKeyValuePair<int>(arg, minMultipleChargeToken, 2);
     double singleChargeFractionTIC = parseKeyValuePair<double>(arg, singleChargeFractionTICToken, 0.9);
     int maxKnownCharge = parseKeyValuePair<int>(arg, maxKnownChargeToken, 0);
-    bool makeMS2 = parseKeyValuePair<bool>(arg, makeMS2Token, false);
+    bool makeMS2 = parseKeyValuePair<LocaleBool>(arg, makeMS2Token, false);
     bal::trim(arg);
     if (!arg.empty())
         throw runtime_error("[chargeStatePredictor] unhandled text remaining in argument string: \"" + arg + "\"");
@@ -1282,7 +1288,7 @@ SpectrumListPtr filterCreator_ActivationType(const MSData& msd, const string& ar
         throw user_error("[SpectrumListFactory::filterCreator_ActivationType()] invalid activation type \"" + activationType + "\"");
 
     return SpectrumListPtr(new SpectrumList_Filter(msd.run.spectrumListPtr, 
-                                                   SpectrumList_FilterPredicate_ActivationType(cvIDs, hasNot)));
+                                                   SpectrumList_FilterPredicate_ActivationType(cvIDs, hasNot), ilr));
 }
 UsageInfo usage_activation = { "<precursor_activation_type>",
     "Keeps only spectra whose precursors have the specifed activation type.  It doesn't affect non-MS spectra, and doesn't "
@@ -1314,7 +1320,7 @@ SpectrumListPtr filterCreator_AnalyzerType(const MSData& msd, const string& arg,
         throw user_error("[SpectrumListFactory::filterCreator_AnalyzerType()] invalid filter argument.");
 
     return SpectrumListPtr(new SpectrumList_Filter(msd.run.spectrumListPtr,
-                                                   SpectrumList_FilterPredicate_AnalyzerType(cvIDs)));
+                                                   SpectrumList_FilterPredicate_AnalyzerType(cvIDs), ilr));
 
 }
 UsageInfo usage_analyzerTypeOld = { "<analyzer>",
@@ -1417,7 +1423,7 @@ SpectrumListPtr filterCreator_polarityFilter(const MSData& msd, const string& ar
     if (polarity == CVID_Unknown)
         throw user_error("[SpectrumListFactory::filterCreator_polarityFilter()] invalid polarity (expected \"positive\" or \"negative\")");
 
-    return SpectrumListPtr(new SpectrumList_Filter(msd.run.spectrumListPtr, SpectrumList_FilterPredicate_Polarity(polarity)));
+    return SpectrumListPtr(new SpectrumList_Filter(msd.run.spectrumListPtr, SpectrumList_FilterPredicate_Polarity(polarity), ilr));
 }
 UsageInfo usage_polarity = { "<polarity>",
     "Keeps only spectra with scan of the selected <polarity>.\n"
@@ -1459,7 +1465,7 @@ SpectrumListPtr filterCreator_thermoScanFilterFilter(const MSData& msd, const st
     //cout << "includeArg[" << includeArg << "]" << endl;
     //cout << "matchStringArg[" << matchStringArg << "]" << endl;
 
-    return SpectrumListPtr(new SpectrumList_Filter(msd.run.spectrumListPtr, SpectrumList_FilterPredicate_ThermoScanFilter(matchStringArg, matchExact, inverse)));
+    return SpectrumListPtr(new SpectrumList_Filter(msd.run.spectrumListPtr, SpectrumList_FilterPredicate_ThermoScanFilter(matchStringArg, matchExact, inverse), ilr));
 }
 
 UsageInfo usage_thermoScanFilter = { "<exact|contains> <include|exclude> <match string>",
@@ -1678,6 +1684,29 @@ string SpectrumListFactory::usage(bool detailedHelp, const char *morehelp_prompt
     }
 
     return str;
+}
+
+
+string SpectrumListFactory::usage(const std::string& detailedHelpForFilter)
+{
+    ostringstream oss;
+
+    for (JumpTableEntry* it = jumpTable_; it != jumpTableEnd_; ++it)
+    {
+        if (it->command == detailedHelpForFilter)
+        {
+            oss << it->command << " " << it->usage[0] << endl << it->usage[1] << endl;
+            return oss.str();
+        }
+    }
+
+    oss << "Invalid filter name: " << detailedHelpForFilter << endl << endl
+        << "Supported filters are:" << endl;
+
+    for (JumpTableEntry* it = jumpTable_; it != jumpTableEnd_; ++it)
+        oss << it->command << endl;
+
+    return oss.str();
 }
 
 

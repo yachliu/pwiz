@@ -20,14 +20,15 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
+using pwiz.Common.Chemistry;
 using pwiz.Common.DataBinding.Attributes;
-using pwiz.ProteowizardWrapper;
 using pwiz.Skyline.Model.Databinding.Collections;
 using pwiz.Skyline.Model.ElementLocators;
 using pwiz.Skyline.Model.Results;
 
 namespace pwiz.Skyline.Model.Databinding.Entities
 {
+    [InvariantDisplayName(nameof(ResultFile))]
     public class ResultFile : SkylineObject, IComparable
     {
         private readonly CachedValue<ChromFileInfo> _chromFileInfo;
@@ -61,6 +62,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         public DateTime? ModifiedTime { get { return ChromFileInfo.FileWriteTime; } }
         public DateTime? AcquiredTime { get { return ChromFileInfo.RunStartTime; } }
 
+        [Importable]
         public double? ExplicitGlobalStandardArea
         {
             get { return ChromFileInfo.ExplicitGlobalStandardArea; }
@@ -79,15 +81,15 @@ namespace pwiz.Skyline.Model.Databinding.Entities
                     }
                 }
 
-                Replicate.ChangeChromatogramSet(EditDescription.SetColumn("ExplicitGlobalStandardArea", // Not L10N
-                    value), 
-                Replicate.ChromatogramSet.ChangeMSDataFileInfos(newFileInfos));
+                Replicate.ChangeChromatogramSet(
+                    EditColumnDescription(nameof(ExplicitGlobalStandardArea), value), 
+                    Replicate.ChromatogramSet.ChangeMSDataFileInfos(newFileInfos));
             }
         }
 
         public double? TicArea { get { return ChromFileInfo.TicArea; } }
 
-        public MsDataFileImpl.eIonMobilityUnits IonMobilityUnits { get { return ChromFileInfo.IonMobilityUnits; } }
+        public eIonMobilityUnits IonMobilityUnits { get { return ChromFileInfo.IonMobilityUnits; } }
 
         public TChromInfo FindChromInfo<TChromInfo>(Results<TChromInfo> chromInfos) where TChromInfo : ChromInfo
         {
@@ -158,6 +160,16 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         public string Locator
         {
             get { return GetLocator(); }
+        }
+
+        public string SampleId
+        {
+            get { return ChromFileInfo.SampleId; }
+        }
+
+        public string InstrumentSerialNumber
+        {
+            get { return ChromFileInfo.InstrumentSerialNumber; }
         }
 
         public override ElementRef GetElementRef()

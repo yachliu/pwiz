@@ -99,8 +99,8 @@ PWIZ_API_DECL size_t SpectrumList_Bruker::find(const string& id) const
                 // fall through and return size_ (id not found)
             }
         }
-
-        return size_;
+        
+        return checkNativeIdFindResult(size_, id);
     }
     return scanItr->second;
 }
@@ -218,6 +218,8 @@ PWIZ_API_DECL SpectrumPtr SpectrumList_Bruker::spectrum(size_t index, DetailLeve
         // get the spectrum from MS interface; for FID formats scan is 0-based, else it's 1-based
         MSSpectrumPtr spectrum = getMSSpectrumPtr(si.scan, brukerDetailLevel);
 
+        result->cvParams.reserve(8); // Anticipate about this many CVParams
+
         int msLevel = spectrum->getMSMSStage();
         result->set(MS_ms_level, msLevel);
 
@@ -254,65 +256,33 @@ PWIZ_API_DECL SpectrumPtr SpectrumList_Bruker::spectrum(size_t index, DetailLeve
             result->set(MS_total_ion_current, spectrum->getTIC());
         }
 
+        double oneOverK0 = spectrum->oneOverK0();
+        if (oneOverK0 > 0)
+        {
+            scan.set(MS_inverse_reduced_ion_mobility, oneOverK0, MS_Vs_cm_2);
+            int windowGroup = spectrum->getWindowGroup();
+            if (windowGroup > 0)
+                scan.userParams.push_back(UserParam("windowGroup", lexical_cast<string>(windowGroup))); // diaPASEF data
+        }
+
         if (detailLevel == DetailLevel_InstantMetadata)
             return result;
-
-        if (spectrum->isIonMobilitySpectrum())
-            scan.set(MS_inverse_reduced_ion_mobility, spectrum->oneOverK0(), MS_Vs_cm_2);
-
-        if (detailLevel == DetailLevel_FastMetadata)
-            return result;
-
-        // Enumerating merged scan numbers is not instant.
-        IntegerSet scanNumbers = spectrum->getMergedScanNumbers();
-        if (config_.combineIonMobilitySpectra && scanNumbers.size() < 100)
-        {
-            using namespace boost::spirit::karma;
-            auto frameScanPair = compassDataPtr_->getFrameScanPair(si.scan);
-            generate(std::back_insert_iterator<std::string>(scan.spectrumID),
-                     "frame=" << int_ << " scan=" << int_,
-                     frameScanPair.first, *scanNumbers.begin());
-
-            vector<Scan>& scans = result->scanList.scans;
-            for (auto itr = ++scanNumbers.begin(); itr != scanNumbers.end(); ++itr)
-            {
-                scans.push_back(Scan());
-                scans.back().instrumentConfigurationPtr = msd_.run.defaultInstrumentConfigurationPtr;
-                generate(std::back_insert_iterator<std::string>(scans.back().spectrumID),
-                         "frame=" << int_ << " scan=" << int_,
-                         frameScanPair.first, *itr);
-
-                // CONSIDER: do we need this? all scan times will be the same and it's rather verbose
-                //if (scanTime > 0)
-                //    scans.back().set(MS_scan_start_time, scanTime, UO_second);
-
-                // CONSIDER: do we need this? all scan ranges will be the same and it's very verbose!
-                //if (scanRange.first > 0 && scanRange.second > 0)
-                //    scans.back().scanWindows.push_back(ScanWindow(scanRange.first, scanRange.second, MS_m_z));
-            }
-            result->scanList.set(MS_sum_of_spectra);
-        }
-        else
-            result->scanList.set(MS_no_combination);
-
-        //sd.set(MS_lowest_observed_m_z, minObservedMz);
-        //sd.set(MS_highest_observed_m_z, maxObservedMz);
 
         if (msLevel > 1)
         {
             Precursor precursor;
 
-            vector<double> fragMZs, isolMZs;
+            vector<double> fragMZs;
             vector<FragmentationMode> fragModes;
-            vector<IsolationMode> isolModes;
+            vector<IsolationInfo> isolationInfo;
 
             spectrum->getFragmentationData(fragMZs, fragModes);
 
             if (!fragMZs.empty())
             {
-                spectrum->getIsolationData(isolMZs, isolModes);
+                spectrum->getIsolationData(isolationInfo);
 
-                for (size_t i=0; i < fragMZs.size(); ++i)
+                for (size_t i = 0; i < fragMZs.size(); ++i)
                 {
                     if (fragMZs[i] > 0)
                     {
@@ -350,14 +320,13 @@ PWIZ_API_DECL SpectrumPtr SpectrumList_Bruker::spectrum(size_t index, DetailLeve
                             case FragmentationMode_PTR:
                                 break;
                         }
-                        //precursor.activation.set(MS_collision_energy, pExScanStats_->CollisionEnergy);
 
                         precursor.selectedIons.push_back(selectedIon);
                     }
 
-                    if (isolMZs[i] > 0)
+                    if (isolationInfo[i].isolationMz > 0)
                     {
-                        precursor.isolationWindow.set(MS_isolation_window_target_m_z, isolMZs[i], MS_m_z);
+                        precursor.isolationWindow.set(MS_isolation_window_target_m_z, isolationInfo[i].isolationMz, MS_m_z);
 
                         double isolationWidth = spectrum->getIsolationWidth();
                         if (isolationWidth > 0)
@@ -365,6 +334,9 @@ PWIZ_API_DECL SpectrumPtr SpectrumList_Bruker::spectrum(size_t index, DetailLeve
                             precursor.isolationWindow.set(MS_isolation_window_lower_offset, isolationWidth / 2, MS_m_z);
                             precursor.isolationWindow.set(MS_isolation_window_upper_offset, isolationWidth / 2, MS_m_z);
                         }
+
+                        if (isolationInfo[i].collisionEnergy > 0)
+                            precursor.activation.set(MS_collision_energy, isolationInfo[i].collisionEnergy);
                     }
                 }
             }
@@ -372,6 +344,48 @@ PWIZ_API_DECL SpectrumPtr SpectrumList_Bruker::spectrum(size_t index, DetailLeve
             if (precursor.selectedIons.size() > 0 || !precursor.isolationWindow.empty())
                 result->precursors.push_back(precursor);
         }
+
+        if (detailLevel == DetailLevel_FastMetadata)
+            return result;
+
+        // Enumerating merged scan numbers is not instant.
+        IntegerSet scanNumbers = spectrum->getMergedScanNumbers();
+        if (config_.combineIonMobilitySpectra && format_ == Reader_Bruker_Format_TDF)
+        {
+            result->scanList.set(MS_sum_of_spectra);
+            if (scanNumbers.size() < 100)
+            {
+                using namespace boost::spirit::karma;
+                auto frameScanPair = compassDataPtr_->getFrameScanPair(si.scan);
+                generate(std::back_insert_iterator<std::string>(scan.spectrumID),
+                         "frame=" << int_ << " scan=" << int_,
+                         frameScanPair.frame, *scanNumbers.begin());
+
+                vector<Scan>& scans = result->scanList.scans;
+                scans.reserve(scanNumbers.size());
+                for (auto itr = ++scanNumbers.begin(); itr != scanNumbers.end(); ++itr)
+                {
+                    scans.push_back(Scan());
+                    scans.back().instrumentConfigurationPtr = msd_.run.defaultInstrumentConfigurationPtr;
+                    generate(std::back_insert_iterator<std::string>(scans.back().spectrumID),
+                             "frame=" << int_ << " scan=" << int_,
+                             frameScanPair.frame, *itr);
+
+                    // CONSIDER: do we need this? all scan times will be the same and it's rather verbose
+                    //if (scanTime > 0)
+                    //    scans.back().set(MS_scan_start_time, scanTime, UO_second);
+
+                    // CONSIDER: do we need this? all scan ranges will be the same and it's very verbose!
+                    //if (scanRange.first > 0 && scanRange.second > 0)
+                    //    scans.back().scanWindows.push_back(ScanWindow(scanRange.first, scanRange.second, MS_m_z));
+                }
+            }
+        }
+        else
+            result->scanList.set(MS_no_combination);
+
+        //sd.set(MS_lowest_observed_m_z, minObservedMz);
+        //sd.set(MS_highest_observed_m_z, maxObservedMz);
 
         if (detailLevel == DetailLevel_FullData)
         {
@@ -384,13 +398,15 @@ PWIZ_API_DECL SpectrumPtr SpectrumList_Bruker::spectrum(size_t index, DetailLeve
                 auto& mz = result->getMZArray()->data;
                 auto& intensity = result->getIntensityArray()->data;
 
+                result->set(MS_centroid_spectrum); // TIMS is always centroided
+
                 BinaryDataArrayPtr mobility(new BinaryDataArray);
                 result->binaryDataArrayPtrs.push_back(mobility);
-                CVParam arrayType(MS_mean_ion_mobility_array);
+                CVParam arrayType(MS_mean_inverse_reduced_ion_mobility_array);
                 arrayType.units = MS_Vs_cm_2;
                 mobility->cvParams.emplace_back(arrayType);
 
-                spectrum->getCombinedSpectrumData(mz, intensity, mobility->data);
+                spectrum->getCombinedSpectrumData(mz, intensity, mobility->data, config_.sortAndJitter);
                 result->defaultArrayLength = mz.size();
             }
             else
@@ -421,15 +437,23 @@ PWIZ_API_DECL SpectrumPtr SpectrumList_Bruker::spectrum(size_t index, DetailLeve
         }
         else if (detailLevel == DetailLevel_FullMetadata)
         {
-            // N.B.: just getting the data size from the Bruker API is quite expensive.
-            if (msLevelsToCentroid.contains(msLevel) || ((result->defaultArrayLength = spectrum->getProfileDataSize())==0))
+            if (config_.combineIonMobilitySpectra)
             {
-                result->defaultArrayLength = spectrum->getLineDataSize();
-                result->set(MS_centroid_spectrum);
+                result->defaultArrayLength = spectrum->getCombinedSpectrumDataSize();
+                result->set(MS_centroid_spectrum); // TIMS is always centroided
             }
             else
             {
-                result->set(MS_profile_spectrum);
+                // N.B.: just getting the data size from the Bruker API is quite expensive.
+                if (msLevelsToCentroid.contains(msLevel) || ((result->defaultArrayLength = spectrum->getProfileDataSize())==0))
+                {
+                    result->defaultArrayLength = spectrum->getLineDataSize();
+                    result->set(MS_centroid_spectrum);
+                }
+                else
+                {
+                    result->set(MS_profile_spectrum);
+                }
             }
         }
     /*}
@@ -653,14 +677,14 @@ PWIZ_API_DECL void SpectrumList_Bruker::createIndex()
             if (config_.combineIonMobilitySpectra)
             {
                 generate(sink,
-                         "merged=" << int_,
-                         si.index);
+                         "merged=" << int_ << " frame=" << int_ << " scanStart=" << int_ << " scanEnd=" << int_,
+                         si.index, frameScanPair.frame, frameScanPair.scanStart, frameScanPair.scanEnd);
                 idToIndexTempMap[si.id] = si.index;
             }
             else // not inserting into idToIndexTempMap (instead uses on-the-fly logic in find())
                 generate(sink,
                          "frame=" << int_ << " scan=" << int_,
-                         frameScanPair.first, frameScanPair.second);
+                         frameScanPair.frame, frameScanPair.scanStart);
         }
     }
     else if (format_ != Reader_Bruker_Format_U2)
@@ -695,18 +719,24 @@ PWIZ_API_DECL bool SpectrumList_Bruker::hasPASEF() const
     return compassDataPtr_->hasPASEFData();
 }
 
-PWIZ_API_DECL bool SpectrumList_Bruker::canConvertInverseK0AndCCS() const
+PWIZ_API_DECL bool SpectrumList_Bruker::canConvertIonMobilityAndCCS() const
 {
     return format_ == Reader_Bruker_Format_TDF;
 }
 
+PWIZ_API_DECL bool SpectrumList_Bruker::hasCombinedIonMobility() const
+{
+    return format_ == Reader_Bruker_Format_TDF && config_.combineIonMobilitySpectra;
+}
+
 // Per email thread Aug 22 2017 bpratt, mattc, Bruker's SvenB:
 // The gas is nitrogen(14.0067 AMU) and the temperature is(according to Sven) assumed to be 305K.
+// Turns out it's N2, actually, which seems obvious in retrospect (bpratt Dec 2 2019)
 static const double ccs_conversion_factor = 18509.863216340458;
-static const double MolWeightGas = 14.0067;
+static const double MolWeightGas =  2.0 * 14.0067;
 static const double Temperature = 305;
 
-double SpectrumList_Bruker::inverseK0ToCCS(double inverseK0, double mz, int charge) const
+PWIZ_API_DECL double SpectrumList_Bruker::ionMobilityToCCS(double inverseK0, double mz, int charge) const
 {
     double MolWeight = mz * abs(charge) + chemistry::Electron * charge;
     double ReducedMass = MolWeight * MolWeightGas / (MolWeight + MolWeightGas);
@@ -715,7 +745,7 @@ double SpectrumList_Bruker::inverseK0ToCCS(double inverseK0, double mz, int char
     return ccs;    // in Angstrom^2
 }
 
-double SpectrumList_Bruker::ccsToInverseK0(double ccs, double mz, int charge) const
+PWIZ_API_DECL double SpectrumList_Bruker::ccsToIonMobility(double ccs, double mz, int charge) const
 {
     double MolWeight = mz * abs(charge) + chemistry::Electron * charge;
     double ReducedMass = MolWeight * MolWeightGas / (MolWeight + MolWeightGas);
@@ -750,10 +780,11 @@ SpectrumPtr SpectrumList_Bruker::spectrum(size_t index, DetailLevel detailLevel)
 SpectrumPtr SpectrumList_Bruker::spectrum(size_t index, bool getBinaryData, const pwiz::util::IntegerSet& msLevelsToCentroid) const {return SpectrumPtr();}
 SpectrumPtr SpectrumList_Bruker::spectrum(size_t index, DetailLevel detailLevel, const pwiz::util::IntegerSet& msLevelsToCentroid) const {return SpectrumPtr();}
 bool SpectrumList_Bruker::hasIonMobility() const { return false; }
+bool SpectrumList_Bruker::hasCombinedIonMobility() const { return false; }
 bool SpectrumList_Bruker::hasPASEF() const { return false; }
-bool SpectrumList_Bruker::canConvertInverseK0AndCCS() const { return false; }
-double SpectrumList_Bruker::inverseK0ToCCS(double inverseK0, double mz, int charge) const {return 0;}
-double SpectrumList_Bruker::ccsToInverseK0(double ccs, double mz, int charge) const {return 0;}
+bool SpectrumList_Bruker::canConvertIonMobilityAndCCS() const { return false; }
+double SpectrumList_Bruker::ionMobilityToCCS(double ionMobility, double mz, int charge) const {return 0;}
+double SpectrumList_Bruker::ccsToIonMobility(double ccs, double mz, int charge) const {return 0;}
 } // detail
 } // msdata
 } // pwiz

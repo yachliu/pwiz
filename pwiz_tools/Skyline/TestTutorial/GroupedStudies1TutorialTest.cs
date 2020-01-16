@@ -56,6 +56,7 @@ namespace pwiz.SkylineTestTutorial
     public class GroupedStudies1TutorialTest : AbstractFunctionalTestEx
     {
         [TestMethod]
+        [Timeout(60*60*1000)]  // These can take a long time in code coverage mode (1 hour)
         public void TestGroupedStudies1Tutorial()
         {
             // Set true to look at tutorial screenshots.
@@ -88,8 +89,6 @@ namespace pwiz.SkylineTestTutorial
                 ? Path.Combine(dirPath, fileName)
                 : dirPath;
         }
-
-        private bool IsFullData { get { return IsPauseForScreenShots || IsDemoMode || IsPass0; } }
 
         private const string TRUNCATED_PRECURSORS_VIEW_NAME = "Truncated Precursors";
         private const string MISSING_PEAKS_VIEW_NAME = "Missing Peaks";

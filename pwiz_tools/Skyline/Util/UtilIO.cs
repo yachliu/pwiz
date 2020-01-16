@@ -32,8 +32,10 @@ using pwiz.Common.Database.NHibernate;
 using pwiz.Common.SystemUtil;
 using pwiz.Skyline.Alerts;
 using pwiz.Skyline.Model;
+using pwiz.Skyline.Model.AuditLog;
 using pwiz.Skyline.Model.Results;
 using pwiz.Skyline.Properties;
+using pwiz.Skyline.Util.Extensions;
 
 namespace pwiz.Skyline.Util
 {
@@ -275,7 +277,7 @@ namespace pwiz.Skyline.Util
                 var sb = new StringBuilder();
                 foreach (var connection in _connections)
                 {
-                    sb.AppendLine(string.Format("{0}. {1}", connection.Key, connection.Value)); // Not L10N
+                    sb.AppendLine(string.Format(@"{0}. {1}", connection.Key, connection.Value));
                 }
                 return sb.ToString();
             }
@@ -452,7 +454,7 @@ namespace pwiz.Skyline.Util
             get
             {
                 if (!IsModified)
-                    return "Unmodified";    // Not L10N
+                    return @"Unmodified";
                 return FileEx.GetElapsedTimeExplanation(FileTime, File.GetLastWriteTime(FilePath));
             }
         }
@@ -519,7 +521,7 @@ namespace pwiz.Skyline.Util
             get
             {
                 if (!IsModified)
-                    return "Unmodified";    // Not L10N
+                    return @"Unmodified";
                 return FileEx.GetElapsedTimeExplanation(FileTime, File.GetLastWriteTime(FilePath));
             }
         }
@@ -713,7 +715,7 @@ namespace pwiz.Skyline.Util
 
         private static string GetBackupFileName(string pathDestination)
         {
-            string backupFile = FileSaver.TEMP_PREFIX + Path.GetFileName(pathDestination) + ".bak"; // Not L10N
+            string backupFile = FileSaver.TEMP_PREFIX + Path.GetFileName(pathDestination) + @".bak";
             string dirName = Path.GetDirectoryName(pathDestination);
             if (!string.IsNullOrEmpty(dirName))
                 backupFile = Path.Combine(dirName, backupFile);
@@ -780,7 +782,8 @@ namespace pwiz.Skyline.Util
                 }
                 else
                 {
-                    throw new IOException(string.Format(Resources.FileStreamManager_GetTempFileName_Win32_Error__0__, lastWin32Error));
+                    throw new IOException(TextUtil.LineSeparate(string.Format(Resources.FileStreamManager_GetTempFileName_Failed_attempting_to_create_a_temporary_file_in_the_folder__0__with_the_following_error_, basePath),
+                        string.Format(Resources.FileStreamManager_GetTempFileName_Win32_Error__0__, lastWin32Error)));
                 }
             }
 
@@ -895,8 +898,8 @@ namespace pwiz.Skyline.Util
             do
             {
                 path = Path.Combine(Path.GetDirectoryName(fileName) ?? String.Empty,
-                    Path.GetFileNameWithoutExtension(fileName) + "_" + // Not L10N
-                    DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + // Not L10N
+                    Path.GetFileNameWithoutExtension(fileName) + @"_" +
+                    DateTime.Now.ToString(@"yyyy-MM-dd_HH-mm-ss") +
                     SrmDocumentSharing.EXT_SKY_ZIP);
             }
             while (File.Exists(path));
@@ -908,12 +911,12 @@ namespace pwiz.Skyline.Util
             long deltaTicks = endTime.Ticks - startTime.Ticks;
             var elapsedSpan = new TimeSpan(deltaTicks);
             if (elapsedSpan.TotalMinutes > 0)
-                return string.Format("{0} minutes, {1} seconds", elapsedSpan.TotalMinutes, elapsedSpan.Seconds);   // Not L10N
+                return string.Format(@"{0} minutes, {1} seconds", elapsedSpan.TotalMinutes, elapsedSpan.Seconds);
             if (elapsedSpan.TotalSeconds > 0)
-                return elapsedSpan.TotalSeconds + " seconds"; // Not L10N
+                return elapsedSpan.TotalSeconds + @" seconds";
             if (elapsedSpan.TotalMilliseconds > 0)
-                return elapsedSpan.TotalMilliseconds + " milliseconds"; // Not L10N
-            return deltaTicks + " ticks"; // Not L10N
+                return elapsedSpan.TotalMilliseconds + @" milliseconds";
+            return deltaTicks + @" ticks";
         }
     }
 
@@ -997,19 +1000,24 @@ namespace pwiz.Skyline.Util
     /// <summary>
     /// Utility class to update progress while reading a Skyline document.
     /// </summary>
-    public sealed class StreamReaderWithProgress : StreamReader
+    public sealed class HashingStreamReaderWithProgress : StreamReader
     {
         private readonly IProgressMonitor _progressMonitor;
         private IProgressStatus _status;
-        private readonly long _totalBytes;
-        private long _bytesRead;
+        private long _totalChars;
+        private long _charsRead;
 
-        public StreamReaderWithProgress(string path, IProgressMonitor progressMonitor)
-            : base(path)
+        public HashingStreamReaderWithProgress(string path, IProgressMonitor progressMonitor)
+            : base(HashingStream.CreateReadStream(path), Encoding.UTF8)
         {
             _progressMonitor = progressMonitor;
             _status = new ProgressStatus(Path.GetFileName(path));
-            _totalBytes = new FileInfo(path).Length;
+            _totalChars = new FileInfo(PathEx.SafePath(path)).Length;
+        }
+
+        public HashingStream Stream
+        {
+            get { return (HashingStream) BaseStream; }
         }
 
         public override int Read(char[] buffer, int index, int count)
@@ -1017,15 +1025,34 @@ namespace pwiz.Skyline.Util
             if (_progressMonitor.IsCanceled)
                 throw new OperationCanceledException();
             var byteCount = base.Read(buffer, index, count);
-            _bytesRead += byteCount;
-            _status = _status.UpdatePercentCompleteProgress(_progressMonitor, _bytesRead, _totalBytes);
+            _charsRead += byteCount;
+            _status = _status.UpdatePercentCompleteProgress(_progressMonitor, _charsRead, _totalChars);
             return byteCount;
         }
     }
 
+    public sealed class StringListReader : TextReader
+    {
+        private readonly IList<string> _lines;
+        private int _currentLine;
+
+        public StringListReader(IList<string> lines)
+        {
+            _lines = lines;
+        }
+
+        public override string ReadLine()
+        {
+            if (_currentLine < _lines.Count)
+                return _lines[_currentLine++];
+            return null;
+        }
+    }
+
+
     public sealed class FileSaver : IDisposable
     {
-        public const string TEMP_PREFIX = "~SK"; // Not L10N
+        public const string TEMP_PREFIX = "~SK";
 
         private readonly IStreamManager _streamManager;
         private Stream _stream;
@@ -1154,6 +1181,12 @@ namespace pwiz.Skyline.Util
 
             _streamManager.Commit(SafeName, RealName, streamDest);
 
+            // Also move any files with maching basenames (useful for debugging with extra output files
+//            foreach (var baseMatchFile in Directory.EnumerateFiles(Path.GetDirectoryName(SafeName) ?? @".", Path.GetFileNameWithoutExtension(SafeName) + @".*"))
+//            {
+//                _streamManager.Commit(baseMatchFile, Path.ChangeExtension(RealName, baseMatchFile.Substring(SafeName.LastIndexOf('.'))), null);
+//            }
+
         	Dispose();
 
             return true;
@@ -1169,7 +1202,7 @@ namespace pwiz.Skyline.Util
                 }
                 catch (Exception e)
                 {
-                    Trace.TraceWarning("Exception in FileSaver.Dispose: {0}", e); // Not L10N
+                    Trace.TraceWarning(@"Exception in FileSaver.Dispose: {0}", e);
                 }
                 _stream = null;
             }
@@ -1185,7 +1218,7 @@ namespace pwiz.Skyline.Util
                 }
                 catch (Exception e)
                 {
-                    Trace.TraceWarning("Exception in FileSaver.Dispose: {0}", e); // Not L10N
+                    Trace.TraceWarning(@"Exception in FileSaver.Dispose: {0}", e);
                 }
                 // Make sure any further calls to Dispose() do nothing.
                 SafeName = null;
@@ -1195,7 +1228,7 @@ namespace pwiz.Skyline.Util
 
     public class TemporaryDirectory : IDisposable
     {
-        public const string TEMP_PREFIX = "~SK"; // Not L10N
+        public const string TEMP_PREFIX = "~SK";
 
         public TemporaryDirectory()
             : this(Path.Combine(Path.GetTempPath(), TEMP_PREFIX + Path.GetRandomFileName()))
@@ -1374,7 +1407,7 @@ namespace pwiz.Skyline.Util
                 // Clear the waiting thread.
                 try
                 {
-                    using (var pipeFake = new NamedPipeClientStream("SkylineOutputPipe")) // Not L10N
+                    using (var pipeFake = new NamedPipeClientStream(@"SkylineOutputPipe"))
                     {
                         pipeFake.Connect(10);
                     }
@@ -1403,19 +1436,19 @@ namespace pwiz.Skyline.Util
         public static int RunProcess(string arguments, bool runAsAdministrator, TextWriter writer)
         {
             // create GUID
-            string guidSuffix = string.Format("-{0}", Guid.NewGuid()); // Not L10N
+            string guidSuffix = string.Format(@"-{0}", Guid.NewGuid());
             var startInfo = new ProcessStartInfo
                 {
                     FileName = GetSkylineProcessRunnerExePath(),
-                    Arguments = guidSuffix + " " + arguments, // Not L10N
+                    Arguments = guidSuffix + @" " + arguments,
                 };
                 
             if (runAsAdministrator)
-                startInfo.Verb = "runas"; // Not L10N
+                startInfo.Verb = @"runas";
 
             var process = new Process {StartInfo = startInfo, EnableRaisingEvents = true};
 
-            string pipeName = "SkylineProcessRunnerPipe" + guidSuffix; // Not L10N
+            string pipeName = @"SkylineProcessRunnerPipe" + guidSuffix;
 
             using (var pipeStream = new NamedPipeServerStream(pipeName))
             {
@@ -1458,7 +1491,7 @@ namespace pwiz.Skyline.Util
                 }
                 else
                 {
-                    throw new IOException("Error running process"); // Not L10N? Does user see this?
+                    throw new IOException(@"Error running process"); // CONSIDER: localize? Does user see this?
                 }
             }
         }
@@ -1466,7 +1499,7 @@ namespace pwiz.Skyline.Util
         private static string GetSkylineProcessRunnerExePath()
         {
             string skylineFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            return Path.Combine(skylineFolder ?? string.Empty, "SkylineProcessRunner.exe"); // Not L10N
+            return Path.Combine(skylineFolder ?? string.Empty, @"SkylineProcessRunner.exe");
         }
     }
     

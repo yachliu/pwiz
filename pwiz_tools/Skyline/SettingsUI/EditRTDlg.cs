@@ -21,6 +21,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using pwiz.Common.Collections;
+using pwiz.Common.DataAnalysis;
 using pwiz.Common.DataBinding;
 using pwiz.Common.SystemUtil;
 using pwiz.Skyline.Alerts;
@@ -84,8 +86,13 @@ namespace pwiz.Skyline.SettingsUI
                     if (pepTimes.Count > 0)
                     {
                         ShowPeptides(true);
-                        foreach (var pepTime in pepTimes)
-                            Peptides.Add(new MeasuredPeptide(pepTime.PeptideSequence, pepTime.RetentionTime));
+
+                        var previous = Peptides.RaiseListChangedEvents;
+                        Peptides.RaiseListChangedEvents = false;
+                        Peptides.AddRange(pepTimes.Select(pepTime => new MeasuredPeptide(pepTime.PeptideSequence, pepTime.RetentionTime)));
+                        Peptides.RaiseListChangedEvents = previous;
+                        if (previous)
+                            Peptides.ResetBindings();
 
                         // Get statistics
                         RecalcRegression(_driverCalculators.SelectedItem, _regression.PeptideTimes.ToList());
@@ -110,7 +117,7 @@ namespace pwiz.Skyline.SettingsUI
                                 regressionLine.Intercept.ToString(LocalizationHelper.CurrentCulture);
                         }
                     }
-                    textTimeWindow.Text = string.Format("{0:F04}", _regression.TimeWindow); // Not L10N
+                    textTimeWindow.Text = string.Format(@"{0:F04}", _regression.TimeWindow);
                 }
             }
         }
@@ -334,10 +341,9 @@ namespace pwiz.Skyline.SettingsUI
 
         public void AddResults()
         {
-            SetTablePeptides(GetDocumentPeptides().ToArray());
-            var regressionPeps = UpdateCalculator(null);
-            if (regressionPeps != null)
-                SetTablePeptides(regressionPeps);
+            var peps = GetDocumentPeptides().ToArray();
+            var regressionPeps = UpdateCalculator(null, peps);
+            SetTablePeptides(regressionPeps ?? peps);
         }
 
         public void SetTablePeptides(IList<MeasuredRetentionTime> tablePeps)
@@ -405,6 +411,7 @@ namespace pwiz.Skyline.SettingsUI
 
             foreach (var measuredPeptide in Peptides)
             {
+                
                 times.Add(measuredPeptide.RetentionTime);
                 double? score = calc.ScoreSequence(measuredPeptide.Target);
                 scores.Add(score ?? calc.UnknownScore);
@@ -467,11 +474,11 @@ namespace pwiz.Skyline.SettingsUI
 		/// Todo: split this function into one that chooses and returns the calculator and one that returns the peptides
 		/// todo: chosen by that calculator
         /// </summary>
-        private IList<MeasuredRetentionTime> UpdateCalculator(RetentionScoreCalculatorSpec calculator)
+        private IList<MeasuredRetentionTime> UpdateCalculator(RetentionScoreCalculatorSpec calculator, IList<MeasuredRetentionTime> activePeptides = null)
         {
             bool calcInitiallyNull = calculator == null;
 
-            var activePeptides = GetTablePeptides();
+            activePeptides = activePeptides ?? GetTablePeptides();
             if (activePeptides.Count == 0)
                 return null;
 
@@ -553,19 +560,16 @@ namespace pwiz.Skyline.SettingsUI
 
         private RetentionScoreCalculatorSpec RecalcRegression(IList<RetentionScoreCalculatorSpec> calculators, IList<MeasuredRetentionTime> peptidesTimes)
         {
-            RetentionScoreCalculatorSpec calculatorSpec;
-            RetentionTimeStatistics statistics;
-
-            var regression = RetentionTimeRegression.CalcRegression("Recalc", // Not L10N
-                                                                    calculators,
-                                                                    RegressionMethodRT.linear,
-                                                                    peptidesTimes,
-                                                                    out statistics);
+            var summary = RetentionTimeRegression.CalcBestRegressionLongOperationRunner(XmlNamedElement.NAME_INTERNAL, calculators, peptidesTimes,
+                null, false, RegressionMethodRT.linear, CustomCancellationToken.NONE);
+            var regression = summary.Best.Regression;
+            var statistics = summary.Best.Statistics;
+            var calculatorSpec = summary.Best.Calculator;
 
             double r = 0;
             if (regression == null)
             {
-                if (calculators.Count() > 1)
+                if (calculators.Count > 1)
                 {
                     textSlope.Text = string.Empty;
                     textIntercept.Text = string.Empty;
@@ -581,10 +585,10 @@ namespace pwiz.Skyline.SettingsUI
                 var regressionLine = regression.Conversion as RegressionLineElement;
                 if (regressionLine != null)
                 {
-                    textSlope.Text = string.Format("{0}", regressionLine.Slope); // Not L10N 
-                    textIntercept.Text = string.Format("{0}", regressionLine.Intercept); // Not L10N
+                    textSlope.Text = string.Format(@"{0}", regressionLine.Slope);
+                    textIntercept.Text = string.Format(@"{0}", regressionLine.Intercept);
                 }
-                textTimeWindow.Text = string.Format("{0:F01}", regression.TimeWindow); // Not L10N
+                textTimeWindow.Text = string.Format(@"{0:F01}", regression.TimeWindow);
 
                 // Select best calculator match.
                 calculatorSpec = regression.Calculator;
@@ -737,16 +741,23 @@ namespace pwiz.Skyline.SettingsUI
             RetentionTime = rt;
         }
 
+        public MeasuredPeptide(MeasuredPeptide other) : this(other.Target, other.RetentionTime)
+        {
+        }
+
         public Target Target { get; set; }
         public double RetentionTime { get; set; }
-        public string Sequence { get { return Target == null ? string.Empty : Target.ToString(); } }
+        public string Sequence { get { return Target == null ? string.Empty : Target.ToSerializableString(); } }
 
         public static string ValidateSequence(Target sequence)
         {
-            if (sequence.IsEmpty || !sequence.IsProteomic)
+            if (sequence.IsEmpty)
                 return Resources.MeasuredPeptide_ValidateSequence_A_modified_peptide_sequence_is_required_for_each_entry;
-            if (!FastaSequence.IsExSequence(sequence.Sequence))
-                return string.Format(Resources.MeasuredPeptide_ValidateSequence_The_sequence__0__is_not_a_valid_modified_peptide_sequence, sequence);
+            if (sequence.IsProteomic)
+            {
+                if (!FastaSequence.IsExSequence(sequence.Sequence))
+                    return string.Format(Resources.MeasuredPeptide_ValidateSequence_The_sequence__0__is_not_a_valid_modified_peptide_sequence, sequence);
+            }
             return null;
         }
 

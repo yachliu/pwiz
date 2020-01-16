@@ -30,6 +30,7 @@
 
 #ifdef PWIZ_BINDINGS_CLI_COMBINED
     #include "../msdata/MSData.hpp"
+    #include "../common/IterationListener.hpp"
 #else
     #include "../common/SharedCLI.hpp"
     #using "pwiz_bindings_cli_common.dll" as_friend
@@ -102,9 +103,19 @@ public ref class SpectrumListFactory abstract
     static void wrap(msdata::MSData^ msd, System::String^ wrapper);
 
     /// <summary>
+    /// instantiate the SpectrumListWrapper indicated by wrapper
+    /// </summary>
+    static void wrap(msdata::MSData^ msd, System::String^ wrapper, util::IterationListenerRegistry^ ilr);
+
+    /// <summary>
     /// instantiate a list of SpectrumListWrappers
     /// </summary>
     static void wrap(msdata::MSData^ msd, System::Collections::Generic::IList<System::String^>^ wrappers);
+
+    /// <summary>
+    /// instantiate a list of SpectrumListWrappers
+    /// </summary>
+    static void wrap(msdata::MSData^ msd, System::Collections::Generic::IList<System::String^>^ wrappers, util::IterationListenerRegistry^ ilr);
 
     /// <summary>
     /// user-friendly documentation
@@ -471,12 +482,15 @@ public ref class SpectrumList_IonMobility : public msdata::SpectrumList
     /// </summary>
     static bool accept(msdata::SpectrumList^ inner);
 
-    enum class eIonMobilityUnits { none, drift_time_msec, inverse_reduced_ion_mobility_Vsec_per_cm2 };
+    enum class IonMobilityUnits { none, drift_time_msec, inverse_reduced_ion_mobility_Vsec_per_cm2, compensation_V };
 
-    virtual eIonMobilityUnits getIonMobilityUnits();
+    virtual IonMobilityUnits getIonMobilityUnits();
+
+    // returns true if 3-array IMS representation is in use
+    virtual bool hasCombinedIonMobility(); 
 
     // returns true if the data file actually has necessary info for CCS/ion mobility conversion handling
-    virtual bool canConvertIonMobilityAndCCS(eIonMobilityUnits units);
+    virtual bool canConvertIonMobilityAndCCS(IonMobilityUnits units);
 
     /// returns collisional cross-section associated with the ion mobility value (units depend on equipment type)
     virtual double ionMobilityToCCS(double ionMobility, double mz, int charge);

@@ -23,7 +23,6 @@
 #include "BlibUtils.h"
 
 
-using namespace std;
 namespace bfs = boost::filesystem;
 
 namespace BiblioSpec {
@@ -101,6 +100,22 @@ const char* scoreTypeToProbabilityTypeString(PSM_SCORE_TYPE scoreType){
 }
 
 
+const char* specIdTypeToString(SPEC_ID_TYPE specIdType)
+{
+    switch (specIdType)
+    {
+        case SCAN_NUM_ID:
+            return "scan number";
+        case INDEX_ID:
+            return "index";
+        case NAME_ID:
+            return "nativeID";
+        default:
+            throw BlibException(true, "unknown specIdType");
+    }
+}
+
+
 const char* ionMobilityTypeToString(IONMOBILITY_TYPE ionMobilityType)
 {
     switch (ionMobilityType)
@@ -111,6 +126,8 @@ const char* ionMobilityTypeToString(IONMOBILITY_TYPE ionMobilityType)
         return "driftTime(msec)";
     case IONMOBILITY_INVERSEREDUCED_VSECPERCM2:
         return "inverseK0(Vsec/cm^2)";
+    case IONMOBILITY_COMPENSATION_V:
+        return "compensation(V)";
     default:
         throw BlibException(true, "unknown ion mobility type");
     }

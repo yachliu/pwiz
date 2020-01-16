@@ -40,9 +40,10 @@ namespace detail {
 
 using namespace Waters;
 
-PWIZ_API_DECL ChromatogramList_Waters::ChromatogramList_Waters(RawDataPtr rawdata)
+PWIZ_API_DECL ChromatogramList_Waters::ChromatogramList_Waters(RawDataPtr rawdata, const Reader::Config& config)
 :   rawdata_(rawdata),
     size_(0),
+    config_(config),
     indexInitialized_(util::init_once_flag_proxy)
 {
 }
@@ -78,10 +79,16 @@ PWIZ_API_DECL size_t ChromatogramList_Waters::find(const string& id) const
 
 PWIZ_API_DECL ChromatogramPtr ChromatogramList_Waters::chromatogram(size_t index, bool getBinaryData) const
 {
-    return chromatogram(index, getBinaryData ? DetailLevel_FullData : DetailLevel_FullMetadata, 0.0, 0.0, 0.0);
+    return chromatogram(index, getBinaryData ? DetailLevel_FullData : DetailLevel_FullMetadata);
 }
 
-PWIZ_API_DECL ChromatogramPtr ChromatogramList_Waters::chromatogram(size_t index, bool getBinaryData, double lockmassMzPosScans, double lockmassMzNegScans, double lockmassTolerance) const
+
+PWIZ_API_DECL ChromatogramPtr ChromatogramList_Waters::chromatogram(size_t index, DetailLevel detailLevel) const
+{
+    return chromatogram(index, detailLevel, 0.0, 0.0, 0.0);
+}
+
+PWIZ_API_DECL ChromatogramPtr ChromatogramList_Waters::chromatogram(size_t index, DetailLevel detailLevel, double lockmassMzPosScans, double lockmassMzNegScans, double lockmassTolerance) const
 {
     boost::call_once(indexInitialized_.flag, boost::bind(&ChromatogramList_Waters::createIndex, this));
     if (index>size_)
@@ -106,17 +113,54 @@ PWIZ_API_DECL ChromatogramPtr ChromatogramList_Waters::chromatogram(size_t index
             result->set(translate(polarityType));
     }
 
+    bool getBinaryData = detailLevel == DetailLevel_FullData;
+
     switch (ie.chromatogramType)
     {
         case MS_TIC_chromatogram:
         {
+            if (detailLevel < DetailLevel_FullMetadata)
+                return result;
+
             map<double, double> fullFileTIC;
 
             for(int function : rawdata_->FunctionIndexList())
             {
+                if (config_.globalChromatogramsAreMs1Only)
+                {
+                    int msLevel;
+                    CVID spectrumType;
+                    try { translateFunctionType(WatersToPwizFunctionType(rawdata_->Info.GetFunctionType(function)), msLevel, spectrumType); }
+                    catch (...) // unable to translate function type
+                    {
+                        cerr << "[ChromatogramList_Waters::createIndex] Unable to translate function type \"" + rawdata_->Info.GetFunctionTypeString(rawdata_->Info.GetFunctionType(function)) + "\"" << endl;
+                        continue;
+                    }
+
+                    if (spectrumType != MS_MS1_spectrum)
+                        continue;
+
+                    // heuristic to detect high-energy MSe function
+                    if (function == 1)
+                    {
+                        double collisionEnergy = 0;
+                        string collisionEnergyStr = rawdata_->GetScanStat(1, 0, MassLynxScanItem::COLLISION_ENERGY);
+                        if (!collisionEnergyStr.empty())
+                            collisionEnergy = lexical_cast<double>(collisionEnergyStr);
+
+                        double collisionEnergyFunction1 = 0;
+                        string collisionEnergyStrFunction1 = rawdata_->GetScanStat(0, 0, MassLynxScanItem::COLLISION_ENERGY);
+                        if (collisionEnergy > collisionEnergyFunction1)
+                        {
+                            // MSe high energy is pseudo-MS2, exclude from MS1-only TIC
+                            continue;
+                        }
+                    }
+                }
+
                 // add current function TIC to full file TIC
-                vector<float> times, intensities;
-                rawdata_->ChromatogramReader.ReadTICChromatogram(function, times, intensities);
+                const vector<float>& times = rawdata_->TimesByFunctionIndex()[function];
+                const vector<float>& intensities = rawdata_->TicByFunctionIndex()[function];
                 for (int i = 0, end = intensities.size(); i < end; ++i)
                     fullFileTIC[times[i]] += intensities[i];
             }
@@ -154,6 +198,9 @@ PWIZ_API_DECL ChromatogramPtr ChromatogramList_Waters::chromatogram(size_t index
             //result->product.isolationWindow.set(MS_isolation_window_lower_offset, ie.q3, MS_m_z);
             //result->product.isolationWindow.set(MS_isolation_window_upper_offset, ie.q3, MS_m_z);
 
+            if (detailLevel < DetailLevel_FullMetadata)
+                return result;
+
             result->setTimeIntensityArrays(std::vector<double>(), std::vector<double>(), UO_minute, MS_number_of_detector_counts);
 
             vector<float> times;
@@ -176,6 +223,9 @@ PWIZ_API_DECL ChromatogramPtr ChromatogramList_Waters::chromatogram(size_t index
             //result->precursor.isolationWindow.set(MS_isolation_window_upper_offset, ie.q1, MS_m_z);
             result->precursor.activation.set(MS_CID);
 
+            if (detailLevel < DetailLevel_FullMetadata)
+                return result;
+
             result->setTimeIntensityArrays(std::vector<double>(), std::vector<double>(), UO_minute, MS_number_of_detector_counts);
 
             vector<float> times;
@@ -195,7 +245,6 @@ PWIZ_API_DECL ChromatogramPtr ChromatogramList_Waters::chromatogram(size_t index
     return result;
 }
 
-
 PWIZ_API_DECL void ChromatogramList_Waters::createIndex() const
 {
     index_.push_back(IndexEntry());
@@ -214,7 +263,7 @@ PWIZ_API_DECL void ChromatogramList_Waters::createIndex() const
         try { translateFunctionType(WatersToPwizFunctionType(rawdata_->Info.GetFunctionType(function)), msLevel, spectrumType); }
         catch(...) // unable to translate function type
         {
-            cerr << "[ChromatogramList_Waters::createIndex] Unable to translate function type \"" + rawdata_->Info.GetFunctionTypeString(function) + "\"" << endl;
+            cerr << "[ChromatogramList_Waters::createIndex] Unable to translate function type \"" + rawdata_->Info.GetFunctionTypeString(rawdata_->Info.GetFunctionType(function)) + "\"" << endl;
             continue;
         }
 
@@ -225,7 +274,7 @@ PWIZ_API_DECL void ChromatogramList_Waters::createIndex() const
         //cout << "Time range: " << f1 << " - " << f2 << endl;
 
         vector<float> precursorMZs, productMZs, intensities;
-        rawdata_->ScanReader.ReadScan(function, 1, precursorMZs, intensities, productMZs);
+        rawdata_->Reader.ReadScan(function, 1, precursorMZs, intensities, productMZs);
 
         if (spectrumType == MS_SRM_spectrum && productMZs.size() != precursorMZs.size())
             throw runtime_error("[ChromatogramList_Waters::createIndex] MRM function " + lexical_cast<string>(function+1) + " has mismatch between product m/z count (" + lexical_cast<string>(productMZs.size()) + ") and precursor m/z count (" + lexical_cast<string>(precursorMZs.size()) + ")");
@@ -289,7 +338,8 @@ size_t ChromatogramList_Waters::size() const {return 0;}
 const ChromatogramIdentity& ChromatogramList_Waters::chromatogramIdentity(size_t index) const {return emptyIdentity;}
 size_t ChromatogramList_Waters::find(const std::string& id) const {return 0;}
 ChromatogramPtr ChromatogramList_Waters::chromatogram(size_t index, bool getBinaryData) const {return ChromatogramPtr();}
-ChromatogramPtr ChromatogramList_Waters::chromatogram(size_t index, bool getBinaryData, double lockmassMzPosScans, double lockmassMzNegScans, double lockmassTolerance) const {return ChromatogramPtr();}
+ChromatogramPtr ChromatogramList_Waters::chromatogram(size_t index, DetailLevel detailLevel) const {return ChromatogramPtr();}
+ChromatogramPtr ChromatogramList_Waters::chromatogram(size_t index, DetailLevel detailLevel, double lockmassMzPosScans, double lockmassMzNegScans, double lockmassTolerance) const {return ChromatogramPtr();}
 
 } // detail
 } // msdata

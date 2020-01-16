@@ -23,6 +23,7 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Serialization;
 using pwiz.Common.SystemUtil;
+using pwiz.Skyline.Model.AuditLog;
 using pwiz.Skyline.Model.DocSettings;
 using pwiz.Skyline.Properties;
 using pwiz.Skyline.Util;
@@ -30,9 +31,9 @@ using pwiz.Skyline.Util;
 namespace pwiz.Skyline.Model.Optimization
 {
     [XmlRoot("optimized_library")]
-    public class OptimizationLibrary : XmlNamedElement
+    public class OptimizationLibrary : XmlNamedElement, IAuditLogComparable
     {
-        public static readonly OptimizationLibrary NONE = new OptimizationLibrary("None", string.Empty); // Not L10N
+        public static readonly OptimizationLibrary NONE = new OptimizationLibrary(@"None", string.Empty);
 
         private OptimizationDb _database;
 
@@ -42,7 +43,11 @@ namespace pwiz.Skyline.Model.Optimization
             DatabasePath = databasePath;
         }
 
-        [Diff]
+        [Track]
+        public AuditLogPath DatabasePathAuditLog
+        {
+            get { return AuditLogPath.Create(DatabasePath); }
+        }
         public string DatabasePath { get; private set; }
 
         public bool IsNone
@@ -239,5 +244,15 @@ namespace pwiz.Skyline.Model.Optimization
         }
 
         #endregion
+
+        public object GetDefaultObject(ObjectInfo<object> info)
+        {
+            return NONE;
+        }
+
+        public override string AuditLogText
+        {
+            get { return ReferenceEquals(this, NONE) ? LogMessage.NONE : base.AuditLogText; }
+        }
     }
 }

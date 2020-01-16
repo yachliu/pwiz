@@ -32,7 +32,7 @@ namespace pwiz.Common.Chemistry
 // ReSharper disable InconsistentNaming
         public static readonly T Empty = new T { Dictionary = ImmutableSortedList<string, TValue>.EMPTY };
 // ReSharper restore InconsistentNaming
-        public override abstract string ToString();
+        public abstract override string ToString();
         private int _hashCode;
         private ImmutableSortedList<string, TValue> _dict;
         public virtual String ToDisplayString()
@@ -259,7 +259,7 @@ namespace pwiz.Common.Chemistry
             var parts = expression.Split('-');
             if (parts.Length > 2)
             {
-                throw new ArgumentException("Molecular formula subtraction expressions are limited a single operation"); // Not L10N
+                throw new ArgumentException(@"Molecular formula subtraction expressions are limited a single operation");
             }
             var result = ParseToDictionary(parts[0]);
             if (parts.Length > 1)

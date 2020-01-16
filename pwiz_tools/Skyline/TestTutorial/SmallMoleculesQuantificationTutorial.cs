@@ -23,6 +23,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Windows.Forms;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using pwiz.Common.DataBinding;
 using pwiz.Common.SystemUtil;
@@ -30,9 +31,11 @@ using pwiz.Skyline;
 using pwiz.Skyline.Controls;
 using pwiz.Skyline.Controls.Databinding;
 using pwiz.Skyline.Controls.Graphs.Calibration;
+using pwiz.Skyline.Controls.Startup;
 using pwiz.Skyline.EditUI;
 using pwiz.Skyline.FileUI;
 using pwiz.Skyline.Model;
+using pwiz.Skyline.Model.Databinding.Entities;
 using pwiz.Skyline.Model.DocSettings;
 using pwiz.Skyline.Model.DocSettings.AbsoluteQuantification;
 using pwiz.Skyline.Model.GroupComparison;
@@ -48,13 +51,22 @@ namespace pwiz.SkylineTestTutorial
     [TestClass]
     public class SmallMoleculesQuantificationTutorialTest : AbstractFunctionalTestEx
     {
+        protected override bool UseRawFiles
+        {
+            get { return !ForceMzml && ExtensionTestContext.CanImportWatersRaw; }
+        }
+        protected override bool ShowStartPage
+        {
+            get { return true; }  // So we can point out the UI mode control
+        }
+
         [TestMethod]
         public void TestSmallMoleculesQuantificationTutorial()
         {
             // Set true to look at tutorial screenshots.
             //IsPauseForScreenShots = true;
 
-            LinkPdf = "https://skyline.gs.washington.edu/labkey/_webdav/home/software/Skyline/%40files/tutorials/SmallMoleculesQuantification.pdf";
+            LinkPdf = "https://skyline.gs.washington.edu/labkey/_webdav/home/software/Skyline/%40files/tutorials/SmallMoleculeQuantification.pdf";
             ForceMzml = true; // Prefer mzML as being the more efficient download
 
             TestFilesZipPaths = new[]
@@ -76,17 +88,20 @@ namespace pwiz.SkylineTestTutorial
 
         protected override void DoTest()
         {
+            // Setting the UI mode, p 2  
+            var startPage = WaitForOpenForm<StartPage>();
+            RunUI(() => startPage.SetUIMode(SrmDocument.DOCUMENT_TYPE.proteomic));
+            PauseForScreenShot<StartPage>("Start Window proteomic", 2);
+            RunUI(() => startPage.SetUIMode(SrmDocument.DOCUMENT_TYPE.small_molecules));
+            PauseForScreenShot<StartPage>("Start Window small molecule", 3);
+            RunUI(() => startPage.DoAction(skylineWindow => true));
+            WaitForOpenForm<SkylineWindow>();
+
             // Inserting a Transition List, p. 2
             {
                 var doc = SkylineWindow.Document;
 
                 var pasteDlg = ShowDialog<PasteDlg>(SkylineWindow.ShowPasteTransitionListDlg);
-                RunUI(() =>
-                {
-                    pasteDlg.IsMolecule = false;  // Default peptide view
-                    pasteDlg.Size = new Size(800, 275);
-                });
-                PauseForScreenShot<PasteDlg>("Paste Dialog in peptide mode", 2);
 
                 RunUI(() =>
                 {
@@ -253,7 +268,6 @@ namespace pwiz.SkylineTestTutorial
                         peptideSettingsUI.QuantMsLevel = null; // All
                         peptideSettingsUI.QuantUnits = "uM";
                     });
-
                     PauseForScreenShot<PeptideSettingsUI.QuantificationTab>("Peptide Settings - Quantitation", 14);
                     OkDialog(peptideSettingsUI, peptideSettingsUI.OkDialog);
                 }
@@ -264,7 +278,7 @@ namespace pwiz.SkylineTestTutorial
                 RunUI(() => documentGrid.ChooseView(Resources.SkylineViewContext_GetDocumentGridRowSources_Replicates));
                 PauseForScreenShot<DocumentGridForm>("Document Grid - replicates", 15);
 
-                IDictionary<string, Tuple<SampleType, double?>> sampleTypes =
+                /*IDictionary<string, Tuple<SampleType, double?>> sampleTypes =
                     new Dictionary<string, Tuple<SampleType, double?>> {
                     {"Blank_01", new Tuple<SampleType, double?>(SampleType.BLANK,null)},
                     {"Blank_02", new Tuple<SampleType, double?>(SampleType.BLANK,null)},
@@ -295,8 +309,20 @@ namespace pwiz.SkylineTestTutorial
                     {"QC_Mid_01", new Tuple<SampleType, double?>(SampleType.QC,346)},
                     {"QC_Mid_02", new Tuple<SampleType, double?>(SampleType.QC,346)},
                     {"QC_Mid_03", new Tuple<SampleType, double?>(SampleType.QC,346)}
-                };
-                SetDocumentGridSampleTypesAndConcentrations(sampleTypes);
+                };*/
+
+                SetExcelFileClipboardText(GetTestPath("Concentrations.xlsx"), "Sheet1", 3, false);
+                RunUI(() =>
+                {
+                    // Find and select Blank_01 cell
+                    var replicateColumnIndex = documentGrid.FindColumn(PropertyPath.Root).Index;
+                    documentGrid.DataGridView.CurrentCell = documentGrid.DataGridView.Rows.Cast<DataGridViewRow>()
+                        .Select(row => row.Cells[replicateColumnIndex])
+                        .FirstOrDefault(cell => ((Replicate) cell.Value).Name == "Blank_01");
+
+                    documentGrid.DataGridView.SendPaste();
+                });
+                //SetDocumentGridSampleTypesAndConcentrations(sampleTypes);
                 PauseForScreenShot<DocumentGridForm>("Document Grid - sample types - enlarge for screenshot so all rows can be seen ", 16);
 
                 RunUI(() => SkylineWindow.ShowCalibrationForm());
@@ -350,9 +376,7 @@ namespace pwiz.SkylineTestTutorial
                 RunUI(() =>
                 {
                     openDataSourceDialog1.CurrentDirectory = new MsDataFilePath(GetTestPath());
-                    openDataSourceDialog1.SelectAllFileType(UseRawFiles
-                            ? ExtensionTestContext.ExtWatersRaw
-                            : ExtensionTestContext.ExtMzml,
+                    openDataSourceDialog1.SelectAllFileType(ExtWatersRaw,
                             path => isFirstPass ? firstPassMatches.Any(path.Contains) : !firstPassMatches.Any(path.Contains));
                 });
                 if (isFirstPass)

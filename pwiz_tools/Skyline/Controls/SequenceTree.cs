@@ -99,7 +99,11 @@ namespace pwiz.Skyline.Controls
             tran_group_lib_decoy,
             fragment_lib_decoy,
             molecule,
+            molecule_lib,
+            molecule_irt,
+            molecule_irt_lib,
             molecule_standard,
+            molecule_standard_lib,
             molecule_list,
             peptide_list,
             empty_list,
@@ -153,7 +157,11 @@ namespace pwiz.Skyline.Controls
             ImageList.Images.Add(Resources.TransitionGroupLibDecoy);
             ImageList.Images.Add(Resources.FragmentLibDecoy);
             ImageList.Images.Add(Resources.Molecule);
+            ImageList.Images.Add(Resources.MoleculeLib);
+            ImageList.Images.Add(Resources.MoleculeIrt);
+            ImageList.Images.Add(Resources.MoleculeIrtLib);
             ImageList.Images.Add(Resources.MoleculeStandard);
+            ImageList.Images.Add(Resources.MoleculeStandardLib);
             ImageList.Images.Add(Resources.MoleculeList);
             ImageList.Images.Add(Resources.PeptideList);
             ImageList.Images.Add(Resources.EmptyList);
@@ -172,7 +180,7 @@ namespace pwiz.Skyline.Controls
             _pickTimer = new Timer { Interval = 1 };
             _pickTimer.Tick += tick_ShowPickList;
 
-            _nodeTip = new NodeTip(this);
+            _nodeTip = new NodeTip(this) {Parent = TopLevelControl};
 
             OnTextZoomChanged();
             OnDocumentChanged(this, new DocumentChangedEventArgs(null));
@@ -188,6 +196,11 @@ namespace pwiz.Skyline.Controls
                 _nodeTip = null;
             }
             base.Dispose(disposing);
+        }
+
+        public bool IsTipVisible
+        {
+            get { return _nodeTip.Visible; }
         }
 
         [Browsable(true)]
@@ -766,6 +779,9 @@ namespace pwiz.Skyline.Controls
         /// </summary>
         public void HideEffects()
         {
+            if (IgnoreFocus)
+                return;
+
             // Clear capture node to hide drop arrow
             NodeCapture = null;
 
@@ -902,6 +918,8 @@ namespace pwiz.Skyline.Controls
             }
         }
 
+        public bool IgnoreFocus { get; set; }
+
         protected override void OnGotFocus(EventArgs e)
         {
             base.OnGotFocus(e);
@@ -933,7 +951,11 @@ namespace pwiz.Skyline.Controls
         {
             base.OnMouseMove(e);
 
-            Point pt = e.Location;
+            MoveMouse(e.Location);
+        }
+
+        public void MoveMouse(Point pt)
+        {
             if (!_moveThreshold.Moved(pt))
                 return;
             _moveThreshold.Location = null;
@@ -946,7 +968,7 @@ namespace pwiz.Skyline.Controls
                 ((SrmTreeNode) node).ShowAnnotationTipOnly = GetNoteRect(node).Contains(pt);
             if (tipProvider != null && !tipProvider.HasTip)
                 tipProvider = null;
-            if (_focus &&  (picker != null || tipProvider != null))
+            if ((_focus || IgnoreFocus) && (picker != null || tipProvider != null))
             {
                 Rectangle rectCapture = node.BoundsMS;
                 if (tipProvider == null || !rectCapture.Contains(pt))
@@ -963,9 +985,11 @@ namespace pwiz.Skyline.Controls
             {
                 node = null;
                 if (_nodeTip != null)
-                    _nodeTip.HideTip();                
+                    _nodeTip.HideTip();
             }
-            NodeCapture = node;
+            // Capture the mouse cursor, if not in test mode ignoring focus
+            if (!IgnoreFocus)
+                NodeCapture = node;
         }
 
         protected override void OnMouseClick(MouseEventArgs e)
@@ -1280,7 +1304,7 @@ namespace pwiz.Skyline.Controls
 
         public bool AllowDisplayTip
         {
-            get { return Focused || ToolTipOwner != null; }
+            get { return IgnoreFocus || Focused || ToolTipOwner != null; }
         }
 
         public static ProteinMetadataManager.ProteinDisplayMode ProteinsDisplayMode

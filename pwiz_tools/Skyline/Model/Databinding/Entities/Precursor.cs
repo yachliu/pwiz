@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using pwiz.Common.Chemistry;
 using pwiz.Common.DataBinding.Attributes;
-using pwiz.ProteowizardWrapper;
 using pwiz.Skyline.Controls.SeqNode;
 using pwiz.Skyline.Model.Databinding.Collections;
 using pwiz.Skyline.Model.DocSettings;
@@ -49,6 +49,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         }
 
         [HideWhen(AncestorOfType = typeof(Peptide))]
+        [InvariantDisplayName("Molecule", ExceptInUiMode = UiModes.PROTEOMIC)]
         public Peptide Peptide
         {
             get { return _peptide.Value; }
@@ -64,7 +65,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         }
 
         [InvariantDisplayName("PrecursorResults")]
-        [OneToMany(ForeignKey = "Precursor", ItemDisplayName = "PrecursorResult")]
+        [OneToMany(ForeignKey = "Precursor")]
         public IDictionary<ResultKey, PrecursorResult> Results
         {
             get { return _results.Value; }
@@ -77,7 +78,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
 
         protected override TransitionGroupDocNode CreateEmptyNode()
         {
-            return new TransitionGroupDocNode(new TransitionGroup(new Model.Peptide(null, "X", null, null, 0), Util.Adduct.SINGLY_PROTONATED, IsotopeLabelType.light), null); // Not L10N
+            return new TransitionGroupDocNode(new TransitionGroup(new Model.Peptide(null, @"X", null, null, 0), Util.Adduct.SINGLY_PROTONATED, IsotopeLabelType.light), null);
         }
 
         [InvariantDisplayName("PrecursorResultsSummary")]
@@ -121,6 +122,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
             return DocNode.TransitionGroup.IsCustomIon;
         }
 
+        [Hidden(InUiMode = UiModes.PROTEOMIC)]
         [InvariantDisplayName("PrecursorIonName")]
         [Format(NullValue = TextUtil.EXCEL_NA)]
         public string IonName
@@ -193,6 +195,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         }
 
         [InvariantDisplayName("PrecursorAdduct")]
+        [Hidden(InUiMode = UiModes.PROTEOMIC)]
         public string Adduct
         {
             get
@@ -235,6 +238,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         }
         
         [ChildDisplayName("ModifiedSequence{0}")]
+        [Hidden(InUiMode = UiModes.SMALL_MOLECULES)]
         public ModifiedSequence ModifiedSequence
         {
             get
@@ -244,63 +248,59 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         }
 
         [Format(Formats.OPT_PARAMETER, NullValue = TextUtil.EXCEL_NA)]
+        [Obsolete("Use Transition.ExplicitCollisionEnergy instead")]
         public double? ExplicitCollisionEnergy
         {
             get
             {
-                return DocNode.ExplicitValues.CollisionEnergy;
-            }
-            set
-            {
-                var values = DocNode.ExplicitValues.ChangeCollisionEnergy(value);
-                ChangeDocNode(EditDescription.SetColumn("ExplicitCollisionEnergy", value), // Not L10N
-                    docNode=>docNode.ChangeExplicitValues(values));
+                // If all transitions have the same value, show that
+                return Transitions.Any() && Transitions.All(t => Equals(t.ExplicitCollisionEnergy, Transitions.First().ExplicitCollisionEnergy))
+                    ? Transitions.First().ExplicitCollisionEnergy
+                    : null;
             }
         }
 
         [Format(Formats.OPT_PARAMETER, NullValue = TextUtil.EXCEL_NA)]
+        [Obsolete("Use Transition.SLens instead")]
         public double? ExplicitSLens
         {
             get
             {
-                return DocNode.ExplicitValues.SLens;
-            }
-            set
-            {
-                ChangeDocNode(EditDescription.SetColumn("ExplicitSLens", value), // Not L10N
-                    docNode=>docNode.ChangeExplicitValues(docNode.ExplicitValues.ChangeSLens(value)));
+                // If all transitions have the same value, show that
+                return Transitions.Any() && Transitions.All(t => Equals(t.ExplicitSLens, Transitions.First().ExplicitSLens))
+                    ? Transitions.First().ExplicitSLens
+                    : null;
             }
         }
 
         [Format(Formats.OPT_PARAMETER, NullValue = TextUtil.EXCEL_NA)]
+        [Obsolete("Use Transition.ExplicitConeVolrage instead")]
         public double? ExplicitConeVoltage
         {
             get
             {
-                return DocNode.ExplicitValues.ConeVoltage;
-            }
-            set
-            {
-                ChangeDocNode(EditDescription.SetColumn("ExplicitConeVoltage", value), // Not L10N
-                    docNode=>docNode.ChangeExplicitValues(docNode.ExplicitValues.ChangeConeVoltage(value)));
+                // If all transitions have the same value, show that
+                return Transitions.Any() && Transitions.All(t => Equals(t.ExplicitConeVoltage, Transitions.First().ExplicitConeVoltage))
+                    ? Transitions.First().ExplicitConeVoltage
+                    : null;
             }
         }
 
         [Format(Formats.OPT_PARAMETER, NullValue = TextUtil.EXCEL_NA)]
+        [Obsolete("Use Transition.ExplicitDeclusteringPotential instead")]
         public double? ExplicitDeclusteringPotential
         {
             get
             {
-                return DocNode.ExplicitValues.DeclusteringPotential;
-            }
-            set
-            {
-                ChangeDocNode(EditDescription.SetColumn("ExplicitDeclusteringPotential", value), // Not L10N
-                    docNode => docNode.ChangeExplicitValues(docNode.ExplicitValues.ChangeDeclusteringPotential(value)));
+                // If all transitions have the same value, show that
+                return Transitions.Any() && Transitions.All(t => Equals(t.ExplicitDeclusteringPotential, Transitions.First().ExplicitDeclusteringPotential))
+                    ? Transitions.First().ExplicitDeclusteringPotential
+                    : null;
             }
         }
 
         [Format(Formats.OPT_PARAMETER, NullValue = TextUtil.EXCEL_NA)]
+        [Importable]
         public double? ExplicitCompensationVoltage
         {
             get
@@ -309,8 +309,8 @@ namespace pwiz.Skyline.Model.Databinding.Entities
             }
             set
             {
-                ChangeDocNode(EditDescription.SetColumn("ExplicitCompensationVoltage", value), // Not L10N
-                    docNode=>docNode.ChangeExplicitValues(docNode.ExplicitValues.ChangeCompensationVoltage(value)));
+                ChangeDocNode(EditColumnDescription(nameof(ExplicitCompensationVoltage), value),
+                    docNode=>docNode.ChangeExplicitValues(docNode.ExplicitValues.ChangeIonMobility(value, eIonMobilityUnits.compensation_V)));
             }
         }
 
@@ -319,29 +319,25 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         {
             get
             {
-                return DocNode.ExplicitValues.IonMobilityUnits == MsDataFileImpl.eIonMobilityUnits.drift_time_msec ? DocNode.ExplicitValues.IonMobility : null;
+                return DocNode.ExplicitValues.IonMobilityUnits == eIonMobilityUnits.drift_time_msec ? DocNode.ExplicitValues.IonMobility : null;
             }
             set
             {
-                ChangeDocNode(EditDescription.SetColumn("ExplicitDriftTimeMsec", value), // Not L10N
-                    docNode => docNode.ChangeExplicitValues(docNode.ExplicitValues.ChangeIonMobility(value, MsDataFileImpl.eIonMobilityUnits.drift_time_msec)));
+                ChangeDocNode(EditColumnDescription(nameof(ExplicitDriftTimeMsec), value),
+                    docNode => docNode.ChangeExplicitValues(docNode.ExplicitValues.ChangeIonMobility(value, eIonMobilityUnits.drift_time_msec)));
             }
         }
 
-        [Obsolete("use IonMobilityHighEnergyOffset instead")] 
+        [Obsolete("use Transition.IonMobilityHighEnergyOffset instead")] 
         public double? ExplicitDriftTimeHighEnergyOffsetMsec  // Backward compatibility, the more general "ExplicitIonMobility" is preferred
         {
             get
             {
-                return DocNode.ExplicitValues.IonMobilityUnits == MsDataFileImpl.eIonMobilityUnits.drift_time_msec ? DocNode.ExplicitValues.IonMobilityHighEnergyOffset : null;
-            }
-            set
-            {
-                ChangeDocNode(EditDescription.SetColumn("ExplicitDriftTimeHighEnergyOffsetMsec", value), // Not L10N
-                    docNode => docNode.ChangeExplicitValues(docNode.ExplicitValues.ChangeIonMobilityHighEnergyOffset(value)));
+                return DocNode.ExplicitValues.IonMobilityUnits == eIonMobilityUnits.drift_time_msec ? ExplicitIonMobilityHighEnergyOffset : null;
             }
         }
 
+        [Importable]
         public double? ExplicitIonMobility
         {
             get
@@ -350,11 +346,12 @@ namespace pwiz.Skyline.Model.Databinding.Entities
             }
             set
             {
-                ChangeDocNode(EditDescription.SetColumn("ExplicitIonMobility", value), // Not L10N
+                ChangeDocNode(EditColumnDescription(nameof(ExplicitIonMobility), value),
                     docNode=>docNode.ChangeExplicitValues(docNode.ExplicitValues.ChangeIonMobility(value, docNode.ExplicitValues.IonMobilityUnits)));
             }
         }
 
+        [Importable]
         public string ExplicitIonMobilityUnits
         {
             get
@@ -363,26 +360,26 @@ namespace pwiz.Skyline.Model.Databinding.Entities
             }
             set
             {
-                MsDataFileImpl.eIonMobilityUnits eValue;
-                if (SmallMoleculeTransitionListReader.IonMobilityUnitsSynonyms.TryGetValue(value.Trim(), out eValue))
-                    ChangeDocNode(EditDescription.SetColumn("ExplicitIonMobilityUnits", eValue), // Not L10N
+                eIonMobilityUnits eValue;
+                if (SmallMoleculeTransitionListReader.IonMobilityUnitsSynonyms.TryGetValue(string.IsNullOrEmpty(value) ? string.Empty : value.Trim(), out eValue))
+                    ChangeDocNode(EditColumnDescription(nameof(ExplicitIonMobilityUnits), eValue),
                         docNode=>docNode.ChangeExplicitValues(docNode.ExplicitValues.ChangeIonMobility(docNode.ExplicitValues.IonMobility, eValue)));
             }
         }
 
+        [Obsolete("Use Transition.IonMobilityHighEnergyOffset instead")]
         public double? ExplicitIonMobilityHighEnergyOffset
         {
             get
             {
-                return DocNode.ExplicitValues.IonMobilityHighEnergyOffset;
-            }
-            set
-            {
-                ChangeDocNode(EditDescription.SetColumn("ExplicitIonMobilityHighEnergyOffset", value), // Not L10N
-                    docNode=>docNode.ChangeExplicitValues(docNode.ExplicitValues.ChangeIonMobilityHighEnergyOffset(value)));
+                // If all transitions have the same value, show that
+                return Transitions.Any() && Transitions.All(t => Equals(t.ExplicitIonMobilityHighEnergyOffset, Transitions.First().ExplicitIonMobilityHighEnergyOffset))
+                    ? Transitions.First().ExplicitIonMobilityHighEnergyOffset
+                    : null;
             }
         }
-        
+
+        [Importable]
         public double? ExplicitCollisionalCrossSection
         {
             get
@@ -391,18 +388,30 @@ namespace pwiz.Skyline.Model.Databinding.Entities
             }
             set
             {
-                ChangeDocNode(EditDescription.SetColumn("ExplicitCollisionalCrossSection", value), // Not L10N
+                ChangeDocNode(EditColumnDescription(nameof(ExplicitCollisionalCrossSection), value),
                     docNode=>docNode.ChangeExplicitValues(docNode.ExplicitValues.ChangeCollisionalCrossSection(value)));
             }
         }
 
+        [Importable]
+        public double? PrecursorConcentration
+        {
+            get { return DocNode.PrecursorConcentration; }
+            set
+            {
+                ChangeDocNode(EditColumnDescription(nameof(PrecursorConcentration), value),
+                    docNode=>docNode.ChangePrecursorConcentration(value));
+            }
+        }
+
         [InvariantDisplayName("PrecursorNote")]
+        [Importable]
         public string Note
         {
             get { return DocNode.Note; }
             set
             {
-                ChangeDocNode(EditDescription.SetColumn("PrecursorNote", value), // Not L10N
+                ChangeDocNode(EditColumnDescription(nameof(Note), value),
                     docNode => (TransitionGroupDocNode) docNode.ChangeAnnotations(docNode.Annotations
                         .ChangeNote(value)));
             }
@@ -419,18 +428,24 @@ namespace pwiz.Skyline.Model.Databinding.Entities
             {
                 if (DocNode.LibInfo is NistSpectrumHeaderInfo)
                 {
-                    return "NIST"; // Not L10N
+                    return @"NIST";
                 }
                 if (DocNode.LibInfo is XHunterSpectrumHeaderInfo)
                 {
-                    return "GPM"; // Not L10N
+                    return @"GPM";
                 }
                 if (DocNode.LibInfo is BiblioSpecSpectrumHeaderInfo)
                 {
-                    return "BiblioSpec"; // Not L10N
+                    return @"BiblioSpec";
                 }
                 return null;
             }
+        }
+
+        [Format(NullValue = TextUtil.EXCEL_NA)]
+        public double? LibraryProbabilityScore
+        {
+            get { return (DocNode.LibInfo as BiblioSpecSpectrumHeaderInfo)?.Score; }
         }
 
         [Format(NullValue = TextUtil.EXCEL_NA)]
@@ -495,12 +510,42 @@ namespace pwiz.Skyline.Model.Databinding.Entities
             return string.Format(Resources.Precursor_GetDeleteConfirmation_Are_you_sure_you_want_to_delete_these__0__precursors_, nodeCount);
         }
 
+        [Importable]
+        public bool AutoSelectTransitions
+        {
+            get { return DocNode.AutoManageChildren; }
+            set
+            {
+                if (value == AutoSelectTransitions)
+                {
+                    return;
+                }
+                ChangeDocNode(EditColumnDescription(nameof(AutoSelectTransitions), value), docNode =>
+                    {
+                        docNode = (TransitionGroupDocNode) docNode.ChangeAutoManageChildren(value);
+                        if (docNode.AutoManageChildren)
+                        {
+                            var srmSettingsDiff = new SrmSettingsDiff(false, false, false, false, true, false);
+                            docNode = docNode.ChangeSettings(SrmDocument.Settings, Peptide.DocNode, Peptide.DocNode.ExplicitMods,
+                                srmSettingsDiff);
+                        }
+
+                        return docNode;
+                    });
+            }
+        }
+
         [InvariantDisplayName("PrecursorLocator")]
         public string Locator { get { return GetLocator(); } }
 
         protected override NodeRef NodeRefPrototype
         {
             get { return PrecursorRef.PROTOTYPE; }
+        }
+
+        protected override Type SkylineDocNodeType
+        {
+            get { return typeof(Precursor); }
         }
     }
 
@@ -574,7 +619,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
         [Obsolete]
         public Precursor Precursor { get; private set; }
         [Obsolete]
-        public string ReplicatePath { get { return "/"; } } // Not L10N
+        public string ReplicatePath { get { return @"/"; } }
         [ChildDisplayName("{0}BestRetentionTime")]
         public RetentionTimeSummary BestRetentionTime { get; private set; }
         [ChildDisplayName("{0}MaxFwhm")]
@@ -590,7 +635,7 @@ namespace pwiz.Skyline.Model.Databinding.Entities
 
         public override string ToString()
         {
-            return string.Format("RT: {0} Area: {1}", BestRetentionTime, TotalArea); // Not L10N?
+            return string.Format(@"RT: {0} Area: {1}", BestRetentionTime, TotalArea); // CONSIDER: localize?
         }
 
     }

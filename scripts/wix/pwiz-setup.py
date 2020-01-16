@@ -74,11 +74,14 @@ def contextMenuRegistries() :
     for appName in appNames :
         txt = componentText.replace("_MY_APPU_",appName.upper())
         txt = txt.replace("__MY_APP__","Open with "+appName)
-        txt = txt.replace("__MY_PATH__","[APPLICATIONROOTDIRECTORY]"+appName+".exe")
+        txt = txt.replace("__MY_PATH__","[APPLICATIONFOLDER]"+appName+".exe")
         registries = registries + txt
     return registries
 
 wxsTemplate = open(templatePath + "/pwiz-setup.wxs.template").read()
+wxsVendorDlls = open(templatePath + "/vendor-dlls.wxs-fragment").read()
+
+wxsTemplate = wxsTemplate.replace("__VENDOR_DLLS__", wxsVendorDlls)
 wxsTemplate = wxsTemplate.replace("__CONTEXTMENU_PROPERTIES__",contextMenuProperties())
 wxsTemplate = wxsTemplate.replace("__CONTEXTMENU_REGISTRY__",contextMenuRegistries())
 wxsTemplate = wxsTemplate.replace("__CONTEXTMENU_CHECKBOXEN__",contextMenuOptions())

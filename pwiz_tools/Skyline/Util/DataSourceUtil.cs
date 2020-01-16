@@ -30,9 +30,10 @@ namespace pwiz.Skyline.Util
 {
     public static class DataSourceUtil
     {
-        // ReSharper disable NonLocalizedString
+        // ReSharper disable LocalizableElement
         public const string EXT_THERMO_RAW = ".raw";
         public const string EXT_WIFF = ".wiff";
+        public const string EXT_WIFF2 = ".wiff2";
         public const string EXT_SHIMADZU_RAW = ".lcd";
         public const string EXT_MZXML =  ".mzxml";
         public const string EXT_MZDATA = ".mzdata";
@@ -40,12 +41,13 @@ namespace pwiz.Skyline.Util
         public const string EXT_MZ5 = ".mz5";
         public const string EXT_XML = ".xml";
         public const string EXT_UIMF = ".uimf";
-        public const string EXT_CHORUSRESPONSE = ".chorusresponse";
+        public const string EXT_WATERS_RAW = ".raw";
+        public const string EXT_AGILENT_BRUKER_RAW = ".d";
 
-        public const string TYPE_WIFF = "ABSciex WIFF";
-        public const string TYPE_AGILENT = "Agilent Data";
-        public const string TYPE_BRUKER = "Bruker Data";
-        public const string TYPE_SHIMADZU = "Shimadzu Data";
+        public const string TYPE_WIFF = "Sciex WIFF/WIFF2";
+        public const string TYPE_AGILENT = "Agilent MassHunter Data";
+        public const string TYPE_BRUKER = "Bruker BAF/TDF";
+        public const string TYPE_SHIMADZU = "Shimadzu LCD";
         public const string TYPE_THERMO_RAW = "Thermo RAW";
         public const string TYPE_WATERS_RAW = "Waters RAW";
         public const string TYPE_MZML = "mzML";
@@ -56,7 +58,7 @@ namespace pwiz.Skyline.Util
         public const string TYPE_CHORUSRESPONSE = "Chorus Response";
         public const string FOLDER_TYPE = "File Folder";
         public const string UNKNOWN_TYPE = "unknown";
-        // ReSharper restore NonLocalizedString
+        // ReSharper restore LocalizableElement
 
         public static bool IsDataSource(string path)
         {
@@ -70,13 +72,13 @@ namespace pwiz.Skyline.Util
 
         public static string GetSourceType(DirectoryInfo dirInfo)
         {
-            // ReSharper disable NonLocalizedString
+            // ReSharper disable LocalizableElement
             try
             {
-                if (dirInfo.HasExtension(".raw") &&
+                if (dirInfo.HasExtension(EXT_WATERS_RAW) &&
                         dirInfo.GetFiles("_FUNC*.DAT").Length > 0)
                     return TYPE_WATERS_RAW;
-                if (dirInfo.HasExtension(".d"))
+                if (dirInfo.HasExtension(EXT_AGILENT_BRUKER_RAW))
                 {
                     if (dirInfo.GetDirectories("AcqData").Length > 0)
                         return TYPE_AGILENT;
@@ -86,7 +88,7 @@ namespace pwiz.Skyline.Util
                 }
                 return FOLDER_TYPE;
             }
-            // ReSharper restore NonLocalizedString
+            // ReSharper restore LocalizableElement
             catch (Exception)
             {
                 // TODO: Folder without access type
@@ -111,6 +113,7 @@ namespace pwiz.Skyline.Util
             {
                 case EXT_THERMO_RAW: return TYPE_THERMO_RAW;
                 case EXT_WIFF: return TYPE_WIFF;
+                case EXT_WIFF2: return TYPE_WIFF;
                 case EXT_SHIMADZU_RAW: return TYPE_SHIMADZU;
                 //case ".mgf": return "Mascot Generic";
                 //case ".dta": return "Sequest DTA";
@@ -122,14 +125,6 @@ namespace pwiz.Skyline.Util
                 case EXT_MZML: return TYPE_MZML;
                 case EXT_MZ5: return TYPE_MZ5;
                 case EXT_XML: return GetSourceTypeFromXML(fileInfo.FullName);
-                case EXT_CHORUSRESPONSE:
-                {
-                    if (Settings.Default.EnableChorus)
-                    {
-                        return TYPE_CHORUSRESPONSE;
-                    }
-                    return UNKNOWN_TYPE;
-                }
                 case EXT_UIMF: return TYPE_UIMF;
                 default: return UNKNOWN_TYPE;
             }
@@ -173,10 +168,9 @@ namespace pwiz.Skyline.Util
                     {
                         if (reader.NodeType == XmlNodeType.Element)
                         {
-                            // ReSharper disable NonLocalizedString
+                            // ReSharper disable LocalizableElement
                             switch (reader.Name.ToLowerInvariant())
                             {
-                                // Not L10N
                                 case "mzml":
                                 case "indexmzml":
                                     return "mzML";
@@ -190,7 +184,7 @@ namespace pwiz.Skyline.Util
                                 default:
                                     return UNKNOWN_TYPE;
                             }
-                            // ReSharper restore NonLocalizedString
+                            // ReSharper restore LocalizableElement
                         }
                     }
                 }

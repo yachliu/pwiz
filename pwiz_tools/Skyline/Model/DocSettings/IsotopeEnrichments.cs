@@ -16,6 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -34,9 +35,6 @@ namespace pwiz.Skyline.Model.DocSettings
     [XmlRoot("isotope_enrichments")]
     public sealed class IsotopeEnrichments : XmlNamedElement, IValidating
     {
-        public static readonly IsotopeEnrichments DEFAULT = new IsotopeEnrichments(Resources.IsotopeEnrichments_DEFAULT_Default,
-            BioMassCalc.HeavySymbols.Select(sym => new IsotopeEnrichmentItem(sym)).ToArray());
-
         private ImmutableList<IsotopeEnrichmentItem> _isotopeEnrichments;
 
         public IsotopeEnrichments(string name, IList<IsotopeEnrichmentItem> isotopeEnrichments)
@@ -47,7 +45,7 @@ namespace pwiz.Skyline.Model.DocSettings
             DoValidate();
         }
 
-        [DiffParent]
+        [TrackChildren]
         public ImmutableList<IsotopeEnrichmentItem> Enrichments
         {
             get { return _isotopeEnrichments; }
@@ -91,7 +89,7 @@ namespace pwiz.Skyline.Model.DocSettings
                 dictSymDist.Add(symbol, new IsotopeEnrichmentItem(symbol, 1.0).CalcDistribution(isotopes));
             }
 
-            IsotopeAbundances = isotopes.SetAbundances(dictSymDist);
+            IsotopeAbundances = BioMassCalc.AddHeavyNicknames(isotopes.SetAbundances(dictSymDist));
         }
 
         public static IsotopeEnrichments Deserialize(XmlReader reader)
@@ -127,6 +125,11 @@ namespace pwiz.Skyline.Model.DocSettings
         #endregion
 
         #region object overrides
+
+        public override string AuditLogText
+        {
+            get { return IsotopeEnrichmentsList.GetDisplayText(this); }
+        }
 
         public bool Equals(IsotopeEnrichments other)
         {
@@ -177,19 +180,18 @@ namespace pwiz.Skyline.Model.DocSettings
             DoValidate();
         }
 
-        [Diff]
+        [Track]
         public string IsotopeSymbol { get; private set; }
-        [Diff]
+        [Track]
         public double AtomPercentEnrichment { get; private set; }
-        [Diff]
+        [Track]
         public string Symbol { get { return BioMassCalc.GetMonoisotopicSymbol(IsotopeSymbol); } }
-        private int IsotopeIndex { get { return BioMassCalc.GetIsotopeDistributionIndex(IsotopeSymbol); } }
+        private double IsotopeMass { get { return BioMassCalc.GetHeavySymbolMass(IsotopeSymbol); } }
 
         public MassDistribution CalcDistribution(IsotopeAbundances isotopeAbundances)
         {
             var massDistribution = isotopeAbundances[Symbol];
-            double mass = massDistribution.ToArray()[IsotopeIndex].Key;
-            massDistribution = massDistribution.SetAbundance(mass, AtomPercentEnrichment);
+            massDistribution = massDistribution.SetAbundance(IsotopeMass, AtomPercentEnrichment);
             return massDistribution;            
         }
 
@@ -214,7 +216,7 @@ namespace pwiz.Skyline.Model.DocSettings
 
         private void DoValidate()
         {
-            if (Equals(Symbol, IsotopeSymbol))
+            if (!BioMassCalc.IsSkylineHeavySymbol(IsotopeSymbol)) // e.g. accept H' but not D
                 throw new InvalidDataException(string.Format(Resources.IsotopeEnrichmentItem_DoValidate_Isotope_enrichment_is_not_supported_for_the_symbol__0__, IsotopeSymbol));
             if (MIN_ATOM_PERCENT_ENRICHMENT > AtomPercentEnrichment ||
                     AtomPercentEnrichment > MAX_ATOM_PERCENT_ENRICHMENT)

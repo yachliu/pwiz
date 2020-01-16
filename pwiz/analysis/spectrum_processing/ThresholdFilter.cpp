@@ -48,7 +48,7 @@ struct PWIZ_API_DECL XYPlusPair
     {}
 };
 
-vector<BinaryDataArrayPtr> getExtraArrays(const Spectrum& s, const vector<double>& x, const vector<double>& y)
+vector<BinaryDataArrayPtr> getExtraArrays(const Spectrum& s, const pwiz::util::BinaryData<double>& x, const pwiz::util::BinaryData<double>& y)
 {
     vector<BinaryDataArrayPtr> output;
     for (const auto& arrayPtr : s.binaryDataArrayPtrs)
@@ -112,7 +112,7 @@ void setXYPlusPairs(Spectrum& s, XYPlusPair* input, size_t size, CVID yUnits, co
 
     x.resize(size);
     y.resize(size);
-    vector<vector<double>*> extraArrays;
+    vector<pwiz::util::BinaryData<double>*> extraArrays;
     for (size_t i = 0; i < input[0].extra.size(); ++i)
     {
         auto arrayPtr = s.getArrayByCVID(extraArrayTypes[i]);
@@ -125,6 +125,13 @@ void setXYPlusPairs(Spectrum& s, XYPlusPair* input, size_t size, CVID yUnits, co
 
     double* bdX = &x[0];
     double* bdY = &y[0];
+    vector<double*> bdExtra(extraArrays.size());
+    for (size_t i = 0; i < extraArrays.size(); ++i)
+    {
+        extraArrays[i]->resize(size);
+        bdExtra[i] = &(*extraArrays[i])[0];
+    }
+
     for (const XYPlusPair& pair : boost::iterator_range<XYPlusPair*>(input, input+size))
     {
         *bdX++ = pair.x;
@@ -132,7 +139,7 @@ void setXYPlusPairs(Spectrum& s, XYPlusPair* input, size_t size, CVID yUnits, co
         if (pair.extra.size() != end)
             throw runtime_error("[setXYPlusPairs] pair has mismatched number of extra values");
         for (size_t i = 0; i < end; ++i)
-            extraArrays[i]->push_back(pair.extra[i]);
+            (*bdExtra[i] = pair.extra[i])++;
     }
 
     s.defaultArrayLength = size;

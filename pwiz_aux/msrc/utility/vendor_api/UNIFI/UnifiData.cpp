@@ -63,6 +63,7 @@ using System::Net::Http::HttpClient;
 using System::Uri;
 using IdentityModel::Client::TokenClient;
 using IdentityModel::Client::TokenResponse;
+using std::size_t;
 
 namespace pwiz {
 namespace vendor_api {
@@ -95,6 +96,11 @@ public:
 
     [ProtoBuf::ProtoMember(1)]
     property cli::array<double>^ Intensities;
+
+    virtual ~Spectrum() { if (intensityArray != nullptr) delete intensityArray; intensityArray = nullptr; }
+    !Spectrum() { delete this; }
+
+    std::vector<double>* intensityArray;
 };
 
 [ProtoBuf::ProtoContract]
@@ -108,6 +114,11 @@ public:
 
     [ProtoBuf::ProtoMember(2)]
     property cli::array<int>^ ScanSize;
+
+    virtual ~MassSpectrum() { if (mzArray != nullptr) delete mzArray; mzArray = nullptr; }
+    !MassSpectrum() { delete this; }
+
+    std::vector<double>* mzArray;
 };
 
 [ProtoBuf::ProtoContract]
@@ -125,6 +136,17 @@ public:
     property ProtoPolarity IonizationPolarity;
 
     property System::Collections::Generic::List<int>^ ScanIndexes;
+};
+
+
+template <typename T>
+struct ArrayLessThanByIndex
+{
+    ArrayLessThanByIndex(const std::vector<T>& a) : _a(a) {}
+    bool operator() (size_t lhs, size_t rhs) const { return _a[lhs] < _a[rhs]; }
+
+    private:
+    const std::vector<T>& _a;
 };
 
 
@@ -202,6 +224,10 @@ ref class ParallelDownloadQueue
             _httpClients->Enqueue(httpClient);
         }
 
+#ifdef WIN32 // DEBUG
+        Console::Error->WriteLine("Chunk size: {0}, Num. spectra: {1}", chunkSize, numSpectra);
+#endif
+
         _queueScheduler = gcnew QueuedTaskScheduler();
         _primaryScheduler = _queueScheduler->ActivateNewQueue(0);
         _readaheadScheduler = _queueScheduler->ActivateNewQueue(1);
@@ -216,7 +242,7 @@ ref class ParallelDownloadQueue
 
     ~ParallelDownloadQueue()
     {
-        Console::WriteLine("Disposing queue and cancelling requests.");
+        Console::Error->WriteLine("Disposing queue and cancelling requests.");
         _cancelTokenSource->Cancel();
         //for each (Task^ task in _tasksByIndex->Values)
         //    task->Wait();
@@ -226,7 +252,7 @@ ref class ParallelDownloadQueue
     {
         int currentThreadId = System::Threading::Thread::CurrentThread->ManagedThreadId;
 #ifdef _WIN32 //DEBUG
-        Console::WriteLine((DateTime::UtcNow - _startTime).ToString("\\[h\\:mm\\:ss\\]\\ ") + "Requesting chunk {0} on thread {1}", taskIndex, currentThreadId);
+        Console::Error->WriteLine((DateTime::UtcNow - _startTime).ToString("\\[h\\:mm\\:ss\\]\\ ") + "Requesting chunk {0} on thread {1}", taskIndex, currentThreadId);
 #endif
         HttpClient^ httpClient = nullptr;
         while (!_httpClients->TryDequeue(httpClient)) {}
@@ -262,7 +288,7 @@ ref class ParallelDownloadQueue
                     try
                     {
                         requestStart = DateTime::UtcNow;
-                        request = gcnew System::Net::Http::HttpRequestMessage(System::Net::Http::HttpMethod::Get, spectrumEndpoint(taskIndex, min(_numSpectra, taskIndex + _chunkSize)));
+                        request = gcnew System::Net::Http::HttpRequestMessage(System::Net::Http::HttpMethod::Get, spectrumEndpoint(taskIndex, Math::Min(_numSpectra, (int) taskIndex + _chunkSize)));
                         response = httpClient->SendAsync(request, System::Net::Http::HttpCompletionOption::ResponseHeadersRead)->Result;
                         if (response->IsSuccessStatusCode)
                             break;
@@ -273,7 +299,7 @@ ref class ParallelDownloadQueue
                         {
                             // try again
 #ifdef _WIN32 //DEBUG
-                            Console::WriteLine((DateTime::UtcNow - _startTime).ToString("\\[h\\:mm\\:ss\\]\\ ") + System::String::Format("Retrying spectra chunk request {0} on thread {1} (attempt #{3}) due to error ({2})", taskIndex, currentThreadId, e->ToString()->Replace("\r", "")->Split(L'\n')[0], requestRetryCount));
+                            Console::Error->WriteLine((DateTime::UtcNow - _startTime).ToString("\\[h\\:mm\\:ss\\]\\ ") + System::String::Format("Retrying spectra chunk request {0} on thread {1} (attempt #{3}) due to error ({2})", taskIndex, currentThreadId, e->ToString()->Replace("\r", "")->Split(L'\n')[0], requestRetryCount));
 #endif
                             System::Threading::Thread::Sleep(2000 * Math::Pow(2, requestRetryCount));
                         }
@@ -290,7 +316,7 @@ ref class ParallelDownloadQueue
 
 #ifdef _WIN32 //DEBUG
                 //if (streamRetryCount == 1)
-                    Console::WriteLine((DateTime::UtcNow - _startTime).ToString("\\[h\\:mm\\:ss\\]\\ ") + "Starting chunk {0} ({1}ms to send request and read response headers)", taskIndex, (stop - requestStart).TotalMilliseconds);
+                    Console::Error->WriteLine((DateTime::UtcNow - _startTime).ToString("\\[h\\:mm\\:ss\\]\\ ") + "Starting chunk {0} ({1}ms to send request and read response headers)", taskIndex, (stop - requestStart).TotalMilliseconds);
 #endif
 
                 start = DateTime::UtcNow;
@@ -304,6 +330,17 @@ ref class ParallelDownloadQueue
                         if (spectrum == nullptr)
                             throw gcnew Exception(System::String::Format("deserialized null spectrum for index {0} (spectrum {1})", i, taskIndex + i));
 
+                        if (spectrum->Masses == nullptr)
+                        {
+                            spectrum->mzArray = new vector<double>();
+                            spectrum->intensityArray = new vector<double>();
+                            if (!_cache->Contains(taskIndex + i))
+                            {
+                                //Console::WriteLine("Adding result to cache: {0}", taskIndex + i);
+                                _cache->Add(taskIndex + i, spectrum);
+                            }
+                            continue;
+                        }
                         bytesDownloaded += sizeof(double) * spectrum->Masses->Length * 2;
 
                         if (bytesDownloaded == 0)
@@ -314,6 +351,14 @@ ref class ParallelDownloadQueue
                             throw gcnew Exception(System::String::Format("download is going too slow in chunk {0} on thread {1}: one spectrum ({2}) took {3}s", taskIndex, currentThreadId, taskIndex+i, (DateTime::UtcNow - lastSpectrum).TotalSeconds));
                         lastSpectrum = DateTime::UtcNow;
 
+                        spectrum->mzArray = new vector<double>();
+                        spectrum->intensityArray = new vector<double>();
+                        auto& mzArray = *spectrum->mzArray;
+                        auto& intensityArray = *spectrum->intensityArray;
+
+                        ToStdVector(spectrum->Masses, mzArray);
+                        ToStdVector(spectrum->Intensities, intensityArray);
+
                         if (spectrum->ScanSize->Length > 1)
                         {
                             // calculate cumulative scan indexes
@@ -321,6 +366,54 @@ ref class ParallelDownloadQueue
                             spectrum->ScanIndexes->Add(0);
                             for (int j = 1; j < spectrum->ScanSize->Length; ++j)
                                 spectrum->ScanIndexes->Add(spectrum->ScanIndexes[j - 1] + spectrum->ScanSize[j - 1]);
+
+                            // for IMS data, we must sort all the points from the drift scans
+                            std::vector<size_t> p(mzArray.size());
+                            std::iota(p.begin(), p.end(), 0);
+                            std::sort(p.begin(), p.end(), ArrayLessThanByIndex<double>(mzArray));
+
+                            std::vector<bool> done(mzArray.size());
+                            for (size_t i = 0; i < mzArray.size(); ++i)
+                            {
+                                if (done[i])
+                                    continue;
+
+                                done[i] = true;
+                                size_t prev_j = i;
+                                size_t j = p[i];
+                                while (i != j)
+                                {
+                                    std::swap(mzArray[prev_j], mzArray[j]);
+                                    std::swap(intensityArray[prev_j], intensityArray[j]);
+                                    done[j] = true;
+                                    prev_j = j;
+                                    j = p[j];
+                                }
+                            }
+
+                            // and then combine equal points
+                            vector<double>& a = mzArray, &b = intensityArray;
+
+                            size_t i = 1, j = 0;
+                            while (i < a.size())
+                            {
+                                while (a[i] == a[j] && i < a.size())
+                                {
+                                    b[j] += b[i];
+                                    ++i;
+                                }
+
+                                if (i == a.size())
+                                    break;
+
+                                ++j;
+                                a[j] = a[i];
+                                b[j] = b[i];
+                                ++i;
+                            }
+
+                            a.resize(j + 1);
+                            b.resize(j + 1);
                         }
 
                         //spectrum->Masses = gcnew cli::array<double>(10);
@@ -347,7 +440,7 @@ ref class ParallelDownloadQueue
                 {
                     // try again
 #ifdef _WIN32 //DEBUG
-                    Console::WriteLine((DateTime::UtcNow - _startTime).ToString("\\[h\\:mm\\:ss\\]\\ ") + System::String::Format("Retrying spectra chunk download {0} on thread {1} (attempt #{3}) due to error ({2})", taskIndex, currentThreadId, e->ToString()->Replace("\r", "")->Split(L'\n')[0], streamRetryCount));
+                    Console::Error->WriteLine((DateTime::UtcNow - _startTime).ToString("\\[h\\:mm\\:ss\\]\\ ") + System::String::Format("Retrying spectra chunk download {0} on thread {1} (attempt #{3}) due to error ({2})", taskIndex, currentThreadId, e->ToString()->Replace("\r", "")->Split(L'\n')[0], streamRetryCount));
 #endif
                     System::Threading::Thread::Sleep(2000 * Math::Pow(2, streamRetryCount));
                     bytesDownloaded = 0;
@@ -365,7 +458,7 @@ ref class ParallelDownloadQueue
         }
 #ifdef _WIN32 //DEBUG
         DateTime stop = DateTime::UtcNow;
-        Console::WriteLine((DateTime::UtcNow - _startTime).ToString("\\[h\\:mm\\:ss\\]\\ ") + "FINISHED chunk {0} on thread {1} ({2} bytes in {3}s)", taskIndex, currentThreadId, bytesDownloaded, (stop - start).TotalSeconds);
+        Console::Error->WriteLine((DateTime::UtcNow - _startTime).ToString("\\[h\\:mm\\:ss\\]\\ ") + "FINISHED chunk {0} on thread {1} ({2} bytes in {3}s); cache size {4}", taskIndex, currentThreadId, bytesDownloaded, (stop - start).TotalSeconds, _cache->Count);
 #endif
         _tasksByIndex->Remove(taskIndex); // remove the task
         _httpClients->Enqueue(httpClient); // add client back to queue
@@ -395,7 +488,7 @@ ref class ParallelDownloadQueue
 class UnifiData::Impl
 {
     public:
-    Impl(const std::string& sampleResultUrl) : _acquisitionStartTime(blt::not_a_date_time)
+    Impl(const std::string& sampleResultUrl, bool combineIonMobilitySpectra) : _acquisitionStartTime(blt::not_a_date_time), _combineIonMobilitySpectra(combineIonMobilitySpectra)
     {
         try
         {
@@ -434,8 +527,13 @@ class UnifiData::Impl
             getNumberOfSpectra();
             //Console::WriteLine("numLogicalSpectra: {0}, numNetworkSpectra: {1}", _numLogicalSpectra, _numNetworkSpectra);
 
-            _chunkSize = (int) std::ceil(_numNetworkSpectra /100.0);//200;
-            _chunkReadahead = 3;
+            _chunkSize = 10;// Math::Max(10, (int)std::ceil(_numNetworkSpectra / 500.0));
+
+#ifdef _WIN64
+            _chunkReadahead = 8;
+#else
+            _chunkReadahead = 2;
+#endif
             _cacheSize = _chunkSize * _chunkReadahead * 2;
 
             _cache = gcnew MemoryCache<int, MSeMassSpectrum^>(_cacheSize);
@@ -444,7 +542,7 @@ class UnifiData::Impl
             _tasksByIndex = gcnew ConcurrentDictionary<int, Task^>();
             _queue = gcnew ParallelDownloadQueue(_sampleResultUrl, _accessToken, _httpClient, _numNetworkSpectra, _cache, _tasksByIndex, _chunkSize, _chunkReadahead+1);
         }
-        CATCH_AND_FORWARD
+        CATCH_AND_FORWARD_EX(sampleResultUrl)
     }
 
     friend class UnifiData;
@@ -677,11 +775,14 @@ class UnifiData::Impl
     gcroot<HttpClient^> _httpClient;
     gcroot<ParallelDownloadQueue^> _queue;
 
+    bool _combineIonMobilitySpectra; // do not treat drift bins as separate spectra
     int _numNetworkSpectra; // number of spectra without accounting for drift scans
     int _numLogicalSpectra; // number of spectra with IMS spectra counting as 200 logical spectra
 
     string _sampleName;
     string _sampleDescription;
+    int _replicateNumber;
+    string _wellPosition;
     blt::local_date_time _acquisitionStartTime; // UTC
 
     struct FunctionInfo
@@ -695,6 +796,8 @@ class UnifiData::Impl
         bool isIonMobilityData;
         bool hasCCSCalibration;
         int numSpectra;
+        double lowMass, highMass;
+        EnergyLevel energyLevel;
     };
 
     vector<FunctionInfo> _functionInfo;
@@ -711,7 +814,7 @@ class UnifiData::Impl
 
     size_t networkIndexFromLogicalIndex(size_t logicalIndex)
     {
-        if (!_hasAnyIonMobilityData)
+        if (!_hasAnyIonMobilityData || _combineIonMobilitySpectra)
             return logicalIndex;
 
         // 0-199 -> 0
@@ -723,13 +826,23 @@ class UnifiData::Impl
 
     void getAccessToken()
     {
+        cli::array<String^>^ userPassPair;
+        String^ username, ^password;
         if (String::IsNullOrEmpty(_sampleResultUrl->UserInfo))
-            throw user_error("UserInfo null; username and password must be specified in the sample result URL (e.g. username:password@unifiserver.com:{port}/{sampleResultPath})");
-        auto userPassPair = _sampleResultUrl->UserInfo->Split(':');
-        if (userPassPair->Length != 2 || String::IsNullOrEmpty(userPassPair[0]) || String::IsNullOrEmpty(userPassPair[1]))
-            throw user_error("UserInfo not a pair of values; username and password must be specified in the sample result URL (e.g. username:password@unifiserver.com:{port}/{sampleResultPath})");
-        auto username = userPassPair[0];
-        auto password = userPassPair[1];
+        {
+            username = Environment::GetEnvironmentVariable("UNIFI_USERNAME");
+            password = Environment::GetEnvironmentVariable("UNIFI_PASSWORD");
+            if (username == nullptr || password == nullptr || username->Length == 0 || password->Length == 0)
+                throw user_error("UserInfo null; username and password must be specified in the sample result URL (e.g. username:password@unifiserver.com:{port}/{sampleResultPath})");
+        }
+        else
+        {
+            userPassPair = _sampleResultUrl->UserInfo->Split(':');
+            if (userPassPair->Length != 2 || String::IsNullOrEmpty(userPassPair[0]) || String::IsNullOrEmpty(userPassPair[1]))
+                throw user_error("UserInfo not a pair of values; username and password must be specified in the sample result URL (e.g. username:password@unifiserver.com:{port}/{sampleResultPath})");
+            username = userPassPair[0];
+            password = userPassPair[1];
+        }
 
         auto fields = gcnew System::Collections::Generic::Dictionary<System::String^, System::String^>();
         fields->Add(IdentityModel::OidcConstants::TokenRequest::GrantType, IdentityModel::OidcConstants::GrantTypes::Password);
@@ -737,10 +850,10 @@ class UnifiData::Impl
         fields->Add(IdentityModel::OidcConstants::TokenRequest::Password, password);
         fields->Add(IdentityModel::OidcConstants::TokenRequest::Scope, _clientScope);
 
-        auto tokenClient = gcnew TokenClient(tokenEndpoint(), "resourceownerclient", _clientSecret, IdentityModel::Client::AuthenticationStyle::BasicAuthentication);
+        auto tokenClient = gcnew TokenClient(tokenEndpoint(), "resourceownerclient", _clientSecret, nullptr, IdentityModel::Client::AuthenticationStyle::BasicAuthentication);
         TokenResponse^ response = tokenClient->RequestAsync(fields, System::Threading::CancellationToken::None)->Result;
         if (response->IsError)
-            throw user_error("authentication error: incorrect username or password? (" + ToStdString(response->Error) + ")");
+            throw user_error("authentication error: incorrect hostname, username or password? (" + ToStdString(response->Error) + ")");
 
         _accessToken = response->AccessToken;
         //Console::WriteLine(_accessToken);
@@ -773,6 +886,8 @@ class UnifiData::Impl
             auto o = JObject::Parse(json);
             _sampleName = ToStdString(o->SelectToken("$.name")->ToString());
             _sampleDescription = ToStdString(o->SelectToken("$.description")->ToString());
+            _replicateNumber = Convert::ToInt32(o->SelectToken("$.sample.replicateNumber")->ToString());
+            _wellPosition = ToStdString(o->SelectToken("$.sample.wellPosition")->ToString());
 
             auto acquisitionTime = (System::DateTime) o->SelectToken("$.sample.acquisitionStartTime");
 
@@ -811,6 +926,11 @@ class UnifiData::Impl
             auto o = JObject::Parse(json);
             for each (auto spectrumInfo in o->SelectToken("$.value")->Children())
             {
+                // skip non-MS functions
+                auto detectorType = spectrumInfo->SelectToken("$.detectorType")->ToString();
+                if (detectorType != "MS")
+                    continue;
+
                 _functionInfo.emplace_back(_functionInfo.size());
                 FunctionInfo& fi = _functionInfo.back();
 
@@ -820,6 +940,8 @@ class UnifiData::Impl
                 fi.isRetentionData = (bool)spectrumInfo->SelectToken("$.isRetentionData");
                 fi.isIonMobilityData = (bool)spectrumInfo->SelectToken("$.isIonMobilityData");
                 fi.hasCCSCalibration = (bool)spectrumInfo->SelectToken("$.hasCCSCalibration");
+                fi.lowMass = Convert::ToDouble(spectrumInfo->SelectToken("$.analyticalTechnique.lowMass")->ToString());
+                fi.highMass = Convert::ToDouble(spectrumInfo->SelectToken("$.analyticalTechnique.highMass")->ToString());
 
                 _hasAnyIonMobilityData |= fi.isIonMobilityData;
 
@@ -827,7 +949,10 @@ class UnifiData::Impl
 
                 // skip non-MSe functions for now; UNIFI API doesn't allow downloading their data (!!!)
                 auto mseLevel = spectrumInfo->SelectToken("$.analyticalTechnique.tofGroup.mseLevel");
-                if (System::Object::ReferenceEquals(mseLevel, nullptr) || mseLevel->ToString() == "Unknown")
+                if (System::Object::ReferenceEquals(mseLevel, nullptr))
+                    continue;
+                fi.energyLevel = (EnergyLevel) (ProtoEnergyLevel) Enum::Parse(ProtoEnergyLevel::typeid, mseLevel->ToString());
+                if (fi.energyLevel == EnergyLevel::Unknown)
                     continue;
 
                 hasMSeData = true;
@@ -852,9 +977,25 @@ class UnifiData::Impl
                 }
             }
 
+            auto energyLevelSortOrder = [](EnergyLevel el)
+            {
+                switch (el)
+                {
+                    case EnergyLevel::Unknown: return 2;
+                    case EnergyLevel::Low: return 0;
+                    case EnergyLevel::High: return 1;
+                    default: throw std::runtime_error("unsupported energy level");
+                }
+            };
+
+            sort(_functionInfo.begin(), _functionInfo.end(), [=](const auto& lhs, const auto& rhs)
+            {
+                return energyLevelSortOrder(lhs.energyLevel) < energyLevelSortOrder(rhs.energyLevel);
+            });
+
             for (const auto& fi : _functionInfo)
             {
-                if (_hasAnyIonMobilityData) // assume that only ion mobility functions contribute to final spectra count; i.e. lockmass won't count
+                if (!_combineIonMobilitySpectra && _hasAnyIonMobilityData) // assume that only ion mobility functions contribute to final spectra count; i.e. lockmass won't count
                 {
                     if (fi.isIonMobilityData)
                         _numLogicalSpectra += fi.isIonMobilityData ? fi.numSpectra * 200 : 0;
@@ -875,7 +1016,7 @@ class UnifiData::Impl
         if (!hasMSeData)
             throw std::runtime_error("only MSe and HD-MSe data is supported at this time");
 
-        if (_hasAnyIonMobilityData)
+        if (!_combineIonMobilitySpectra && _hasAnyIonMobilityData)
         {
             try
             {
@@ -919,69 +1060,25 @@ class UnifiData::Impl
     {
         result.retentionTime = spectrum->RetentionTime;
         result.scanPolarity = (Polarity)spectrum->IonizationPolarity;
+        result.energyLevel = (EnergyLevel)spectrum->EnergyLevel;
+        int functionIndex = result.energyLevel == EnergyLevel::Low ? 0 : 1;
+        result.scanRange.first = _functionInfo.at(functionIndex).lowMass;
+        result.scanRange.second = _functionInfo.at(functionIndex).highMass;
 
-        if (!_hasAnyIonMobilityData)
+        if (_combineIonMobilitySpectra || !_hasAnyIonMobilityData)
         {
-            if (spectrum->ScanSize->Length > 1)
+            if (!_hasAnyIonMobilityData && spectrum->ScanSize->Length > 1)
                 throw std::runtime_error("non-ion-mobility spectrum with ScanSize.Length > 1");
 
             result.driftTime = 0;
-            result.arrayLength = spectrum->Masses->Length;
-            result.energyLevel = (logicalIndex % 2) == 0 ? Low : High;
+            result.arrayLength = spectrum->mzArray->size();
 
             if (getBinaryData && result.arrayLength > 0)
             {
-                ToStdVector(spectrum->Masses, result.mzArray);
-                ToStdVector(spectrum->Intensities, result.intensityArray);
-
-                // for IMS data, we must sort all the points from the drift scans
-                /* NOTE: keeping this code for future support of --combineIonMobilitySpectra
-                std::vector<std::size_t> p(result.mzArray.size());
-                std::iota(p.begin(), p.end(), 0);
-                std::sort(p.begin(), p.end(), [&](std::size_t i, std::size_t j) { return result.mzArray[i] < result.mzArray[j]; });
-
-                std::vector<bool> done(result.mzArray.size());
-                for (std::size_t i = 0; i < result.mzArray.size(); ++i)
-                {
-                    if (done[i])
-                        continue;
-
-                    done[i] = true;
-                    std::size_t prev_j = i;
-                    std::size_t j = p[i];
-                    while (i != j)
-                    {
-                        std::swap(result.mzArray[prev_j], result.mzArray[j]);
-                        std::swap(result.intensityArray[prev_j], result.intensityArray[j]);
-                        done[j] = true;
-                        prev_j = j;
-                        j = p[j];
-                    }
-                }
-
-                // and then combine equal points
-                vector<double>& a = result.mzArray, &b = result.intensityArray;
-
-                size_t i = 1, j = 0;
-                while (i < a.size())
-                {
-                    while (a[i] == a[j] && i < a.size())
-                    {
-                        b[j] += b[i];
-                        ++i;
-                    }
-
-                    if (i == a.size())
-                        break;
-
-                    ++j;
-                    a[j] = a[i];
-                    b[j] = b[i];
-                    ++i;
-                }
-
-                a.resize(j + 1);
-                b.resize(j + 1);*/
+                //ToStdVector(spectrum->Masses, result.mzArray);
+                //ToStdVector(spectrum->Intensities, result.intensityArray);
+                result.mzArray = *spectrum->mzArray;
+                result.intensityArray = *spectrum->intensityArray;
             }
         }
         else
@@ -995,13 +1092,12 @@ class UnifiData::Impl
             int driftScanIndex = logicalIndex % 200;
             result.driftTime = _binToDriftTime[driftScanIndex];
             result.arrayLength = spectrum->ScanSize[driftScanIndex];
-            result.energyLevel = (networkIndexFromLogicalIndex(logicalIndex) % 2) == 0 ? Low : High;
 
             if (getBinaryData && result.arrayLength > 0)
             {
                 int driftScanArrayOffset = spectrum->ScanIndexes[driftScanIndex];
-                ToStdVector(spectrum->Masses, driftScanArrayOffset, result.mzArray, 0, result.arrayLength);
-                ToStdVector(spectrum->Intensities, driftScanArrayOffset, result.intensityArray, 0, result.arrayLength);
+                ToBinaryData(spectrum->Masses, driftScanArrayOffset, result.mzArray, 0, result.arrayLength);
+                ToBinaryData(spectrum->Intensities, driftScanArrayOffset, result.intensityArray, 0, result.arrayLength);
             }
         }
     }
@@ -1059,7 +1155,7 @@ class UnifiData::Impl
                     _queue->getChunkTask(taskIndex + _chunkSize * i, false, false);
             }
 #ifdef _WIN32 //DEBUG
-            Console::WriteLine("WAITING for chunk {0}", taskIndex);
+            Console::Error->WriteLine("WAITING for chunk {0}", taskIndex);
 #endif
             chunkTask->Wait(); // wait for the task to finish
 
@@ -1624,8 +1720,8 @@ SpectrumPtr WiffFileImpl::getSpectrum(ExperimentPtr experiment, int cycle) const
 
 
 PWIZ_API_DECL
-UnifiData::UnifiData(const std::string& sampleResultUrl)
-    : _impl(new Impl(sampleResultUrl))
+UnifiData::UnifiData(const std::string& sampleResultUrl, bool combineIonMobilitySpectra)
+    : _impl(new Impl(sampleResultUrl, combineIonMobilitySpectra))
 {
 }
 
@@ -1641,6 +1737,8 @@ PWIZ_API_DECL void UnifiData::getSpectrum(size_t index, UnifiSpectrum& spectrum,
 PWIZ_API_DECL const boost::local_time::local_date_time& UnifiData::getAcquisitionStartTime() const { return _impl->_acquisitionStartTime; }
 PWIZ_API_DECL const std::string& UnifiData::getSampleName() const { return _impl->_sampleName; }
 PWIZ_API_DECL const std::string& UnifiData::getSampleDescription() const { return _impl->_sampleDescription; }
+PWIZ_API_DECL int UnifiData::getReplicateNumber() const { return _impl->_replicateNumber; }
+PWIZ_API_DECL const std::string& UnifiData::getWellPosition() const { return _impl->_wellPosition; }
 
 
 PWIZ_API_DECL bool UnifiData::hasIonMobilityData() const { return _impl->_hasAnyIonMobilityData; }

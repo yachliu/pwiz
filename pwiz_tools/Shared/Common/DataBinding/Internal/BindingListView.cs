@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Original author: Nicholas Shulman <nicksh .at. u.washington.edu>,
  *                  MacCoss Lab, Department of Genome Sciences, UW
  *
@@ -23,7 +23,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using pwiz.Common.Collections;
 using pwiz.Common.DataBinding.Controls;
@@ -52,8 +51,10 @@ namespace pwiz.Common.DataBinding.Internal
         private QueryResults _queryResults;
         private IRowSource _rowSource = StaticRowSource.EMPTY;
         private readonly QueryRequestor _queryRequestor;
+        private INewRowHandler _newRowHandler;
+        private RowItem _newRow;
 
-        public BindingListView(TaskScheduler eventTaskScheduler) : base(new List<RowItem>())
+        public BindingListView(EventTaskScheduler eventTaskScheduler) : base(new List<RowItem>())
         {
             EventTaskScheduler = eventTaskScheduler;
             QueryLock = new QueryLock(CancellationToken.None);
@@ -65,11 +66,70 @@ namespace pwiz.Common.DataBinding.Internal
 
         protected override object AddNewCore()
         {
-            return null;
+            var newRow = _newRow ?? NewRowHandler.AddNewRow();
+            if (newRow == null)
+            {
+                return null;
+            }
+            Items.Add(newRow);
+            _newRow = newRow;
+            return newRow;
         }
 
-        protected override void RemoveItem(int index)
+        public int? NewRowPos
         {
+            get
+            {
+                if (_newRow == null)
+                {
+                    return null;
+                }
+                return Items.IndexOf(_newRow);
+            }
+        }
+
+        public override void CancelNew(int itemIndex)
+        {
+            if (IsNewRowPos(itemIndex))
+            {
+                _newRow = null;
+            }
+            base.CancelNew(itemIndex);
+        }
+
+        public override void EndNew(int itemIndex)
+        {
+            RowItem committedRow = null;
+            if (IsNewRowPos(itemIndex))
+            {
+                committedRow = NewRowHandler.CommitAddNew(_newRow);
+                _newRow = null;
+            }
+
+            base.EndNew(itemIndex);
+            if (committedRow != null)
+            {
+                Items[itemIndex] = committedRow;
+            }
+        }
+
+        public bool ValidateRow(int itemIndex, out bool cancelRowEdit)
+        {
+            if (IsNewRowPos(itemIndex))
+            {
+                return NewRowHandler.ValidateNewRow(_newRow, out cancelRowEdit);
+            }
+            cancelRowEdit = false;
+            return true;
+        }
+
+        private bool IsNewRowPos(int itemIndex)
+        {
+            if (_newRow == null)
+            {
+                return false;
+            }
+            return itemIndex >= 0 && itemIndex < Items.Count && ReferenceEquals(_newRow, Items[itemIndex]);
         }
 
         public ViewInfo ViewInfo
@@ -91,16 +151,19 @@ namespace pwiz.Common.DataBinding.Internal
         {
             TransformStack = TransformStack.EMPTY;
         }
-        public ViewSpec ViewSpec
+
+        public INewRowHandler NewRowHandler
         {
-            get
-            {
-                // TODO(nicksh):Apply current sort if any.
-                return ViewInfo.ViewSpec;
-            }
+            get { return _newRowHandler; }
             set
             {
-                ViewInfo = new ViewInfo(ViewInfo.ParentColumn, value);
+                bool wasAllowNew = AllowNew;
+                _newRowHandler = value;
+                AllowNew = NewRowHandler != null;
+                if (wasAllowNew != AllowNew)
+                {
+                    OnListChanged(new ListChangedEventArgs(ListChangedType.Reset, -1));
+                }
             }
         }
 
@@ -220,7 +283,7 @@ namespace pwiz.Common.DataBinding.Internal
             }
         }
 
-        public TaskScheduler EventTaskScheduler { get; private set; }
+        public EventTaskScheduler EventTaskScheduler { get; private set; }
         public QueryLock QueryLock { get; set; }
 
         public string GetListName(PropertyDescriptor[] listAccessors)
@@ -253,7 +316,7 @@ namespace pwiz.Common.DataBinding.Internal
         {
             get
             {
-                return ((List<RowItem>) Items);
+                return (List<RowItem>) Items;
             }
         }
 
@@ -267,10 +330,26 @@ namespace pwiz.Common.DataBinding.Internal
             {
                 return;
             }
-            _queryResults = _queryRequestor.QueryResults;
+            var queryResults = _queryRequestor.QueryResults;
+            if (queryResults == null)
+            {
+                return;
+            }
+            _queryResults = queryResults;
             bool rowCountChanged = Count != QueryResults.ResultRows.Count;
+            var newRow = _newRow;
+            if (newRow != null)
+            {
+                int newRowPos = Items.IndexOf(newRow);
+                CancelNew(newRowPos);
+            }
             RowItemList.Clear();
             RowItemList.AddRange(QueryResults.ResultRows);
+            if (newRow != null && !NewRowHandler.IsNewRowEmpty(newRow))
+            {
+                _newRow = newRow;
+                AddNew();
+            }
             bool propsChanged = false;
             if (_itemProperties == null)
             {
@@ -281,7 +360,7 @@ namespace pwiz.Common.DataBinding.Internal
                 propsChanged = true;
             }
             _itemProperties = QueryResults.ItemProperties;
-            AllowNew = false;
+            AllowNew = NewRowHandler != null;
             AllowEdit = true;
             AllowRemove = false;
             if (propsChanged)
@@ -429,6 +508,10 @@ namespace pwiz.Common.DataBinding.Internal
             RowSource = null;
             _queryRequestor.Dispose();
             _queryResults = null;
+            if (EventTaskScheduler != null)
+            {
+                EventTaskScheduler.Dispose();
+            }
         }
 
         public event EventHandler<BindingManagerDataErrorEventArgs> UnhandledExceptionEvent;
@@ -436,7 +519,7 @@ namespace pwiz.Common.DataBinding.Internal
 
         public void OnUnhandledException(Exception exception)
         {
-            Trace.TraceError("BindingListView unhandled exception {0}", exception); // Not L10N
+            Trace.TraceError(@"BindingListView unhandled exception {0}", exception);
             var unhandledExceptionEvent = UnhandledExceptionEvent;
             if (null != unhandledExceptionEvent)
             {

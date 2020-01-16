@@ -84,6 +84,11 @@ namespace seems
             browseToFileDialog = new OpenDataSourceDialog();
 			browseToFileDialog.InitialDirectory = "C:\\";
 
+            combineIonMobilitySpectraToolStripMenuItem.Checked = Properties.Settings.Default.CombineIonMobilitySpectra;
+            ignoreZeroIntensityPointsToolStripMenuItem.Checked = Properties.Settings.Default.IgnoreZeroIntensityPoints;
+            acceptZeroLengthSpectraToolStripMenuItem.Checked = Properties.Settings.Default.AcceptZeroLengthSpectra;
+            timeInMinutesToolStripMenuItem.Checked = Properties.Settings.Default.TimeInMinutes;
+
             DockPanelManager.RenderMode = DockPanelRenderMode.VisualStyles;
 
             manager = new Manager(dockPanel);
@@ -112,6 +117,10 @@ namespace seems
 			this.Location = Properties.Settings.Default.MainFormLocation;
 			this.Size = Properties.Settings.Default.MainFormSize;
 			this.WindowState = Properties.Settings.Default.MainFormWindowState;
+
+            if (Properties.Settings.Default.DefaultDecimalPlaces < decimalPlacesToolStripMenuItem.DropDownItems.Count)
+                (decimalPlacesToolStripMenuItem.DropDownItems[Properties.Settings.Default.DefaultDecimalPlaces] as ToolStripMenuItem).Checked = true;
+
 			isLoaded = true;
 		}
 
@@ -154,7 +163,7 @@ namespace seems
             recentFilesMenu.AddFile( filepath, Path.GetFileName( filepath ) );
             recentFilesMenu.SaveToRegistry();
 
-			Manager.OpenFile(filepath);
+			Manager.OpenFile(filepath, closeIfOpen: true);
 		}
 
         private delegate void ParseArgsCallback (string[] args);
@@ -429,5 +438,42 @@ namespace seems
             var heatmapForm = new TimeMzHeatmapForm(Manager, CurrentGraphForm.Sources[0]);
             heatmapForm.Show(DockPanel, DockState.Document);
         }
-	}
+
+        private void decimalPlaces_Click(object sender, EventArgs e)
+        {
+            string decimalPlacesStr = (sender as ToolStripMenuItem)?.Text ?? throw new ArgumentException();
+            Properties.Settings.Default.DefaultDecimalPlaces = Int32.Parse(decimalPlacesStr);
+            Properties.Settings.Default.Save();
+
+            foreach (ToolStripMenuItem item in decimalPlacesToolStripMenuItem.DropDownItems)
+                item.Checked = false;
+            (decimalPlacesToolStripMenuItem.DropDownItems[Properties.Settings.Default.DefaultDecimalPlaces] as ToolStripMenuItem).Checked = true;
+
+            Refresh();
+        }
+
+        private void combineIonMobilitySpectraToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.CombineIonMobilitySpectra = combineIonMobilitySpectraToolStripMenuItem.Checked;
+            Properties.Settings.Default.Save();
+        }
+
+        private void ignoreZeroIntensityPointsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.IgnoreZeroIntensityPoints = ignoreZeroIntensityPointsToolStripMenuItem.Checked;
+            Properties.Settings.Default.Save();
+        }
+
+        private void acceptZeroLengthSpectraToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.AcceptZeroLengthSpectra = acceptZeroLengthSpectraToolStripMenuItem.Checked;
+            Properties.Settings.Default.Save();
+        }
+
+        private void timeInMinutesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.TimeInMinutes = timeInMinutesToolStripMenuItem.Checked;
+            Properties.Settings.Default.Save();
+        }
+    }
 }

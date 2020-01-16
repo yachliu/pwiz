@@ -28,6 +28,7 @@ using ZedGraph;
 using pwiz.Common.DataBinding;
 using pwiz.Skyline.Alerts;
 using pwiz.Skyline.Controls;
+using pwiz.Skyline.Model;
 using pwiz.Skyline.Model.Find;
 using pwiz.Skyline.Model.Results.Scoring;
 using pwiz.Skyline.Properties;
@@ -49,7 +50,7 @@ namespace pwiz.Skyline.SettingsUI
         private readonly IEnumerable<IPeakScoringModel> _existing;
         private IPeakScoringModel _peakScoringModel;
         private IPeakScoringModel _lastTrainedScoringModel;
-        private const string UNNAMED = "<UNNAMED>"; // Not L10N
+        private const string UNNAMED = "<UNNAMED>";
         private string _originalName;
         private TargetDecoyGenerator _targetDecoyGenerator;
         private readonly PeakCalculatorGridViewDriver _gridViewDriver;
@@ -266,8 +267,8 @@ namespace pwiz.Skyline.SettingsUI
             {
                 longWaitDlg.PerformWork(this, 800, progressMonitor => 
                 {
-                    _peakScoringModel = peakScoringModel.Train(targetTransitionGroups, decoyTransitionGroups, initialParams,
-                        null, secondBestCheckBox.Checked, true, progressMonitor);
+                    _peakScoringModel = peakScoringModel.Train(targetTransitionGroups, decoyTransitionGroups, _targetDecoyGenerator, initialParams,
+                        null, null, secondBestCheckBox.Checked, true, progressMonitor);
                 });
                 if (longWaitDlg.IsCanceled)
                     return;
@@ -291,6 +292,8 @@ namespace pwiz.Skyline.SettingsUI
                         {
                             var item = _gridViewDriver.Items[i];
                             double weight = _peakScoringModel.Parameters.Weights[i];
+                            var contribution = _peakScoringModel.Parameters.PercentContributions[i];
+                            var percentContribution = double.IsNaN(contribution) ? (double?) null : contribution;
                             if (double.IsNaN(weight))
                             {
                                 item.Weight = null;
@@ -302,8 +305,7 @@ namespace pwiz.Skyline.SettingsUI
                                 progressMonitor.ProgressValue = (seenContributingScores*100)/totalContributingScores;
 
                                 item.Weight = weight;
-                                item.PercentContribution = _targetDecoyGenerator.GetPercentContribution(
-                                    _peakScoringModel, i);
+                                item.PercentContribution = percentContribution;
 
                                 Interlocked.Increment(ref seenContributingScores);
                                 progressMonitor.ProgressValue = (seenContributingScores*100)/totalContributingScores;
@@ -519,10 +521,17 @@ namespace pwiz.Skyline.SettingsUI
                                                     Resources.EditPeakScoringModelDlg_EditPeakScoringModelDlg_Composite_Score__Normalized_;
             graphPaneQ.Title.Text = hasUnknownScores ?
                                                     Resources.EditPeakScoringModelDlg_UpdateModelGraph_Trained_model_is_not_applicable_to_current_dataset_ :
-                                                    Resources.EditPeakScoringModelDlg_UpdateQValueGraph_Q_values_of_target_peptides;
+                                                    GetModeUIHelper().Translate(Resources.EditPeakScoringModelDlg_UpdateQValueGraph_Q_values_of_target_peptides);
             graphPaneP.Title.Text = hasUnknownScores ?
                                                     Resources.EditPeakScoringModelDlg_UpdateModelGraph_Trained_model_is_not_applicable_to_current_dataset_ :
-                                                    Resources.EditPeakScoringModelDlg_UpdateModelGraph_P_values_of_target_peptides;
+                                                    GetModeUIHelper().Translate(Resources.EditPeakScoringModelDlg_UpdateModelGraph_P_values_of_target_peptides);
+
+            if (ModeUI == SrmDocument.DOCUMENT_TYPE.small_molecules)
+            {
+                decoyCheckBox.Checked = decoyCheckBox.Enabled = false; // No decoys for small molecules
+                secondBestCheckBox.Checked = true; // Must have at least one of these two checked
+                secondBestCheckBox.Enabled = false;
+            }
 
             // Add bar graphs.
             if (decoyCheckBox.Checked)
@@ -946,13 +955,6 @@ namespace pwiz.Skyline.SettingsUI
                     cell.ReadOnly = false;
                     cell.ToolTipText = string.Empty;
                 }
-                if (unsortedIndex == 0)
-                {
-                    // The score used for bootstrap cannot be disabled
-                    var bootstrapCell = gridPeakCalculators.Rows[row].Cells[(int)ColumnNames.enabled];
-                    bootstrapCell.ReadOnly = true;
-                    bootstrapCell.Style = inactiveStyle;
-                }
                 // Show row in red if weight is the wrong sign
                 if (IsWrongSignWeight(row))
                 {
@@ -1066,7 +1068,7 @@ namespace pwiz.Skyline.SettingsUI
             get
             {
                 var name = textName.Text.Trim();
-                return name.Length > 0 ? name : UNNAMED;    // Not L10N
+                return name.Length > 0 ? name : UNNAMED;
             }
             set { textName.Text = (value == UNNAMED) ? string.Empty : value; }
         }

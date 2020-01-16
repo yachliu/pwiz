@@ -32,7 +32,7 @@ namespace pwiz.Skyline.Model
         /// Also, we want their Sodium: 22.989769 to match our Sodium: 22.989767
         /// </summary>
         public const int MAX_PRECISION_TO_MATCH = 4;
-
+        public const int MAX_PRECISION_FOR_LIB = 5; // BlibBuild uses 5 digit precision
         public const int MAX_PRECISION_TO_KEEP = 6;
 
 
@@ -48,6 +48,11 @@ namespace pwiz.Skyline.Model
         public static MassModification FromMass(double mass)
         {
             return new MassModification(mass, InferPrecision(mass));
+        }
+
+        public static MassModification FromMassForLib(double mass)
+        {
+            return FromMass(Math.Round(mass, MAX_PRECISION_FOR_LIB));
         }
 
         public bool Matches(MassModification that)
@@ -71,10 +76,10 @@ namespace pwiz.Skyline.Model
 
         public override string ToString()
         {
-            string str = Mass.ToString("F0" + Precision, CultureInfo.InvariantCulture); // Not L10N
+            string str = Mass.ToString(@"F0" + Precision, CultureInfo.InvariantCulture);
             if (Mass > 0)
             {
-                str = "+" + str; // Not L10N
+                str = @"+" + str;
             }
             return str;
         }
@@ -100,7 +105,7 @@ namespace pwiz.Skyline.Model
             }
         }
 
-        private static readonly Regex REGEX_MASS_MODIFICATION = new Regex("^[+-]?[0-9]*[.,]?[0-9]*$"); // Not L10N
+        private static readonly Regex REGEX_MASS_MODIFICATION = new Regex(@"^[+-]?[0-9]*[.,]?[0-9]*$");
 
         public static MassModification Parse(string strModification)
         {

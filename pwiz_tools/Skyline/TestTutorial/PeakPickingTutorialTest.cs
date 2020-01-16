@@ -43,7 +43,7 @@ using pwiz.SkylineTestUtil;
 namespace pwiz.SkylineTestTutorial
 {
     [TestClass]
-    public class PeakPickingTutorialTest : AbstractFunctionalTest
+    public class PeakPickingTutorialTest : AbstractFunctionalTestEx
     {
         private readonly string[] _importFiles =
             {
@@ -53,6 +53,11 @@ namespace pwiz.SkylineTestTutorial
                 "olgas_S130501_009_StC-DosR_B4",
                 "olgas_S130501_010_StC-DosR_C4"
             };
+
+        protected override bool UseRawFiles
+        {
+            get { return !ForceMzml && ExtensionTestContext.CanImportAbWiff; }
+        }
 
         [TestMethod]
         public void TestPeakPickingTutorial()
@@ -72,6 +77,8 @@ namespace pwiz.SkylineTestTutorial
                     @"TestTutorial\PeakPickingViews.zip"
                 };
             RunFunctionalTest();
+
+            Assert.IsFalse(IsRecordMode);   // Make sure this doesn't get committed as true
         }
 
         private string GetTestPath(string relativePath)
@@ -87,8 +94,8 @@ namespace pwiz.SkylineTestTutorial
 
         private readonly string[] EXPECTED_COEFFICIENTS =
         {
-            "-0.0328|-1.1391|0.2356|1.9433|1.1626|0.0359|0.1891|0.1578| null |0.5210|6.6354|-0.0517|0.5002|0.6283| null | null | null | null | null ", // Not L10N
-            "0.2828| null | null | null |5.7555|-0.0571|0.7363|0.9204| null | null | null | null | null | null | null | null | null | null | null ", // Not L10N
+            "-0.0786|-0.7490|2.2393|1.2082|0.0330|0.1517|0.1764| null |0.4993|6.3960|-0.0482|0.5479|0.6292| null | null | null | null | null ", // Not L10N
+            "0.2903| null | null |5.9906|-0.0621|0.6717|0.7982| null | null | null | null | null | null | null | null | null | null | null ", // Not L10N
         };
 
         protected override void DoTest()
@@ -143,7 +150,9 @@ namespace pwiz.SkylineTestTutorial
             });
             WaitForClosedForm(importResultsNameDlg);
             WaitForClosedForm(importResultsDlg);
-            WaitForCondition(5 * 60 * 1000, () => SkylineWindow.Document.Settings.MeasuredResults.IsLoaded);    // 5 minutes
+            WaitForConditionUI(5 * 60 * 1000, () => 
+                SkylineWindow.DocumentUI.Settings.HasResults &&
+                SkylineWindow.DocumentUI.Settings.MeasuredResults.IsLoaded);    // 5 minutes
             RestoreViewOnScreen(5);
             const string peptideSeqHighlight = "LPDGNGIELCR";
             RunUI(() =>
@@ -183,7 +192,7 @@ namespace pwiz.SkylineTestTutorial
             var editDlg = ShowDialog<EditPeakScoringModelDlg>(reintegrateDlg.AddPeakScoringModel);
             RunUI(() => editDlg.TrainModel());
             PauseForScreenShot<EditPeakScoringModelDlg.ModelTab>("Edit Peak Scoring Model form trained model", 6);
-            RunUI(() => Assert.AreEqual(0.586, editDlg.PeakCalculatorsGrid.Items[4].PercentContribution ?? 0, 0.005));
+            RunUI(() => Assert.AreEqual(0.5926, editDlg.PeakCalculatorsGrid.Items[3].PercentContribution ?? 0, 0.005));
 
             RunUI(() => editDlg.SelectedGraphTab = 2);
             PauseForScreenShot<EditPeakScoringModelDlg.PvalueTab>("Edit Peak Scoring Model form p value graph metafile", 7);
@@ -197,14 +206,14 @@ namespace pwiz.SkylineTestTutorial
 
             RunUI(() =>
             {
-                Assert.AreEqual(19, editDlg.PeakCalculatorsGrid.RowCount);
+                Assert.AreEqual(18, editDlg.PeakCalculatorsGrid.RowCount);
                 // The rows which the tutorial says are missing scores are in fact missing scores
-                foreach (int i in new[] { 3, 8, 9, 10, 11, 12, 14, 16 }) // MS1 scores are now missing, 19, 20, 21, 22
+                foreach (int i in new[] { 2, 7, 8, 9, 10, 11, 13, 15 }) // MS1 scores are now missing, 19, 20, 21, 22
                 {
                     Assert.IsFalse(editDlg.IsActiveCell(i, 0));
                 }
                 editDlg.IsFindButtonVisible = true;
-                editDlg.FindMissingValues(3);
+                editDlg.FindMissingValues(2);   // Retention time
                 editDlg.PeakScoringModelName = "test1";
             });
             PauseForScreenShot<EditPeakScoringModelDlg.FeaturesTab>("Edit Peak Scoring Model form find missing scores", 11);
@@ -250,7 +259,7 @@ namespace pwiz.SkylineTestTutorial
             var editDlgLibrary = ShowDialog<EditPeakScoringModelDlg>(editListLibrary.EditItem);
             RunUI(() =>
                 {
-                    foreach (int i in new[] { 3, 9, 10, 11, 12 })
+                    foreach (int i in new[] { 2, 8, 9, 10, 11 })
                     {
                         Assert.IsTrue(editDlgLibrary.IsActiveCell(i, 0));
                         Assert.IsFalse(editDlgLibrary.PeakCalculatorsGrid.Items[i].IsEnabled);
@@ -272,16 +281,16 @@ namespace pwiz.SkylineTestTutorial
                 {
                     Assert.IsFalse(editDlgNew.UsesSecondBest);
                     Assert.IsTrue(editDlgNew.UsesDecoys);
-                    Assert.IsTrue(editDlgNew.PeakCalculatorsGrid.Items[5].IsEnabled);
-                    Assert.IsTrue(editDlgNew.PeakCalculatorsGrid.Items[5].PercentContribution < 0);
+                    Assert.IsTrue(editDlgNew.PeakCalculatorsGrid.Items[4].IsEnabled);
+                    Assert.IsTrue(editDlgNew.PeakCalculatorsGrid.Items[4].PercentContribution < 0);
                     Assert.IsTrue(editDlgNew.PeakCalculatorsGrid.Items[2].IsEnabled);
-                    Assert.IsTrue(editDlgNew.PeakCalculatorsGrid.Items[2].PercentContribution < 0);
+                    Assert.IsTrue(editDlgNew.PeakCalculatorsGrid.Items[2].PercentContribution > 0);
                     editDlgNew.UsesSecondBest = true;
-                    editDlgNew.PeakCalculatorsGrid.Items[5].IsEnabled = false;
+                    editDlgNew.PeakCalculatorsGrid.Items[4].IsEnabled = false;
                     editDlgNew.PeakCalculatorsGrid.Items[2].IsEnabled = false;
                     editDlgNew.TrainModel(true);
                     // Check that these cells are still active even though they've been unchecked
-                    Assert.IsTrue(editDlgNew.IsActiveCell(7, 0));
+                    Assert.IsTrue(editDlgNew.IsActiveCell(6, 0));
                 });
             PauseForScreenShot<EditPeakScoringModelDlg.ModelTab>("Edit Peak Scoring Model form with second best", 15);
 
@@ -411,9 +420,9 @@ namespace pwiz.SkylineTestTutorial
                         Assert.AreEqual(editDlgFromSrm.PeakCalculatorsGrid.Items[j].PercentContribution, null);
                     }
                     int i = 0;
+                    Assert.IsTrue(editDlgFromSrm.IsActiveCell(i++, 0));
                     Assert.IsFalse(editDlgFromSrm.IsActiveCell(i++, 0));
-                    Assert.IsFalse(editDlgFromSrm.IsActiveCell(i++, 0));
-                    Assert.IsFalse(editDlgFromSrm.IsActiveCell(i++, 0));
+//                    Assert.IsFalse(editDlgFromSrm.IsActiveCell(i++, 0));
                     Assert.IsFalse(editDlgFromSrm.IsActiveCell(i++, 0));
                     Assert.IsTrue(editDlgFromSrm.IsActiveCell(i++, 0));
                     Assert.IsTrue(editDlgFromSrm.IsActiveCell(i++, 0));
@@ -444,9 +453,9 @@ namespace pwiz.SkylineTestTutorial
             RunUI(() =>
                 {
                     editDlgDia.SelectedGraphTab = 1;
-                    editDlgDia.PeakCalculatorsGrid.SelectRow(3);
+                    editDlgDia.PeakCalculatorsGrid.SelectRow(2);
                     editDlgDia.IsFindButtonVisible = true;
-                    editDlgDia.FindMissingValues(3);
+                    editDlgDia.FindMissingValues(2);    // Retention times
                     editDlgDia.PeakScoringModelName = "testDIA";
                 });
             OkDialog(editDlgDia, editDlgDia.OkDialog);
@@ -459,7 +468,7 @@ namespace pwiz.SkylineTestTutorial
 
             findResultsForm = FormUtil.OpenForms.OfType<FindResultsForm>().FirstOrDefault();
             Assert.IsNotNull(findResultsForm);
-            Assert.AreEqual(34 + (TestSmallMolecules ? 1 : 0), findResultsForm.ItemCount);
+            Assert.AreEqual(34, findResultsForm.ItemCount);
         }
 
         private void ValidateCoefficients(EditPeakScoringModelDlg editDlgFromSrm, int coeffIndex)
@@ -483,10 +492,11 @@ namespace pwiz.SkylineTestTutorial
             }
         }
 
-        private static void CheckPointsTypeRT(PointsTypeRT pointsType, int expectedPoints)
+        private void CheckPointsTypeRT(PointsTypeRT pointsType, int expectedPoints)
         {
             RunUI(() => SkylineWindow.ShowPointsType(pointsType));
             WaitForGraphs();
+            WaitForRegression();
             RunUI(() =>
             {
                 RTLinearRegressionGraphPane pane;

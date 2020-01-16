@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Original author: Brendan MacLean <brendanx .at. u.washington.edu>,
  *                  MacCoss Lab, Department of Genome Sciences, UW
  *
@@ -120,7 +120,7 @@ namespace pwiz.Skyline.Model.Results
 
         public void BuildCache()
         {
-            //LOG.InfoFormat("Start file import: {0}", MSDataFilePath.GetFileName());  // Not L10N
+            //LOG.InfoFormat(@"Start file import: {0}", MSDataFilePath.GetFileName());
 
             // Check for cancellation on every chromatogram, because there
             // have been some files that load VERY slowly, and appear to hang
@@ -162,8 +162,6 @@ namespace pwiz.Skyline.Model.Results
             try
             {
                 var dataFilePath = MSDataFilePath;
-                var centroidMS1 = MSDataFilePath.GetCentroidMs1();
-                var centroidMS2 = MSDataFilePath.GetCentroidMs2();
                 var msDataFilePath = MSDataFilePath as MsDataFilePath;
                 if (msDataFilePath != null)
                 {
@@ -182,20 +180,20 @@ namespace pwiz.Skyline.Model.Results
                 ChromDataProvider provider = null;
                 try
                 {
-                    if (dataFilePathRecalc == null && !RemoteChromDataProvider.IsRemoteChromFile(dataFilePath))
+                    if (dataFilePathRecalc == null)
                     {
                         // Always use SIM as spectra, if any full-scan chromatogram extraction is enabled
                         var fullScan = _document.Settings.TransitionSettings.FullScan;
-                        var enableSimSpectrum = fullScan.IsEnabled;
-                        var preferOnlyMsLevel = fullScan.IsEnabled && !fullScan.IsEnabledMsMs ? 1 : 0; // If we don't want MS2, ask reader to totally skip it (not guaranteed)
-                        inFile = MSDataFilePath.OpenMsDataFile(enableSimSpectrum, preferOnlyMsLevel);
-                        // Preserve centroiding info as part of MsDataFileUri string in chromdata only if it will be used
-                        // CONSIDER: Dangerously high knowledge of future control flow required for making this decision
-                        if (!ChromatogramDataProvider.HasChromatogramData(inFile) && !inFile.HasSrmSpectra)
-                            MSDataFilePath = dataFilePath = MSDataFilePath.ChangeCentroiding(centroidMS1, centroidMS2);
+                        bool enableSimSpectrum = fullScan.IsEnabled; // And chromatogram extraction requires SIM as spectra
+                        bool preferOnlyMs1 = fullScan.IsEnabledMs && !fullScan.IsEnabledMsMs; // If we don't want MS2, ask reader to totally skip it (not guaranteed)
+                        bool centroidMs1 = fullScan.IsCentroidedMs;
+                        bool centroidMs2 = fullScan.IsCentroidedMsMs;
+                        const bool ignoreZeroIntensityPoints = true; // Omit zero intensity points during extraction
+                        inFile = MSDataFilePath.OpenMsDataFile(enableSimSpectrum, preferOnlyMs1,
+                            centroidMs1, centroidMs2, ignoreZeroIntensityPoints);
                     }
 
-                    // Check for cancelation
+                    // Check for cancellation
                     if (_loader.IsCanceled)
                     {
                         _loader.UpdateProgress(_status = _status.Cancel());
@@ -211,11 +209,11 @@ namespace pwiz.Skyline.Model.Results
                         if (null == inFile)
                         {
                             _currentFileInfo = new FileBuildInfo(fileInfo.RunStartTime,
-                                fileInfo.FileWriteTime ?? DateTime.Now, new MsInstrumentConfigInfo[0], null, false);
+                                fileInfo.FileWriteTime ?? DateTime.Now);
                         }
                         else
                         {
-                            _currentFileInfo = FileBuildInfo.GetFileBuildInfo(MSDataFilePath, inFile);
+                            _currentFileInfo = new FileBuildInfo(MSDataFilePath, inFile);
                         }
                     }
 
@@ -229,15 +227,6 @@ namespace pwiz.Skyline.Model.Results
                             allChromData.MaxRetentionTime = (float) (provider.MaxRetentionTime ?? 0);
                             allChromData.MaxRetentionTimeKnown = provider.MaxRetentionTime.HasValue;
                         }
-                    }
-                    else if (ChorusResponseChromDataProvider.IsChorusResponse(dataFilePath))
-                    {
-                        provider = new ChorusResponseChromDataProvider(_document, fileInfo, _status, 0, 100, _loader);
-                    }
-                    else if (RemoteChromDataProvider.IsRemoteChromFile(dataFilePath))
-                    {
-                        provider = new RemoteChromDataProvider(_document, _retentionTimePredictor, fileInfo, _status, 0,
-                            100, _loader);
                     }
                     else if (ChromatogramDataProvider.HasChromatogramData(inFile))
                     {
@@ -258,7 +247,7 @@ namespace pwiz.Skyline.Model.Results
 
                     // Start multiple threads to perform peak scoring.
                     _chromDataSets = new QueueWorker<PeptideChromDataSets>(null, ScoreWriteChromDataSets);
-                    _chromDataSets.RunAsync(SCORING_THREADS, "Scoring/writing", MAX_CHROM_READ_AHEAD); // Not L10N
+                    _chromDataSets.RunAsync(SCORING_THREADS, @"Scoring/writing", MAX_CHROM_READ_AHEAD);
 
                     Read(provider);
 
@@ -275,7 +264,7 @@ namespace pwiz.Skyline.Model.Results
                 finally
                 {
                     if (_chromDataSets != null)
-                        _chromDataSets.Abort();
+                        _chromDataSets.Dispose();
                     if (provider != null)
                         provider.Dispose();
                     else if (inFile != null)
@@ -307,7 +296,7 @@ namespace pwiz.Skyline.Model.Results
                 {
                     ExitRead(new MissingDataException(missingDataX.MessageFormat, MSDataFilePath, missingDataX));
                 }
-                else if (x.Message.Contains("PeakDetector::NoVendorPeakPickingException")) // Not L10N
+                else if (x.Message.Contains(@"PeakDetector::NoVendorPeakPickingException"))
                 {
                     ExitRead(new NoCentroidedDataException(MSDataFilePath, x));
                 }
@@ -345,7 +334,7 @@ namespace pwiz.Skyline.Model.Results
 
         private MsDataFileUri GetRecalcDataFilePath(MsDataFileUri dataFilePath, out string dataFilePathPart)
         {
-            if (_cacheRecalc == null || !_cacheRecalc.CachedFilePaths.Contains(dataFilePath))
+            if (_cacheRecalc == null || !_cacheRecalc.CachedFilePaths.Contains(dataFilePath.GetLocation()))
             {
                 dataFilePathPart = null;
                 return null;
@@ -363,18 +352,7 @@ namespace pwiz.Skyline.Model.Results
             if (i == -1)
                 throw new ArgumentException(string.Format(Resources.ChromCacheBuilder_GetRecalcFileBuildInfo_The_path___0___was_not_found_among_previously_imported_results_, dataFilePathRecalc));
             var cachedFile = _cacheRecalc.CachedFiles[i];
-            return new FileBuildInfo(cachedFile.RunStartTime,
-                                     cachedFile.FileWriteTime,
-                                     cachedFile.InstrumentInfoList,
-                                     cachedFile.IsSingleMatchMz,
-                                     cachedFile.HasMidasSpectra);
-        }
-
-        private MsDataFileImpl GetMsDataFile(string dataFilePathPart, int sampleIndex, LockMassParameters lockMassParameters, MsInstrumentConfigInfo msInstrumentConfigInfo, bool enableSimSpectrum, bool requireCentroidedMS1, bool requireCentroidedMS2, int preferOnlyMsLevel)
-        {
-            return new MsDataFileImpl(dataFilePathPart, sampleIndex, lockMassParameters, enableSimSpectrum,
-                requireVendorCentroidedMS1:requireCentroidedMS1, requireVendorCentroidedMS2:requireCentroidedMS2,
-                ignoreZeroIntensityPoints:true, preferOnlyMsLevel:preferOnlyMsLevel);
+            return new FileBuildInfo(cachedFile);
         }
 
         private void ExitRead(Exception x)
@@ -422,7 +400,15 @@ namespace pwiz.Skyline.Model.Results
 
                 // All threads must complete scoring before we complete the first pass.
                 _chromDataSets.Wait();
-                doSecondPass = _retentionTimePredictor.CreateConversion();
+                if (!_retentionTimePredictor.CreateConversion())
+                {
+                    var transitionFullScan = _document.Settings.TransitionSettings.FullScan;
+                    if (transitionFullScan.IsEnabled && transitionFullScan.RetentionTimeFilterType ==
+                        RetentionTimeFilterType.scheduling_windows)
+                    {
+                        doSecondPass = false;
+                    }
+                }
                 if (!doSecondPass && listChromData.Any(data => null != data && !IsFirstPassPeptide(data)))
                 {
                     _status = _status.ChangeWarningMessage(
@@ -471,13 +457,14 @@ namespace pwiz.Skyline.Model.Results
             // Release all provider memory before waiting for write completion
             provider.ReleaseMemory();
 
-            //LOG.InfoFormat("Scans read: {0}", MSDataFilePath.GetFileName());  // Not L10N
+            //LOG.InfoFormat(@"Scans read: {0}", MSDataFilePath.GetFileName());
             _chromDataSets.DoneAdding(true);
-            //LOG.InfoFormat("Peak scoring/writing finished: {0}", MSDataFilePath.GetFileName());  // Not L10N
+            //LOG.InfoFormat(@"Peak scoring/writing finished: {0}", MSDataFilePath.GetFileName());
             if (_chromDataSets.Exception != null)
             {
                 throw new ChromCacheBuildException(MSDataFilePath, _chromDataSets.Exception);
             }
+
             _listCachedFiles.Add(new ChromCachedFile(MSDataFilePath,
                                      _currentFileInfo.Flags,
                                      _currentFileInfo.LastWriteTime,
@@ -488,6 +475,8 @@ namespace pwiz.Skyline.Model.Results
                                      _currentFileInfo.LocationScanIds,
                                      (float?) provider.TicArea,
                                      provider.IonMobilityUnits,
+                                     _currentFileInfo.SampleId,
+                                     _currentFileInfo.SerialNumber,
                                      _currentFileInfo.InstrumentInfoList));
         }
 
@@ -499,6 +488,7 @@ namespace pwiz.Skyline.Model.Results
         private List<PeptideChromDataSets> CalcPeptideChromDataSets(ChromDataProvider provider,
             List<PeptidePrecursorMz> listMzPrecursors, HashSet<IsotopeLabelType> setInternalStandards)
         {
+            double tolerance = _document.Settings.TransitionSettings.Instrument.MzMatchTolerance;
             bool singleMatch = provider.IsSingleMzMatch;
 
             var dictPeptideChromData = new Dictionary<PeptideSequenceModKey, PeptideChromDataSets>();
@@ -508,7 +498,7 @@ namespace pwiz.Skyline.Model.Results
             {
                 if (chromDataSet == null)
                     continue;
-                foreach (var matchingGroup in GetMatchingGroups(chromDataSet, listMzPrecursors, singleMatch))
+                foreach (var matchingGroup in GetMatchingGroups(chromDataSet, listMzPrecursors, singleMatch, tolerance))
                 {
                     var peptidePercursor = matchingGroup.Key;
                     var chromDataSetMatch = matchingGroup.Value;
@@ -584,10 +574,10 @@ namespace pwiz.Skyline.Model.Results
 
         private IEnumerable<ChromDataSet> GetChromDataSets(ChromDataProvider provider)
         {
-            return GetChromDataSets(provider, IsTimeNormalArea);
+            return GetChromDataSets(_document.Settings.TransitionSettings.FullScan.AcquisitionMethod, provider, IsTimeNormalArea);
         }
 
-        public static IEnumerable<ChromDataSet> GetChromDataSets(ChromDataProvider provider, bool isTimeNormalArea)
+        public static IEnumerable<ChromDataSet> GetChromDataSets(FullScanAcquisitionMethod fullScanAcquisitionMethod, ChromDataProvider provider, bool isTimeNormalArea)
         {
             ChromKey lastKey = ChromKey.EMPTY;
             ChromDataSet chromDataSet = null;
@@ -605,7 +595,7 @@ namespace pwiz.Skyline.Model.Results
                     if (chromDataSet != null)
                         yield return chromDataSet;
 
-                    chromDataSet = new ChromDataSet(isTimeNormalArea, null, chromData);
+                    chromDataSet = new ChromDataSet(isTimeNormalArea, null, fullScanAcquisitionMethod, chromData);
                 }
                 lastKey = key;
             }
@@ -741,6 +731,10 @@ namespace pwiz.Skyline.Model.Results
                 return;
             }
             var fullScan = _document.Settings.TransitionSettings.FullScan;
+            if (!fullScan.IsEnabled)
+            {
+                return;
+            }
             if (fullScan.RetentionTimeFilterType != RetentionTimeFilterType.scheduling_windows)
             {
                 return;
@@ -777,7 +771,7 @@ namespace pwiz.Skyline.Model.Results
         /// <summary>
         /// Used for retentiont time prediction during import
         /// </summary>
-        private class RetentionTimePredictor : IRetentionTimePredictor
+        public class RetentionTimePredictor : IRetentionTimePredictor
         {
             private readonly RetentionScoreCalculatorSpec _calculator;
             private readonly double _timeWindow;
@@ -869,7 +863,7 @@ namespace pwiz.Skyline.Model.Results
         }
 
         private static IEnumerable<KeyValuePair<PeptidePrecursorMz, ChromDataSet>> GetMatchingGroups(
-            ChromDataSet chromDataSet, List<PeptidePrecursorMz> listMzPrecursors, bool singleMatch)
+            ChromDataSet chromDataSet, List<PeptidePrecursorMz> listMzPrecursors, bool singleMatch, double tolerance)
         {
             SignedMz maxMzMatch;
             var i = FindMatchMin(chromDataSet, listMzPrecursors, singleMatch, out maxMzMatch);
@@ -891,9 +885,10 @@ namespace pwiz.Skyline.Model.Results
                     // If the current chromDataSet has already been used, make a copy.
                     chromDataSet = new ChromDataSet(chromDataSet.IsTimeNormalArea,
                         peptidePrecursorMz.NodePeptide.ModifiedTarget,
+                        chromDataSet.FullScanAcquisitionMethod, 
                         chromDataSet.Chromatograms.Select(c => c.CloneForWrite()).ToArray());
                 }
-                var groupData = GetMatchingData(nodeGroup, chromDataSet, explicitRetentionTimeInfo);
+                var groupData = GetMatchingData(nodeGroup, chromDataSet, explicitRetentionTimeInfo, tolerance);
                 if (groupData != null)
                 {
                     Assume.IsTrue(chromDataSet.PrecursorMz.IsNegative == peptidePrecursorMz.PrecursorMz.IsNegative);
@@ -953,7 +948,7 @@ namespace pwiz.Skyline.Model.Results
                             arrayChromData[j] = chromData.CloneForWrite();
                         setChromData.Add(chromData);
                     }
-                    var chromDataPart = new ChromDataSet(isTimeNormalArea, match.Item1.NodePeptide.ModifiedTarget, arrayChromData);
+                    var chromDataPart = new ChromDataSet(isTimeNormalArea, match.Item1.NodePeptide.ModifiedTarget, chromDataSet.FullScanAcquisitionMethod, arrayChromData);
                     yield return new KeyValuePair<PeptidePrecursorMz, ChromDataSet>(
                         match.Item1, chromDataPart);
                 }
@@ -1035,11 +1030,11 @@ namespace pwiz.Skyline.Model.Results
         }
 
 // ReSharper disable SuggestBaseTypeForParameter
-        private static IList<ChromData> GetMatchingData(TransitionGroupDocNode nodeGroup, ChromDataSet chromDataSet, ExplicitRetentionTimeInfo explicitRT)
+        private static IList<ChromData> GetMatchingData(TransitionGroupDocNode nodeGroup, ChromDataSet chromDataSet, ExplicitRetentionTimeInfo explicitRT, double tolerance)
 // ReSharper restore SuggestBaseTypeForParameter
         {
             // Look for potential product ion matches
-            var listMatchingData = GetBestMatching(chromDataSet.Chromatograms, nodeGroup.Transitions, explicitRT);
+            var listMatchingData = GetBestMatching(chromDataSet.Chromatograms, nodeGroup.Transitions, explicitRT, tolerance);
 
             // Only return a match, if at least two product ions match, or the precursor
             // has only a single product ion, and it matches
@@ -1059,10 +1054,9 @@ namespace pwiz.Skyline.Model.Results
         }
 
         private static IList<IndexChromDataTrans> GetBestMatching(
-            IEnumerable<ChromData> chromatograms, IEnumerable<TransitionDocNode> transitions, ExplicitRetentionTimeInfo explicitRT)
+            IEnumerable<ChromData> chromatograms, IEnumerable<TransitionDocNode> transitions, ExplicitRetentionTimeInfo explicitRT, double tolerance)
         {
             var listMatchingData = new List<IndexChromDataTrans>();
-            const float tolerance = (float)TransitionInstrument.MAX_MZ_MATCH_TOLERANCE;
             // Create lists of elements sorted by m/z
             var listMzIndexChromatograms =
                 chromatograms.Select((c, i) => new MzIndexChromData(c.Key.Product, i, c)).ToList();
@@ -1348,6 +1342,8 @@ namespace pwiz.Skyline.Model.Results
                     flags |= ChromGroupHeaderInfo.FlagValues.has_calculated_mzs;
                 if (chromDataSet.Extractor == ChromExtractor.base_peak)
                     flags |= ChromGroupHeaderInfo.FlagValues.extracted_base_peak;
+                else if(chromDataSet.Extractor == ChromExtractor.qc)
+                    flags |= ChromGroupHeaderInfo.FlagValues.extracted_qc_trace;
             if (scanIdsByChromSource != null && scanIdsByChromSource.ContainsKey(ChromSource.ms1))
                         flags |= ChromGroupHeaderInfo.FlagValues.has_ms1_scan_ids;
             if (scanIdsByChromSource != null && scanIdsByChromSource.ContainsKey(ChromSource.fragment))
@@ -1356,6 +1352,8 @@ namespace pwiz.Skyline.Model.Results
                         flags |= ChromGroupHeaderInfo.FlagValues.has_sim_scan_ids;
             if (groupOfTimeIntensities is RawTimeIntensities)
                 flags |= ChromGroupHeaderInfo.FlagValues.raw_chromatograms;
+            if (_document.Settings.TransitionSettings.FullScan.AcquisitionMethod == FullScanAcquisitionMethod.DDA)
+                flags |= ChromGroupHeaderInfo.FlagValues.dda_acquisition_method;
 
                 var header = new ChromGroupHeaderInfo(chromDataSet.PrecursorMz,
                     0,
@@ -1425,28 +1423,45 @@ namespace pwiz.Skyline.Model.Results
 
     internal sealed class FileBuildInfo
     {
-        public static FileBuildInfo GetFileBuildInfo(MsDataFileUri msDataFileUri, MsDataFileImpl file)
+        public FileBuildInfo(MsDataFileUri msDataFileUri, MsDataFileImpl file)
         {
-            return new FileBuildInfo(file.RunStartTime, msDataFileUri.GetFileLastWriteTime(),
-                file.GetInstrumentConfigInfoList(), null, false);
+            StartTime = file.RunStartTime;
+            LastWriteTime = msDataFileUri.GetFileLastWriteTime();
+            InstrumentInfoList = file.GetInstrumentConfigInfoList();
+            UsedMs1Centroids = file.RequireVendorCentoridedMs1;
+            UsedMs2Centroids = file.RequireVendorCentoridedMs2;
+            HasCombinedIonMobility = file.HasCombinedIonMobilitySpectra;
+            SampleId = file.GetSampleId();
+            SerialNumber = file.GetInstrumentSerialNumber();
         }
 
-        public FileBuildInfo(DateTime? startTime,
-            DateTime lastWriteTime,
-            IEnumerable<MsInstrumentConfigInfo> instrumentInfoList,
-            bool? isSingleMatchMz,
-            bool hasMidasSpectra)
+        public FileBuildInfo(ChromCachedFile cachedFile)
+        {
+            StartTime = cachedFile.RunStartTime;
+            LastWriteTime = cachedFile.FileWriteTime;
+            InstrumentInfoList = cachedFile.InstrumentInfoList;
+            IsSingleMatchMz = cachedFile.IsSingleMatchMz;
+            UsedMs1Centroids = cachedFile.UsedMs1Centroids;
+            UsedMs2Centroids = cachedFile.UsedMs2Centroids;
+            HasMidasSpectra = cachedFile.HasMidasSpectra;
+            HasCombinedIonMobility = cachedFile.HasCombinedIonMobility;
+            SampleId = cachedFile.SampleId;
+            SerialNumber = cachedFile.InstrumentSerialNumber;
+        }
+
+        public FileBuildInfo(DateTime? startTime, DateTime lastWriteTime)
         {
             StartTime = startTime;
             LastWriteTime = lastWriteTime;
-            InstrumentInfoList = instrumentInfoList;
-            IsSingleMatchMz = isSingleMatchMz;
+            InstrumentInfoList = new MsInstrumentConfigInfo[0];
         }
 
         public DateTime? StartTime { get; private set; }
         public DateTime LastWriteTime { get; private set; }
         public IEnumerable<MsInstrumentConfigInfo> InstrumentInfoList { get; private set; }
         public ChromCachedFile.FlagValues Flags { get; private set; }
+        public string SampleId { get; private set; }
+        public string SerialNumber { get; private set; }
 
         public bool? IsSingleMatchMz
         {
@@ -1464,16 +1479,36 @@ namespace pwiz.Skyline.Model.Results
             }
         }
 
+        public bool UsedMs1Centroids
+        {
+            get { return (Flags & ChromCachedFile.FlagValues.used_ms1_centroids) != 0; }
+            set { SetFlag(value, ChromCachedFile.FlagValues.used_ms1_centroids); }
+        }
+
+        public bool UsedMs2Centroids
+        {
+            get { return (Flags & ChromCachedFile.FlagValues.used_ms2_centroids) != 0; }
+            set { SetFlag(value, ChromCachedFile.FlagValues.used_ms2_centroids); }
+        }
+
         public bool HasMidasSpectra
         {
             get { return (Flags & ChromCachedFile.FlagValues.has_midas_spectra) != 0; }
-            set
-            {
-                if (value)
-                    Flags |= ChromCachedFile.FlagValues.has_midas_spectra;
-                else
-                    Flags &= ~ChromCachedFile.FlagValues.has_midas_spectra;
-            }
+            set { SetFlag(value, ChromCachedFile.FlagValues.has_midas_spectra); }
+        }
+
+        public bool HasCombinedIonMobility
+        {
+            get { return (Flags & ChromCachedFile.FlagValues.has_combined_ion_mobility) != 0; }
+            set { SetFlag(value, ChromCachedFile.FlagValues.has_combined_ion_mobility); }
+        }
+
+        private void SetFlag(bool set, ChromCachedFile.FlagValues flag)
+        {
+            if (set)
+                Flags |= flag;
+            else
+                Flags &= ~flag;
         }
 
         public int SizeScanIds { get; set; }

@@ -69,7 +69,7 @@ namespace SkylineTester
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SkylineTesterWindow));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             this.mainPanel = new System.Windows.Forms.Panel();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
@@ -88,7 +88,7 @@ namespace SkylineTester
             this.labelSelectedFormsCount = new System.Windows.Forms.ToolStripLabel();
             this.clearSeenButton = new System.Windows.Forms.ToolStripButton();
             this.labelFormsSeenPercent = new System.Windows.Forms.ToolStripLabel();
-            this.formsGrid = new System.Windows.Forms.DataGridView();
+            this.formsGrid = new SkylineTester.SafeDataGridView();
             this.FormColumn = new System.Windows.Forms.DataGridViewLinkColumn();
             this.TestColumn = new System.Windows.Forms.DataGridViewLinkColumn();
             this.SeenColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -121,12 +121,12 @@ namespace SkylineTester
             this.windowsGroup = new System.Windows.Forms.GroupBox();
             this.offscreen = new System.Windows.Forms.CheckBox();
             this.iterationsGroup = new System.Windows.Forms.GroupBox();
+            this.recordAuditLogs = new System.Windows.Forms.CheckBox();
             this.testsRunSmallMoleculeVersions = new System.Windows.Forms.CheckBox();
             this.randomize = new System.Windows.Forms.CheckBox();
             this.repeat = new System.Windows.Forms.ComboBox();
             this.label6 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
-            this.testsAddSmallMoleculeNodes = new System.Windows.Forms.CheckBox();
             this.runLoopsCount = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
             this.runLoops = new System.Windows.Forms.RadioButton();
@@ -183,7 +183,6 @@ namespace SkylineTester
             this.qualityChooseTests = new System.Windows.Forms.RadioButton();
             this.groupBox8 = new System.Windows.Forms.GroupBox();
             this.qualityRunSmallMoleculeVersions = new System.Windows.Forms.CheckBox();
-            this.qualityAddSmallMoleculeNodes = new System.Windows.Forms.CheckBox();
             this.qualityPassIndefinite = new System.Windows.Forms.RadioButton();
             this.qualityPassCount = new System.Windows.Forms.NumericUpDown();
             this.pass1 = new System.Windows.Forms.CheckBox();
@@ -228,11 +227,11 @@ namespace SkylineTester
             this.nightlyRunDate = new System.Windows.Forms.ComboBox();
             this.label29 = new System.Windows.Forms.Label();
             this.groupBox20 = new System.Windows.Forms.GroupBox();
+            this.nightlyRunIndefinitely = new System.Windows.Forms.CheckBox();
             this.nightlyRandomize = new System.Windows.Forms.CheckBox();
             this.nightlyRepeat = new System.Windows.Forms.ComboBox();
             this.label8 = new System.Windows.Forms.Label();
             this.label11 = new System.Windows.Forms.Label();
-            this.nightlyTestSmallMolecules = new System.Windows.Forms.CheckBox();
             this.nightlyRunPerfTests = new System.Windows.Forms.CheckBox();
             this.buttonNow = new System.Windows.Forms.Button();
             this.nightlyStartTime = new System.Windows.Forms.DateTimePicker();
@@ -259,7 +258,7 @@ namespace SkylineTester
             this.comboBoxRunStatsCompare = new System.Windows.Forms.ComboBox();
             this.comboBoxRunStats = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.dataGridRunStats = new System.Windows.Forms.DataGridView();
+            this.dataGridRunStats = new SkylineTester.SafeDataGridView();
             this.TestName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Iterations = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Duration = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -518,7 +517,7 @@ namespace SkylineTester
             this.runForms.TabIndex = 4;
             this.runForms.Text = "Run";
             this.runForms.UseVisualStyleBackColor = true;
-            this.runForms.Click += new System.EventHandler(this.Run);
+            this.runForms.Click += new System.EventHandler(this.RunOrStop_Clicked);
             // 
             // groupBox1
             // 
@@ -623,11 +622,11 @@ namespace SkylineTester
             // SeenColumn
             // 
             this.SeenColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.ColumnHeader;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle2.Format = "N0";
-            dataGridViewCellStyle2.NullValue = null;
-            dataGridViewCellStyle2.Padding = new System.Windows.Forms.Padding(0, 0, 4, 0);
-            this.SeenColumn.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle1.Format = "N0";
+            dataGridViewCellStyle1.NullValue = null;
+            dataGridViewCellStyle1.Padding = new System.Windows.Forms.Padding(0, 0, 4, 0);
+            this.SeenColumn.DefaultCellStyle = dataGridViewCellStyle1;
             this.SeenColumn.HeaderText = "Seen";
             this.SeenColumn.MinimumWidth = 40;
             this.SeenColumn.Name = "SeenColumn";
@@ -830,7 +829,7 @@ namespace SkylineTester
             this.runTutorials.TabIndex = 1;
             this.runTutorials.Text = "Run";
             this.runTutorials.UseVisualStyleBackColor = true;
-            this.runTutorials.Click += new System.EventHandler(this.Run);
+            this.runTutorials.Click += new System.EventHandler(this.RunOrStop_Clicked);
             // 
             // tabTests
             // 
@@ -861,7 +860,7 @@ namespace SkylineTester
             this.runTests.Text = "Run";
             this.toolTip1.SetToolTip(this.runTests, "run the selected tests, immediately");
             this.runTests.UseVisualStyleBackColor = true;
-            this.runTests.Click += new System.EventHandler(this.Run);
+            this.runTests.Click += new System.EventHandler(this.RunOrStop_Clicked);
             // 
             // buttonSelectFailedTestsTab
             // 
@@ -896,7 +895,7 @@ namespace SkylineTester
             this.groupBox15.Controls.Add(this.testsJapanese);
             this.groupBox15.Controls.Add(this.testsChinese);
             this.groupBox15.Controls.Add(this.testsEnglish);
-            this.groupBox15.Location = new System.Drawing.Point(11, 300);
+            this.groupBox15.Location = new System.Drawing.Point(11, 308);
             this.groupBox15.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox15.Name = "groupBox15";
             this.groupBox15.Padding = new System.Windows.Forms.Padding(4);
@@ -965,7 +964,7 @@ namespace SkylineTester
             // windowsGroup
             // 
             this.windowsGroup.Controls.Add(this.offscreen);
-            this.windowsGroup.Location = new System.Drawing.Point(11, 234);
+            this.windowsGroup.Location = new System.Drawing.Point(11, 242);
             this.windowsGroup.Margin = new System.Windows.Forms.Padding(4);
             this.windowsGroup.Name = "windowsGroup";
             this.windowsGroup.Padding = new System.Windows.Forms.Padding(4);
@@ -987,12 +986,12 @@ namespace SkylineTester
             // 
             // iterationsGroup
             // 
+            this.iterationsGroup.Controls.Add(this.recordAuditLogs);
             this.iterationsGroup.Controls.Add(this.testsRunSmallMoleculeVersions);
             this.iterationsGroup.Controls.Add(this.randomize);
             this.iterationsGroup.Controls.Add(this.repeat);
             this.iterationsGroup.Controls.Add(this.label6);
             this.iterationsGroup.Controls.Add(this.label3);
-            this.iterationsGroup.Controls.Add(this.testsAddSmallMoleculeNodes);
             this.iterationsGroup.Controls.Add(this.runLoopsCount);
             this.iterationsGroup.Controls.Add(this.label2);
             this.iterationsGroup.Controls.Add(this.runLoops);
@@ -1001,17 +1000,28 @@ namespace SkylineTester
             this.iterationsGroup.Margin = new System.Windows.Forms.Padding(4);
             this.iterationsGroup.Name = "iterationsGroup";
             this.iterationsGroup.Padding = new System.Windows.Forms.Padding(4);
-            this.iterationsGroup.Size = new System.Drawing.Size(280, 176);
+            this.iterationsGroup.Size = new System.Drawing.Size(280, 184);
             this.iterationsGroup.TabIndex = 1;
             this.iterationsGroup.TabStop = false;
             this.iterationsGroup.Text = "Run options";
+            // 
+            // recordAuditLogs
+            // 
+            this.recordAuditLogs.AutoSize = true;
+            this.recordAuditLogs.Location = new System.Drawing.Point(5, 127);
+            this.recordAuditLogs.Name = "recordAuditLogs";
+            this.recordAuditLogs.Size = new System.Drawing.Size(166, 17);
+            this.recordAuditLogs.TabIndex = 10;
+            this.recordAuditLogs.Text = "Record new tutorial audit logs";
+            this.toolTip1.SetToolTip(this.recordAuditLogs, "Create new or updated audit logs for tutorial tests");
+            this.recordAuditLogs.UseVisualStyleBackColor = true;
             // 
             // testsRunSmallMoleculeVersions
             // 
             this.testsRunSmallMoleculeVersions.AutoSize = true;
             this.testsRunSmallMoleculeVersions.Checked = true;
             this.testsRunSmallMoleculeVersions.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.testsRunSmallMoleculeVersions.Location = new System.Drawing.Point(5, 152);
+            this.testsRunSmallMoleculeVersions.Location = new System.Drawing.Point(5, 150);
             this.testsRunSmallMoleculeVersions.Name = "testsRunSmallMoleculeVersions";
             this.testsRunSmallMoleculeVersions.Size = new System.Drawing.Size(179, 17);
             this.testsRunSmallMoleculeVersions.TabIndex = 9;
@@ -1064,20 +1074,6 @@ namespace SkylineTester
             this.label3.Size = new System.Drawing.Size(74, 13);
             this.label3.TabIndex = 4;
             this.label3.Text = "Run each test";
-            // 
-            // testsAddSmallMoleculeNodes
-            // 
-            this.testsAddSmallMoleculeNodes.AutoSize = true;
-            this.testsAddSmallMoleculeNodes.Checked = true;
-            this.testsAddSmallMoleculeNodes.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.testsAddSmallMoleculeNodes.Location = new System.Drawing.Point(5, 129);
-            this.testsAddSmallMoleculeNodes.Name = "testsAddSmallMoleculeNodes";
-            this.testsAddSmallMoleculeNodes.Size = new System.Drawing.Size(168, 17);
-            this.testsAddSmallMoleculeNodes.TabIndex = 8;
-            this.testsAddSmallMoleculeNodes.Text = "Add small molecule test nodes";
-            this.toolTip1.SetToolTip(this.testsAddSmallMoleculeNodes, "Insert a special custom ion node into most tests on every other pass, starting wi" +
-        "th pass 2");
-            this.testsAddSmallMoleculeNodes.UseVisualStyleBackColor = true;
             // 
             // runLoopsCount
             // 
@@ -1405,7 +1401,7 @@ namespace SkylineTester
             this.runBuild.TabIndex = 22;
             this.runBuild.Text = "Run";
             this.runBuild.UseVisualStyleBackColor = true;
-            this.runBuild.Click += new System.EventHandler(this.Run);
+            this.runBuild.Click += new System.EventHandler(this.RunOrStop_Clicked);
             // 
             // groupBox6
             // 
@@ -1456,7 +1452,7 @@ namespace SkylineTester
             this.branchUrl.Name = "branchUrl";
             this.branchUrl.Size = new System.Drawing.Size(595, 20);
             this.branchUrl.TabIndex = 2;
-            this.branchUrl.Text = "https://svn.code.sf.net/p/proteowizard/code/branches/work/BRANCHNAME";
+            this.branchUrl.Text = "https://github.com/ProteoWizard/pwiz/tree/BRANCHNAME";
             // 
             // groupBox5
             // 
@@ -1731,7 +1727,7 @@ namespace SkylineTester
             // 
             this.groupBox9.Controls.Add(this.qualityAllTests);
             this.groupBox9.Controls.Add(this.qualityChooseTests);
-            this.groupBox9.Location = new System.Drawing.Point(0, 172);
+            this.groupBox9.Location = new System.Drawing.Point(0, 162);
             this.groupBox9.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox9.Name = "groupBox9";
             this.groupBox9.Padding = new System.Windows.Forms.Padding(4);
@@ -1767,7 +1763,6 @@ namespace SkylineTester
             // groupBox8
             // 
             this.groupBox8.Controls.Add(this.qualityRunSmallMoleculeVersions);
-            this.groupBox8.Controls.Add(this.qualityAddSmallMoleculeNodes);
             this.groupBox8.Controls.Add(this.qualityPassIndefinite);
             this.groupBox8.Controls.Add(this.qualityPassCount);
             this.groupBox8.Controls.Add(this.pass1);
@@ -1778,7 +1773,7 @@ namespace SkylineTester
             this.groupBox8.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox8.Name = "groupBox8";
             this.groupBox8.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox8.Size = new System.Drawing.Size(224, 164);
+            this.groupBox8.Size = new System.Drawing.Size(224, 144);
             this.groupBox8.TabIndex = 30;
             this.groupBox8.TabStop = false;
             this.groupBox8.Text = "Run options";
@@ -1788,27 +1783,13 @@ namespace SkylineTester
             this.qualityRunSmallMoleculeVersions.AutoSize = true;
             this.qualityRunSmallMoleculeVersions.Checked = true;
             this.qualityRunSmallMoleculeVersions.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.qualityRunSmallMoleculeVersions.Location = new System.Drawing.Point(7, 140);
+            this.qualityRunSmallMoleculeVersions.Location = new System.Drawing.Point(7, 118);
             this.qualityRunSmallMoleculeVersions.Name = "qualityRunSmallMoleculeVersions";
             this.qualityRunSmallMoleculeVersions.Size = new System.Drawing.Size(179, 17);
             this.qualityRunSmallMoleculeVersions.TabIndex = 14;
             this.qualityRunSmallMoleculeVersions.Text = "Run small molecule test versions";
             this.toolTip1.SetToolTip(this.qualityRunSmallMoleculeVersions, "Include small molecule versions of tests when available");
             this.qualityRunSmallMoleculeVersions.UseVisualStyleBackColor = true;
-            // 
-            // qualityAddSmallMoleculeNodes
-            // 
-            this.qualityAddSmallMoleculeNodes.AutoSize = true;
-            this.qualityAddSmallMoleculeNodes.Checked = true;
-            this.qualityAddSmallMoleculeNodes.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.qualityAddSmallMoleculeNodes.Location = new System.Drawing.Point(8, 118);
-            this.qualityAddSmallMoleculeNodes.Name = "qualityAddSmallMoleculeNodes";
-            this.qualityAddSmallMoleculeNodes.Size = new System.Drawing.Size(168, 17);
-            this.qualityAddSmallMoleculeNodes.TabIndex = 13;
-            this.qualityAddSmallMoleculeNodes.Text = "Add small molecule test nodes";
-            this.toolTip1.SetToolTip(this.qualityAddSmallMoleculeNodes, "Insert a special custom ion node into most tests on every other pass, starting wi" +
-        "th pass 2");
-            this.qualityAddSmallMoleculeNodes.UseVisualStyleBackColor = true;
             // 
             // qualityPassIndefinite
             // 
@@ -1918,7 +1899,7 @@ namespace SkylineTester
             this.runQuality.TabIndex = 26;
             this.runQuality.Text = "Run";
             this.runQuality.UseVisualStyleBackColor = true;
-            this.runQuality.Click += new System.EventHandler(this.Run);
+            this.runQuality.Click += new System.EventHandler(this.RunOrStop_Clicked);
             // 
             // tabNightly
             // 
@@ -2032,11 +2013,11 @@ namespace SkylineTester
             this.groupBox19.Controls.Add(this.label34);
             this.groupBox19.Controls.Add(this.nightlyRoot);
             this.groupBox19.Controls.Add(this.nightlyBrowseBuild);
-            this.groupBox19.Location = new System.Drawing.Point(0, 313);
+            this.groupBox19.Location = new System.Drawing.Point(0, 329);
             this.groupBox19.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox19.Name = "groupBox19";
             this.groupBox19.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox19.Size = new System.Drawing.Size(240, 137);
+            this.groupBox19.Size = new System.Drawing.Size(240, 121);
             this.groupBox19.TabIndex = 36;
             this.groupBox19.TabStop = false;
             this.groupBox19.Text = "Nightly directory";
@@ -2077,7 +2058,7 @@ namespace SkylineTester
             this.groupBox22.Controls.Add(this.nightlyBranch);
             this.groupBox22.Controls.Add(this.nightlyBuildTrunk);
             this.groupBox22.Controls.Add(this.nightlyBranchUrl);
-            this.groupBox22.Location = new System.Drawing.Point(0, 219);
+            this.groupBox22.Location = new System.Drawing.Point(0, 235);
             this.groupBox22.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox22.Name = "groupBox22";
             this.groupBox22.Padding = new System.Windows.Forms.Padding(4);
@@ -2119,7 +2100,7 @@ namespace SkylineTester
             this.nightlyBranchUrl.Name = "nightlyBranchUrl";
             this.nightlyBranchUrl.Size = new System.Drawing.Size(159, 20);
             this.nightlyBranchUrl.TabIndex = 2;
-            this.nightlyBranchUrl.Text = "https://svn.code.sf.net/p/proteowizard/code/branches/work/BRANCHNAME";
+            this.nightlyBranchUrl.Text = "https://github.com/ProteoWizard/pwiz/tree/BRANCHNAME";
             // 
             // groupBox18
             // 
@@ -2344,11 +2325,11 @@ namespace SkylineTester
             // 
             // groupBox20
             // 
+            this.groupBox20.Controls.Add(this.nightlyRunIndefinitely);
             this.groupBox20.Controls.Add(this.nightlyRandomize);
             this.groupBox20.Controls.Add(this.nightlyRepeat);
             this.groupBox20.Controls.Add(this.label8);
             this.groupBox20.Controls.Add(this.label11);
-            this.groupBox20.Controls.Add(this.nightlyTestSmallMolecules);
             this.groupBox20.Controls.Add(this.nightlyRunPerfTests);
             this.groupBox20.Controls.Add(this.buttonNow);
             this.groupBox20.Controls.Add(this.nightlyStartTime);
@@ -2362,10 +2343,20 @@ namespace SkylineTester
             this.groupBox20.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox20.Name = "groupBox20";
             this.groupBox20.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox20.Size = new System.Drawing.Size(240, 211);
+            this.groupBox20.Size = new System.Drawing.Size(240, 227);
             this.groupBox20.TabIndex = 30;
             this.groupBox20.TabStop = false;
             this.groupBox20.Text = "Run";
+            // 
+            // nightlyRunIndefinitely
+            // 
+            this.nightlyRunIndefinitely.AutoSize = true;
+            this.nightlyRunIndefinitely.Location = new System.Drawing.Point(10, 199);
+            this.nightlyRunIndefinitely.Name = "nightlyRunIndefinitely";
+            this.nightlyRunIndefinitely.Size = new System.Drawing.Size(98, 17);
+            this.nightlyRunIndefinitely.TabIndex = 39;
+            this.nightlyRunIndefinitely.Text = "Run indefinitely";
+            this.nightlyRunIndefinitely.UseVisualStyleBackColor = true;
             // 
             // nightlyRandomize
             // 
@@ -2412,18 +2403,6 @@ namespace SkylineTester
             this.label11.Size = new System.Drawing.Size(74, 13);
             this.label11.TabIndex = 35;
             this.label11.Text = "Run each test";
-            // 
-            // nightlyTestSmallMolecules
-            // 
-            this.nightlyTestSmallMolecules.AutoSize = true;
-            this.nightlyTestSmallMolecules.Location = new System.Drawing.Point(9, 119);
-            this.nightlyTestSmallMolecules.Name = "nightlyTestSmallMolecules";
-            this.nightlyTestSmallMolecules.Size = new System.Drawing.Size(168, 17);
-            this.nightlyTestSmallMolecules.TabIndex = 34;
-            this.nightlyTestSmallMolecules.Text = "Add small molecule test nodes";
-            this.toolTip1.SetToolTip(this.nightlyTestSmallMolecules, "add a special custom ion node to most tests on every other pass, starting with pa" +
-        "ss 2");
-            this.nightlyTestSmallMolecules.UseVisualStyleBackColor = true;
             // 
             // nightlyRunPerfTests
             // 
@@ -2552,7 +2531,7 @@ namespace SkylineTester
             this.runNightly.TabIndex = 33;
             this.runNightly.Text = "Run";
             this.runNightly.UseVisualStyleBackColor = true;
-            this.runNightly.Click += new System.EventHandler(this.Run);
+            this.runNightly.Click += new System.EventHandler(this.RunOrStop_Clicked);
             // 
             // tabOutput
             // 
@@ -2616,7 +2595,7 @@ namespace SkylineTester
             // 
             this.outputSplitContainer.Panel2.Controls.Add(this.errorConsole);
             this.outputSplitContainer.Size = new System.Drawing.Size(671, 562);
-            this.outputSplitContainer.SplitterDistance = 410;
+            this.outputSplitContainer.SplitterDistance = 398;
             this.outputSplitContainer.SplitterWidth = 10;
             this.outputSplitContainer.TabIndex = 35;
             // 
@@ -2629,6 +2608,8 @@ namespace SkylineTester
             this.commandShell.FinishedOneCommand = null;
             this.commandShell.Font = new System.Drawing.Font("Courier New", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.commandShell.IgnorePaint = 0;
+            this.commandShell.IsUnattended = false;
+            this.commandShell.IsWaiting = false;
             this.commandShell.Location = new System.Drawing.Point(0, 0);
             this.commandShell.LogFile = null;
             this.commandShell.Margin = new System.Windows.Forms.Padding(0, 0, 0, 14);
@@ -2636,7 +2617,7 @@ namespace SkylineTester
             this.commandShell.NextCommand = 0;
             this.commandShell.RestartCount = 0;
             this.commandShell.RunStartTime = new System.DateTime(((long)(0)));
-            this.commandShell.Size = new System.Drawing.Size(671, 410);
+            this.commandShell.Size = new System.Drawing.Size(671, 398);
             this.commandShell.StopButton = null;
             this.commandShell.TabIndex = 2;
             this.commandShell.Text = "";
@@ -2654,7 +2635,7 @@ namespace SkylineTester
             this.errorConsole.Margin = new System.Windows.Forms.Padding(0);
             this.errorConsole.Name = "errorConsole";
             this.errorConsole.ReadOnly = true;
-            this.errorConsole.Size = new System.Drawing.Size(671, 142);
+            this.errorConsole.Size = new System.Drawing.Size(671, 154);
             this.errorConsole.TabIndex = 3;
             this.errorConsole.Text = "";
             this.errorConsole.SelectionChanged += new System.EventHandler(this.errorConsole_SelectionChanged);
@@ -2706,7 +2687,7 @@ namespace SkylineTester
             this.buttonStop.TabIndex = 27;
             this.buttonStop.Text = "Stop";
             this.buttonStop.UseVisualStyleBackColor = true;
-            this.buttonStop.Click += new System.EventHandler(this.Stop);
+            this.buttonStop.Click += new System.EventHandler(this.Stop_Clicked);
             // 
             // tabRunStats
             // 
@@ -3371,7 +3352,7 @@ namespace SkylineTester
         private GroupBox groupBox21;
         private CheckBox showFormNamesTutorial;
         private CheckBox testsTurkish;
-        private DataGridView formsGrid;
+        private SafeDataGridView formsGrid;
         private ToolStrip toolStrip1;
         private ToolStripLabel labelSelectedFormsCount;
         private ToolStripButton clearSeenButton;
@@ -3386,9 +3367,6 @@ namespace SkylineTester
         private ToolStripMenuItem accessInternet;
         private CheckBox runDemoMode;
         private ToolTip toolTip1;
-        private CheckBox qualityAddSmallMoleculeNodes;
-        private CheckBox nightlyTestSmallMolecules;
-        private CheckBox testsAddSmallMoleculeNodes;
         private CheckBox nightlyExit;
         private GroupBox groupBox19;
         private Label label34;
@@ -3397,7 +3375,7 @@ namespace SkylineTester
         private GroupBox groupBox17;
         private TableLayoutPanel nightlyTrendsTable;
         private TabPage tabRunStats;
-        private DataGridView dataGridRunStats;
+        private SafeDataGridView dataGridRunStats;
         private Label label1;
         private ComboBox comboBoxRunStats;
         private DataGridViewTextBoxColumn TestName;
@@ -3426,5 +3404,7 @@ namespace SkylineTester
         private RadioButton radioNightlyMemory;
         private Panel panel2;
         private Panel panel4;
+        private CheckBox nightlyRunIndefinitely;
+        private CheckBox recordAuditLogs;
     }
 }

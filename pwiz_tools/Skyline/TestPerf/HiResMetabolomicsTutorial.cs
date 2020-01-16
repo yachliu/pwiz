@@ -28,6 +28,7 @@ using pwiz.Skyline;
 using pwiz.Skyline.Controls;
 using pwiz.Skyline.Controls.Databinding;
 using pwiz.Skyline.Controls.SeqNode;
+using pwiz.Skyline.Controls.Startup;
 using pwiz.Skyline.EditUI;
 using pwiz.Skyline.FileUI;
 using pwiz.Skyline.Model;
@@ -46,15 +47,21 @@ namespace TestPerf // This would be in TestTutorials if it didn't involve a 2GB 
     [TestClass]
     public class HiResMetabolomicsTutorialTest : AbstractFunctionalTest
     {
+        protected override bool ShowStartPage
+        {
+            get { return true; }  // So we can point out the UI mode control
+        }
+
         [TestMethod]
         public void TestHiResMetabolomicsTutorial()
         {
             // Set true to look at tutorial screenshots.
-           // IsPauseForScreenShots = true;
+            // IsPauseForScreenShots = true;
 
             LinkPdf = "https://skyline.gs.washington.edu/labkey/_webdav/home/software/Skyline/%40files/tutorials/HiResMetabolomics.pdf";
             ForceMzml = true; // Prefer mzML as being the more efficient download
 
+            TestFilesPersistent = new[] { ExtWatersRaw };
             TestFilesZipPaths = new[]
             {
                 (UseRawFiles
@@ -65,15 +72,29 @@ namespace TestPerf // This would be in TestTutorials if it didn't involve a 2GB 
             RunFunctionalTest();
         }
 
+        private string GetDataFolder()
+        {
+            return UseRawFiles ? "HiResMetabolomics" : "HiResMetabolomics_mzML";
+        }
+
         private string GetTestPath(string relativePath = null)
         {
-            string folderSmallMolecule = UseRawFiles ? "HiResMetabolomics" : "HiResMetabolomics_mzML";
+            string folderSmallMolecule = GetDataFolder();
             string fullRelativePath = relativePath != null ? Path.Combine(folderSmallMolecule, relativePath) : folderSmallMolecule;
             return TestFilesDirs[0].GetTestPath(fullRelativePath);
         }
 
         protected override void DoTest()
         {
+            // Setting the UI mode, p 2  
+            var startPage = WaitForOpenForm<StartPage>();
+            RunUI(() => startPage.SetUIMode(SrmDocument.DOCUMENT_TYPE.proteomic));
+            PauseForScreenShot<StartPage>("Start Window proteomic", 2);
+            RunUI(() => startPage.SetUIMode(SrmDocument.DOCUMENT_TYPE.small_molecules));
+            PauseForScreenShot<StartPage>("Start Window small molecule", 3);
+            RunUI(() => startPage.DoAction(skylineWindow => true));
+            WaitForOpenForm<SkylineWindow>();
+
             // Inserting a Transition List, p. 2
             {
                 var doc = SkylineWindow.Document;
@@ -81,17 +102,9 @@ namespace TestPerf // This would be in TestTutorials if it didn't involve a 2GB 
                 for (var retry = 0; retry < 2; retry++)
                 {
                     var pasteDlg = ShowDialog<PasteDlg>(SkylineWindow.ShowPasteTransitionListDlg);
+                    
                     RunUI(() =>
                     {
-                        pasteDlg.IsMolecule = false;  // Default peptide view
-                        pasteDlg.Size = new Size(800, 275);
-                    });
-                    if (retry == 0)
-                        PauseForScreenShot<PasteDlg>("Paste Dialog in peptide mode", 2);
-
-                    RunUI(() =>
-                    {
-                        pasteDlg.IsMolecule = true;
                         pasteDlg.SetSmallMoleculeColumns(null);  // Default columns
                     });
                     if (retry == 0)
@@ -187,6 +200,7 @@ namespace TestPerf // This would be in TestTutorials if it didn't involve a 2GB 
                     // Full Scan Settings
                     transitionSettingsUI.SelectedTab = TransitionSettingsUI.TABS.FullScan;
                     transitionSettingsUI.PrecursorIsotopesCurrent = FullScanPrecursorIsotopes.Count;
+                    transitionSettingsUI.Peaks = 2;
                     transitionSettingsUI.PrecursorMassAnalyzer = FullScanMassAnalyzerType.orbitrap;
                     transitionSettingsUI.PrecursorRes = 70000;
                     transitionSettingsUI.PrecursorResMz = 200;
@@ -206,10 +220,8 @@ namespace TestPerf // This would be in TestTutorials if it didn't involve a 2GB 
                         importResultsDlg1.GetDataSourcePathsFile(null));
                     RunUI(() =>
                     {
-                        openDataSourceDialog1.CurrentDirectory = new MsDataFilePath(GetTestPath());
-                        openDataSourceDialog1.SelectAllFileType(UseRawFiles
-                            ? ExtensionTestContext.ExtWatersRaw
-                            : ExtensionTestContext.ExtMzml);
+                        openDataSourceDialog1.CurrentDirectory = new MsDataFilePath(Path.Combine(TestFilesDirs.First().PersistentFilesDir, GetDataFolder()));
+                        openDataSourceDialog1.SelectAllFileType(ExtWatersRaw);
                     });
                     PauseForScreenShot<ImportResultsSamplesDlg>("Import Results Files form", 6);
                     OkDialog(openDataSourceDialog1, openDataSourceDialog1.Open);
@@ -226,11 +238,9 @@ namespace TestPerf // This would be in TestTutorials if it didn't involve a 2GB 
 
                 var expectedTransCount = new Dictionary<string, int[]>
                 {
-                    // transition groups, heavy transition groups, tranistions, heavy transitions
-                    {"ID31609_01_E749_4745_091517", new[] {3, 3, 3, 10, 9}},
-                    {"ID31627_01_E749_4745_091517", new[] {4, 4, 3, 12, 9}},
-                    {"ID31624_01_E749_4745_091517", new[] {4, 4, 3, 12, 9}},
-                    {"ID31653_01_E749_4745_091517", new[] {4, 4, 3, 12, 9}},
+                    // peptides, transition groups, heavy transition groups, tranistions, heavy transitions
+                    {"default", new[] {4, 4, 3, 8, 6}}, // Most have these values
+                    {"ID31609_01_E749_4745_091517", new[] {4, 4, 3, 7, 6}},
 
                 };
                 var msg = "";
@@ -238,7 +248,7 @@ namespace TestPerf // This would be in TestTutorials if it didn't involve a 2GB 
                 {
                     int[] transitions;
                     if (!expectedTransCount.TryGetValue(chromatogramSet.Name, out transitions))
-                        transitions = new[] {  4, 4, 3, 11, 9 }; // Most have this value
+                        transitions = expectedTransCount["default"];
                     try
                     {
                         AssertResult.IsDocumentResultsState(docResults, chromatogramSet.Name, transitions[0], transitions[1], transitions[2], transitions[3], transitions[4]);
@@ -297,7 +307,7 @@ namespace TestPerf // This would be in TestTutorials if it didn't involve a 2GB 
                         if (row.Cells[0].Value.ToString().StartsWith("NIST"))
                         {
                             row.Cells[1].Value = SampleType.STANDARD;
-                            row.Cells[2].Value = 2838.0;
+                            row.Cells[2].Value = 1.0;
                         }
                         else if (row.Cells[0].Value.ToString().StartsWith("GW"))
                         {
@@ -322,16 +332,12 @@ namespace TestPerf // This would be in TestTutorials if it didn't involve a 2GB 
                 {
                     var gridView = documentGrid3.DataGridView;
                     var methods = ((DataGridViewComboBoxCell) gridView.Rows[0].Cells[6]).Items;
-                    var ratioToHeavy = ((Tuple<String, NormalizationMethod>)methods[3]).Item2;
                     var ratioToSurrogateHeavyDHA = ((Tuple<String, NormalizationMethod>)methods[6]).Item2;
-                    gridView.Rows[0].Cells[5].Value = 1.0;
-                    gridView.Rows[0].Cells[6].Value = ratioToHeavy; 
-                    gridView.Rows[1].Cells[5].Value = .0192;
+                    gridView.Rows[0].Cells[5].Value = 2838.0;
+                    gridView.Rows[1].Cells[5].Value = 54.0;
                     gridView.Rows[1].Cells[6].Value = ratioToSurrogateHeavyDHA;
-                    gridView.Rows[2].Cells[5].Value = .3467;
-                    gridView.Rows[2].Cells[6].Value = ratioToHeavy;
-                    gridView.Rows[3].Cells[5].Value = .0416;
-                    gridView.Rows[3].Cells[6].Value = ratioToHeavy;
+                    gridView.Rows[2].Cells[5].Value = 984.0;
+                    gridView.Rows[3].Cells[5].Value = 118.0;
                 });
 
                 PauseForScreenShot<DocumentGridForm>("Document Grid - peptide quant again", 11);

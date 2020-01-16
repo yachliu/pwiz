@@ -25,16 +25,16 @@ using pwiz.Common.SystemUtil;
 
 namespace pwiz.Skyline.Model.DocSettings.AbsoluteQuantification
 {
-    public class LodCalculation : IAuditLogObject
+    public class LodCalculation : LabeledValues<string>
     {
-        public static readonly LodCalculation NONE = new LodCalculation("none", // Not L10N
+        public static readonly LodCalculation NONE = new LodCalculation(@"none",
             () => QuantificationStrings.LodCalculation_NONE_None, (curve, fitter) => null);
-        public static readonly LodCalculation TURNING_POINT = new LodCalculation("turning_point", // Not L10N
+        public static readonly LodCalculation TURNING_POINT = new LodCalculation(@"turning_point",
             () => QuantificationStrings.LodCalculation_TURNING_POINT_Bilinear_turning_point, CalculateLodFromTurningPoint);
-        public static readonly LodCalculation BLANK_PLUS_2SD = new LodCalculation("blank_plus_2_sd", // Not L10N
+        public static readonly LodCalculation BLANK_PLUS_2SD = new LodCalculation(@"blank_plus_2_sd",
             () => QuantificationStrings.LodCalculation_BLANK_PLUS_2SD_Blank_plus_2___SD,
             (curve, fitter)=>BlankPlusSdMultiple(curve, fitter, 2.0));
-        public static readonly LodCalculation BLANK_PLUS_3SD = new LodCalculation("blank_plus_3_sd", // Not L10N
+        public static readonly LodCalculation BLANK_PLUS_3SD = new LodCalculation(@"blank_plus_3_sd",
             () => QuantificationStrings.LodCalculation_BLANK_PLUS_3SD_Blank_plus_3___SD,
             (curve, fitter)=>BlankPlusSdMultiple(curve, fitter, 3.0));
 
@@ -44,21 +44,12 @@ namespace pwiz.Skyline.Model.DocSettings.AbsoluteQuantification
         });
 
         private readonly Func<CalibrationCurve, CalibrationCurveFitter, double?> _calculateLodFunc;
-        private readonly Func<string> _getLabelFunc;
 
-        private LodCalculation(string name, Func<string> getLabelFunc, Func<CalibrationCurve, CalibrationCurveFitter, double?> calculateLodFunc)
+        private LodCalculation(string name, Func<string> getLabelFunc, Func<CalibrationCurve, CalibrationCurveFitter, double?> calculateLodFunc) :
+            base(name, getLabelFunc)
         {
-            Name = name;
-            _getLabelFunc = getLabelFunc;
             _calculateLodFunc = calculateLodFunc;
         }
-
-        public string Name { get; private set; }
-
-        public string AuditLogText { get { return Name; } }
-        public bool IsName { get { return true; } }
-
-        public string Label { get { return _getLabelFunc(); } }
 
         public override string ToString()
         {
@@ -101,7 +92,7 @@ namespace pwiz.Skyline.Model.DocSettings.AbsoluteQuantification
                 {
                     continue;
                 }
-                double? peakArea = fitter.GetNormalizedPeakArea(iReplicate);
+                double? peakArea = fitter.GetNormalizedPeakArea(new CalibrationPoint(iReplicate, null));
                 if (!peakArea.HasValue)
                 {
                     continue;
@@ -115,7 +106,7 @@ namespace pwiz.Skyline.Model.DocSettings.AbsoluteQuantification
             double meanPlusSd = blankPeakAreas.Mean();
             if (sdMultiple != 0)
             {
-                meanPlusSd = blankPeakAreas.StandardDeviation() * sdMultiple;
+                meanPlusSd += blankPeakAreas.StandardDeviation() * sdMultiple;
             }
             if (double.IsNaN(meanPlusSd) || double.IsInfinity(meanPlusSd))
             {

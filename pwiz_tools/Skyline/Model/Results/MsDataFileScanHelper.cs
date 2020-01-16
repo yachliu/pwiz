@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using pwiz.Common.Chemistry;
 using pwiz.ProteowizardWrapper;
 using pwiz.Skyline.Properties;
 using pwiz.Skyline.Util;
@@ -29,9 +30,10 @@ namespace pwiz.Skyline.Model.Results
 {
     public class MsDataFileScanHelper : IDisposable
     {
-        public MsDataFileScanHelper(Action<MsDataSpectrum[]> successAction, Action<Exception> failureAction)
+        private ChromSource _chromSource;
+        public MsDataFileScanHelper(Action<MsDataSpectrum[]> successAction, Action<Exception> failureAction, bool ignoreZeroIntensityPoints)
         {
-            ScanProvider = new BackgroundScanProvider(successAction, failureAction);
+            ScanProvider = new BackgroundScanProvider(successAction, failureAction, ignoreZeroIntensityPoints);
             SourceNames = new string[Helpers.CountEnumValues<ChromSource>()];
             SourceNames[(int)ChromSource.ms1] = Resources.GraphFullScan_GraphFullScan_MS1;
             SourceNames[(int)ChromSource.fragment] = Resources.GraphFullScan_GraphFullScan_MS_MS;
@@ -50,7 +52,33 @@ namespace pwiz.Skyline.Model.Results
 
         public string[] SourceNames { get; set; }
 
-        public ChromSource Source { get; set; }
+        public ChromSource Source
+        {
+            get { return _chromSource; }
+            set
+            {
+                if (Source == value)
+                {
+                    return;
+                }
+
+                var oldTimeIntensities = GetTimeIntensities(Source);
+                _chromSource = value;
+                var newTimeIntensities = GetTimeIntensities(Source);
+                if (newTimeIntensities != null)
+                {
+                    if (oldTimeIntensities != null)
+                    {
+                        var oldTime = oldTimeIntensities.Times[ScanIndex];
+                        ScanIndex = newTimeIntensities.IndexOfNearestTime(oldTime);
+                    }
+                    else
+                    {
+                        ScanIndex = Math.Min(ScanIndex, newTimeIntensities.NumPoints - 1);
+                    }
+                }
+            }
+        }
 
         public ChromSource SourceFromName(string name)
         {
@@ -76,6 +104,7 @@ namespace pwiz.Skyline.Model.Results
             minIonMobility = double.MaxValue;
             maxIonMobility = double.MinValue;
             var hasIonMobilityInfo = false;
+            int i = 0;
             foreach (var transition in ScanProvider.Transitions)
             {
                 if (!transition._ionMobilityInfo.HasIonMobilityValue || !transition._ionMobilityInfo.IonMobilityExtractionWindowWidth.HasValue)
@@ -84,7 +113,7 @@ namespace pwiz.Skyline.Model.Results
                     minIonMobility = double.MinValue;
                     maxIonMobility = double.MaxValue;
                 }
-                else if (sourceType == ChromSource.unknown || transition.Source == sourceType)
+                else if (sourceType == ChromSource.unknown || (transition.Source == sourceType && i == TransitionIndex))
                 {
                     // Products and precursors may have different expected ion mobility values in Waters MsE
                     double startIM = transition._ionMobilityInfo.IonMobility.Mobility.Value -
@@ -94,6 +123,7 @@ namespace pwiz.Skyline.Model.Results
                     maxIonMobility = Math.Max(maxIonMobility, endIM);
                     hasIonMobilityInfo = true;
                 }
+                i++;
             }
             return hasIonMobilityInfo;
         }
@@ -115,7 +145,7 @@ namespace pwiz.Skyline.Model.Results
             get { return ScanProvider != null && ScanProvider.ProvidesCollisionalCrossSectionConverter; }
         }
 
-        public MsDataFileImpl.eIonMobilityUnits IonMobilityUnits
+        public eIonMobilityUnits IonMobilityUnits
         {
             get
             {
@@ -123,17 +153,22 @@ namespace pwiz.Skyline.Model.Results
             }
         }
 
-        public IList<int> GetScanIndexes(ChromSource source)
+        public TimeIntensities GetTimeIntensities(ChromSource source)
         {
             if (ScanProvider != null)
             {
                 foreach (var transition in ScanProvider.Transitions)
                 {
                     if (transition.Source == source)
-                        return transition.ScanIndexes;
+                        return transition.TimeIntensities;
                 }
             }
             return null;
+        }
+
+        public IList<int> GetScanIndexes(ChromSource source)
+        {
+            return GetTimeIntensities(source)?.ScanIds;
         }
 
         public int GetScanIndex()
@@ -200,13 +235,13 @@ namespace pwiz.Skyline.Model.Results
             private IScanProvider _scanProvider;
             private readonly List<IScanProvider> _cachedScanProviders;
             private readonly List<IScanProvider> _oldScanProviders;
-            // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
             private readonly Thread _backgroundThread;
+            private bool _ignoreZeroIntensityPoints;
 
             private readonly Action<MsDataSpectrum[]> _successAction;
             private readonly Action<Exception> _failureAction;
 
-            public BackgroundScanProvider(Action<MsDataSpectrum[]> successAction, Action<Exception> failureAction)
+            public BackgroundScanProvider(Action<MsDataSpectrum[]> successAction, Action<Exception> failureAction, bool ignoreZeroIntensityPoints)
             {
                 _scanIndexNext = -1;
 
@@ -217,6 +252,7 @@ namespace pwiz.Skyline.Model.Results
 
                 _successAction = successAction;
                 _failureAction = failureAction;
+                _ignoreZeroIntensityPoints = ignoreZeroIntensityPoints;
             }
 
             public MsDataFileUri DataFilePath
@@ -259,13 +295,13 @@ namespace pwiz.Skyline.Model.Results
                 return _scanProvider.CCSFromIonMobility(ionMobility, mz, charge);
             }
 
-            public MsDataFileImpl.eIonMobilityUnits IonMobilityUnits
+            public eIonMobilityUnits IonMobilityUnits
             {
                 get
                 {
                     return _scanProvider != null
                         ? _scanProvider.IonMobilityUnits
-                        : MsDataFileImpl.eIonMobilityUnits.none;
+                        : eIonMobilityUnits.none;
                 } }
 
             public bool ProvidesCollisionalCrossSectionConverter { get { return _scanProvider != null && _scanProvider.ProvidesCollisionalCrossSectionConverter; } }
@@ -276,51 +312,57 @@ namespace pwiz.Skyline.Model.Results
             /// </summary>
             private void Work()
             {
-                while (!_disposing)
+                try
                 {
-                    IScanProvider scanProvider;
-                    int internalScanIndex;
-
-                    lock (this)
+                    while (!_disposing)
                     {
-                        while (!_disposing && (_scanProvider == null || _scanIndexNext < 0) && _oldScanProviders.Count == 0)
-                            Monitor.Wait(this);
-                        if (_disposing)
-                            break;
+                        IScanProvider scanProvider;
+                        int internalScanIndex;
 
-                        scanProvider = _scanProvider;
-                        internalScanIndex = _scanIndexNext;
-                        _scanIndexNext = -1;
-                    }
-
-                    if (scanProvider != null && internalScanIndex != -1)
-                    {
-                        try
+                        lock (this)
                         {
-                            var msDataSpectra = scanProvider.GetMsDataFileSpectraWithCommonRetentionTime(internalScanIndex); // Get a collection of scans with changing ion mobility but same retention time, or single scan if no ion mobility info
-                            _successAction(msDataSpectra);
+                            while (!_disposing && (_scanProvider == null || _scanIndexNext < 0) && _oldScanProviders.Count == 0)
+                                Monitor.Wait(this);
+                            if (_disposing)
+                                break;
+
+                            scanProvider = _scanProvider;
+                            internalScanIndex = _scanIndexNext;
+                            _scanIndexNext = -1;
                         }
-                        catch (Exception ex)
+
+                        if (scanProvider != null && internalScanIndex != -1)
                         {
                             try
                             {
-                                _failureAction(ex);
+                                var msDataSpectra = scanProvider.GetMsDataFileSpectraWithCommonRetentionTime(internalScanIndex, _ignoreZeroIntensityPoints); // Get a collection of scans with changing ion mobility but same retention time, or single scan if no ion mobility info
+                                _successAction(msDataSpectra);
                             }
-                            catch (Exception exFailure)
+                            catch (Exception ex)
                             {
-                                Program.ReportException(exFailure);
+                                try
+                                {
+                                    _failureAction(ex);
+                                }
+                                catch (Exception exFailure)
+                                {
+                                    Program.ReportException(exFailure);
+                                }
                             }
                         }
+
+                        DisposeAllProviders();
                     }
-
-                    DisposeAllProviders();
                 }
-
-                lock (this)
+                finally
                 {
-                    DisposeAllProviders();
+                    lock (this)
+                    {
+                        SetScanProvider(null);
+                        DisposeAllProviders();
 
-                    Monitor.PulseAll(this);
+                        Monitor.PulseAll(this);
+                    }
                 }
             }
 
@@ -401,6 +443,8 @@ namespace pwiz.Skyline.Model.Results
                     _disposing = true;
                     SetScanProvider(null);
                 }
+                // Make sure the background thread goes away
+                _backgroundThread.Join();
             }
         }
 

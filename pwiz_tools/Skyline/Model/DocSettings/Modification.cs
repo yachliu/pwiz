@@ -24,16 +24,17 @@ using System.Xml;
 using System.Xml.Serialization;
 using pwiz.Common.Collections;
 using pwiz.Common.SystemUtil;
+using pwiz.Skyline.Model.AuditLog;
 using pwiz.Skyline.Properties;
 using pwiz.Skyline.Util;
 
 namespace pwiz.Skyline.Model.DocSettings
 {
 // ReSharper disable InconsistentNaming
-    public enum ModTerminus { C, N };  // Not L10N
+    public enum ModTerminus { C, N };
 
     [Flags]
-    public enum LabelAtoms // Not L10N
+    public enum LabelAtoms
     {
         None = 0,
         C13 = 0x1,
@@ -44,8 +45,7 @@ namespace pwiz.Skyline.Model.DocSettings
         Cl37 = 0x10,
         Br81 = 0x20,
         P32 = 0x40,
-        S33 = 0x80,
-        S34 = 0x100
+        S34 = 0x80
     }
 
     public enum RelativeRT { Matching, Overlapping, Preceding, Unknown }
@@ -91,9 +91,10 @@ namespace pwiz.Skyline.Model.DocSettings
     /// case of C-terminal or N-terminal modifications.
     /// </summary>
     [XmlRoot("static_modification")]
-    public sealed class StaticMod : XmlNamedElement
+    public sealed class StaticMod : XmlNamedElement, IAuditLogComparable
     {
         private ImmutableList<FragmentLoss> _losses;
+        public static StaticMod EMPTY = new StaticMod();
 
         public StaticMod(string name, string aas, ModTerminus? term, string formula)
             : this(name, aas, term, formula, LabelAtoms.None, null, null)
@@ -152,32 +153,44 @@ namespace pwiz.Skyline.Model.DocSettings
             Validate();
         }
 
-        [Diff]
+        [Track]
         public string AAs { get; private set; }
 
-        [Diff]
+        [Track]
         public ModTerminus? Terminus { get; private set; }
 
-        [Diff]
+        [Track]
         public bool IsVariable { get; private set; }
 
-        [Diff]
+        [Track]
         public string Formula { get; private set; }
-        [Diff]
+        [Track]
         public double? MonoisotopicMass { get; private set; }
-        [Diff]
+        [Track]
         public double? AverageMass { get; private set; }
 
         public LabelAtoms LabelAtoms { get; private set; }
+        [Track]
         public bool Label13C { get { return (LabelAtoms & LabelAtoms.C13) != 0; } }
+        [Track]
         public bool Label15N { get { return (LabelAtoms & LabelAtoms.N15) != 0; } }
+        [Track]
         public bool Label18O { get { return (LabelAtoms & LabelAtoms.O18) != 0; } }
+        [Track]
         public bool Label2H { get { return (LabelAtoms & LabelAtoms.H2) != 0; } }
+        [Track]
         public bool Label37Cl { get { return (LabelAtoms & LabelAtoms.Cl37) != 0; } }
+        [Track]
         public bool Label81Br { get { return (LabelAtoms & LabelAtoms.Br81) != 0; } }
+        [Track]
         public bool Label32P { get { return (LabelAtoms & LabelAtoms.P32) != 0; } }
-        public bool Label33S { get { return (LabelAtoms & LabelAtoms.S33) != 0; } }
+        [Track]
         public bool Label34S { get { return (LabelAtoms & LabelAtoms.S34) != 0; } }
+
+        public object GetDefaultObject(ObjectInfo<object> info)
+        {
+            return new StaticMod();
+        }
 
         public double IonLabelMassDiff
         {
@@ -198,8 +211,6 @@ namespace pwiz.Skyline.Model.DocSettings
                     massdiff += BioMassCalc.MONOISOTOPIC.GetMass(BioMassCalc.Br81) - BioMassCalc.MONOISOTOPIC.GetMass(BioMassCalc.Br);
                 if (Label32P)
                     massdiff += BioMassCalc.MONOISOTOPIC.GetMass(BioMassCalc.P32) - BioMassCalc.MONOISOTOPIC.GetMass(BioMassCalc.P);
-                if (Label33S)
-                    massdiff += BioMassCalc.MONOISOTOPIC.GetMass(BioMassCalc.S33) - BioMassCalc.MONOISOTOPIC.GetMass(BioMassCalc.S);
                 if (Label34S)
                     massdiff += BioMassCalc.MONOISOTOPIC.GetMass(BioMassCalc.S34) - BioMassCalc.MONOISOTOPIC.GetMass(BioMassCalc.S);
                 return massdiff;
@@ -225,8 +236,6 @@ namespace pwiz.Skyline.Model.DocSettings
                     names.Add(BioMassCalc.Br81);
                 if (Label32P)
                     names.Add(BioMassCalc.P32);
-                if (Label33S)
-                    names.Add(BioMassCalc.S33);
                 if (Label34S)
                     names.Add(BioMassCalc.S34);
                 return names;
@@ -235,7 +244,7 @@ namespace pwiz.Skyline.Model.DocSettings
 
         public RelativeRT RelativeRT { get; private set; }
 
-        [DiffParent]
+        [TrackChildren]
         public IList<FragmentLoss> Losses
         {
             get { return _losses; }
@@ -404,7 +413,7 @@ namespace pwiz.Skyline.Model.DocSettings
         {
         }
 
-        private enum ATTR // Not L10N
+        private enum ATTR
         {
             aminoacid,
             terminus,
@@ -438,7 +447,7 @@ namespace pwiz.Skyline.Model.DocSettings
                 throw new InvalidDataException(Resources.StaticMod_Validate_Variable_modifications_must_specify_amino_acid_or_terminus);
             if (AAs != null)
             {
-                foreach (string aaPart in AAs.Split(',')) // Not L10N
+                foreach (string aaPart in AAs.Split(','))
                 {
                     string aa = aaPart.Trim();
                     if (aa.Length != 1 || !AminoAcid.IsAA(aa[0]))
@@ -514,7 +523,7 @@ namespace pwiz.Skyline.Model.DocSettings
             {                
                 AAs = aas;
                 // Support v0.1 format.
-                if (AAs[0] == '\0') // Not L10N
+                if (AAs[0] == '\0') 
                     AAs = null;
             }
 
@@ -659,12 +668,12 @@ namespace pwiz.Skyline.Model.DocSettings
             }
             else if (Terminus != null)
             {
-                return EquivalentFormulas('\0', obj); // Not L10N
+                return EquivalentFormulas('\0', obj);
             }
             else
             {
                 // Label all amino acids with this label
-                for (char aa = 'A'; aa <= 'Z'; aa++) // Not L10N
+                for (char aa = 'A'; aa <= 'Z'; aa++)
                 {
                     if (AminoAcid.IsAA(aa) && !EquivalentFormulas(aa, obj))
                         return false;
@@ -766,7 +775,7 @@ namespace pwiz.Skyline.Model.DocSettings
         }
 
         public IsotopeLabelType LabelType { get; private set; }
-        [DiffParent(ignoreName: true)]
+        [TrackChildren(ignoreName: true)]
         public ImmutableList<StaticMod> Modifications { get; private set; }
 
         public bool HasImplicitModifications
@@ -1260,6 +1269,39 @@ namespace pwiz.Skyline.Model.DocSettings
         }
 
         #endregion
+    }
+
+    public class LoggableExplicitMod : IAuditLogObject, IAuditLogComparable
+    {
+        public LoggableExplicitMod(ExplicitMod explicitMod, string peptideSeq)
+        {
+            ExplicitMod = explicitMod;
+            PeptideSequence = peptideSeq;
+        }
+
+        [TrackChildren(ignoreName: true)]
+        public ExplicitMod ExplicitMod { get; private set; }
+
+        public string PeptideSequence { get; private set; }
+
+        public string AuditLogText
+        {
+            get
+            {
+                return string.Format(AuditLogStrings.LoggableExplicitMod_AuditLogText__0__residue__1__at_position__2_, ExplicitMod.Modification.Name,
+                    PeptideSequence[ExplicitMod.IndexAA], ExplicitMod.IndexAA + 1);
+            }
+        }
+
+        public bool IsName
+        {
+            get { return true; }
+        }
+
+        public object GetDefaultObject(ObjectInfo<object> info)
+        {
+            return new LoggableExplicitMod(new ExplicitMod(-1, StaticMod.EMPTY), null);
+        }
     }
 
     public sealed class TypedExplicitModifications : Immutable

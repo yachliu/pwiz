@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Original author: Brendan MacLean <brendanx .at. u.washington.edu>,
  *                  MacCoss Lab, Department of Genome Sciences, UW
  *
@@ -18,6 +18,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -108,9 +109,21 @@ namespace pwiz.SkylineTestUtil
             Assert.AreNotEqual(0, parts.Length, "Must have at least one thing contained");
             foreach (string part in parts)
             {
-                if (!value.Contains(part))
+                if (!string.IsNullOrEmpty(part) && !value.Contains(part))
                     Assert.Fail("The text '{0}' does not contain '{1}'", value, part);
             }
+        }
+
+        public static void FileExists(string filePath, string message = null)
+        {
+            if (!File.Exists(filePath))
+                Assert.Fail(TextUtil.LineSeparate(string.Format("Missing file {0}", filePath), message ?? string.Empty));
+        }
+
+        public static void FileNotExists(string filePath, string message = null)
+        {
+            if (File.Exists(filePath))
+                Assert.Fail(TextUtil.LineSeparate(string.Format("Unexpected file exists {0}", filePath), message ?? string.Empty));
         }
 
         public static TObj Deserialize<TObj>(string s)
@@ -308,16 +321,17 @@ namespace pwiz.SkylineTestUtil
                         var schemaStream = assembly.GetManifestResourceStream(xsdName);
                         Assert.IsNotNull(schemaStream, string.Format("Schema {0} not found in TestUtil assembly", xsdName));
                         var schemaText = (new StreamReader(schemaStream)).ReadToEnd();
+                        var xd = new XmlDocument();
+                        xd.Load(new MemoryStream(Encoding.UTF8.GetBytes(schemaText)));
                         string targetXML = null;
                         if (!(obj is SrmDocument))
                         {
                             // XSD validation takes place from the root, so make the object's type a root element for test purposes.
                             // Inspired by http://stackoverflow.com/questions/715626/validating-xml-nodes-not-the-entire-document
                             var elementName = xmlText.Split('<')[2].Split(' ')[0];
-                            var xd = new XmlDocument();
-                            xd.Load(new MemoryStream(Encoding.UTF8.GetBytes(schemaText)));
                             var nodes = xd.GetElementsByTagName("xs:element");
-                            for (var i = 0; i < nodes.Count; i++)
+                            int currentCount = nodes.Count;
+                            for (var i = 0; i < currentCount; i++)
                             {
                                 var xmlAttributeCollection = nodes[i].Attributes;
                                 if (xmlAttributeCollection != null &&
@@ -332,17 +346,14 @@ namespace pwiz.SkylineTestUtil
                                     {
                                         // Don't enter a redundant definition
                                         targetXML = xml;
-                                        var lines = schemaText.Split('\n');
-                                        schemaText = String.Join("\n", lines.Take(lines.Count() - 2));
-                                        schemaText += xml;
-                                        schemaText += lines[lines.Count() - 2];
-                                        schemaText += lines[lines.Count() - 1];
+                                        Assert.IsNotNull(xd.DocumentElement);
+                                        xd.DocumentElement.AppendChild(nodes[i]);
                                     }
                                 }
                             }
                         }
-
-                        using (var schemaReader = new XmlTextReader(new MemoryStream(Encoding.UTF8.GetBytes(schemaText))))
+                        
+                        using (var schemaReader = new XmlNodeReader(xd))
                         {
                             var schema = XmlSchema.Read(schemaReader, ValidationCallBack);
                             var readerSettings = new XmlReaderSettings
@@ -388,12 +399,46 @@ namespace pwiz.SkylineTestUtil
         /// </summary>
         public static void ValidatesAgainstSchema(string xmlText)
         {
-            var verStart = xmlText.IndexOf("format_version=\"", StringComparison.Ordinal) + 16; // Not L10N
-            string schemaVer = xmlText.Substring(verStart, xmlText.Substring(verStart).IndexOf("\"", StringComparison.Ordinal)); // Not L10N
+            // ReSharper disable LocalizableElement
+            var verStart = xmlText.IndexOf("format_version=\"", StringComparison.Ordinal) + 16;
+            string schemaVer = xmlText.Substring(verStart, xmlText.Substring(verStart).IndexOf("\"", StringComparison.Ordinal));
+            // ReSharper restore LocalizableElement
+
+            ValidatesAgainstSchema(xmlText, "Skyline_" + schemaVer);
+        }
+
+        [Localizable(false)]
+        public static void ValidateAuditLogAgainstSchema(string xmlText)
+        {
+            int documentHashIndex = xmlText.IndexOf("document_hash", StringComparison.Ordinal);
+            int formatVersionIndex = xmlText.IndexOf("format_version=\"", StringComparison.Ordinal);
+
+            string version = "0";
+            if (documentHashIndex < 0)
+                Assert.Fail("Invalid Audit Log. No audit_log tag found");
+            if (formatVersionIndex > 0 && formatVersionIndex < documentHashIndex)
+            {
+                version = xmlText.Substring(formatVersionIndex + 16,
+                    xmlText.Substring(formatVersionIndex + 16).IndexOf("\"", StringComparison.Ordinal));
+            }
+
+            // While a change in Skyline schema is often associated with change in audit log
+            // schema, it's not always the case
+            if (double.Parse(version, CultureInfo.InvariantCulture) > 4.21)
+            {
+                version = "4.21";
+            }
+
+            ValidatesAgainstSchema(xmlText, "AuditLog.Skyl_" + version);
+        }
+
+
+        public static void ValidatesAgainstSchema(string xmlText, string xsdName)
+        {
             var assembly = Assembly.GetAssembly(typeof(AssertEx));
-            var schemaFileName = typeof(AssertEx).Namespace + String.Format(CultureInfo.InvariantCulture, ".Schemas.Skyline_{0}.xsd", schemaVer); // Not L10N
-            var schemaFile = assembly.GetManifestResourceStream(schemaFileName);   
-            Assert.IsNotNull(schemaFile, "could not locate a schema file called "+schemaFileName);
+            var schemaFileName = typeof(AssertEx).Namespace + String.Format(CultureInfo.InvariantCulture, @".Schemas.{0}.xsd", xsdName);
+            var schemaFile = assembly.GetManifestResourceStream(schemaFileName);
+            Assert.IsNotNull(schemaFile, "could not locate a schema file called " + schemaFileName);
             using (var schemaReader = new XmlTextReader(schemaFile))
             {
                 var schema = XmlSchema.Read(schemaReader, OldSchemaValidationCallBack);
@@ -538,6 +583,7 @@ namespace pwiz.SkylineTestUtil
             using (StringReader readerActual = new StringReader(actual))
             {
                 int count = 1;
+                string lineEqualLast = string.Empty;
                 while (true)
                 {
                     string lineTarget = readerTarget.ReadLine();
@@ -545,9 +591,9 @@ namespace pwiz.SkylineTestUtil
                     if (lineTarget == null && lineActual == null)
                         return;
                     if (lineTarget == null)
-                        Assert.Fail(helpMsg + "Target stops at line {0}.", count);
+                        Assert.Fail(GetEarlyEndingMessage(helpMsg, "Expected", count-1, lineEqualLast, lineActual, readerActual));
                     if (lineActual == null)
-                        Assert.Fail(helpMsg + "Actual stops at line {0}.", count);
+                        Assert.Fail(GetEarlyEndingMessage(helpMsg, "Actual", count-1, lineEqualLast, lineTarget, readerTarget));
                     if (lineTarget != lineActual)
                     {
                         bool failed = true;
@@ -579,10 +625,22 @@ namespace pwiz.SkylineTestUtil
                         if (failed)
                             Assert.Fail(helpMsg + "Diff found at line {0}:\r\n{1}\r\n>\r\n{2}", count, lineTarget, lineActual);
                     }
+
+                    lineEqualLast = lineTarget;
                     count++;
                 }
 
             }
+        }
+
+        private static string GetEarlyEndingMessage(string helpMsg, string name, int count, string lineEqualLast, string lineNext, TextReader reader)
+        {
+            int linesRemaining = 0;
+            while (reader.ReadLine() != null)
+                linesRemaining++;
+
+            return string.Format(helpMsg + "{0} stops at line {1}:\r\n{2}\r\n>\r\n+ {3}\r\n{4} more lines",
+                name, count, lineEqualLast, lineNext, linesRemaining);
         }
 
         public static void FileEquals(string path1, string path2, Dictionary<int, double> columnTolerances = null )
@@ -772,33 +830,7 @@ namespace pwiz.SkylineTestUtil
         {
             string errmsg = string.Empty;
             if (revision != null)
-            {
-                if (Settings.Default.TestSmallMolecules && (revision == (document.RevisionIndex - 1)))
-                    revision++;
-                        // Presumably this got bumped up during document deserialization in our special test mode
                 errmsg += DocumentStateTestAreEqual("RevisionIndex", revision, document.RevisionIndex);
-            }
-            if (Settings.Default.TestSmallMolecules)
-            {
-                // We'll have added a node at the end that the test writer didn't anticipate - bump the counts accordingly
-                if (groups.HasValue)
-                    groups = document.MoleculeGroups.Where(SrmDocument.IsSpecialNonProteomicTestDocNode)
-                        .Aggregate(groups, (current, @group) => current + 1);
-                if (molecules.HasValue)
-                    molecules = document.Molecules.Where(SrmDocument.IsSpecialNonProteomicTestDocNode)
-                        .Aggregate(molecules, (current, @molecule) => current + 1);
-                if (tranGroups.HasValue)
-                    tranGroups =
-                        document.MoleculeTransitionGroups.Where(SrmDocument.IsSpecialNonProteomicTestDocNode)
-                            .Aggregate(tranGroups, (current, @transgroup) => current + 1);
-                if (transitions.HasValue)
-                {
-                    foreach (var tg in document.MoleculeTransitionGroups.Where(SrmDocument.IsSpecialNonProteomicTestDocNode))
-                    {
-                        transitions += tg.TransitionCount;
-                    }
-                }
-            }
             if (groups.HasValue)
                 errmsg += DocumentStateTestAreEqual("MoleculeGroupCount", groups, document.MoleculeGroupCount);
             if (molecules.HasValue)
@@ -854,7 +886,7 @@ namespace pwiz.SkylineTestUtil
             int attempt = 0;
             do
             {
-                tmpSky = Path.Combine(testDir, string.Format("tmp{0}.sky", attempt++)); // Not L10N
+                tmpSky = Path.Combine(testDir, string.Format(@"tmp{0}.sky", attempt++));
             } 
             while (File.Exists(tmpSky));
             File.WriteAllText(tmpSky, xmlSaved);
@@ -922,6 +954,17 @@ namespace pwiz.SkylineTestUtil
             Cloned(target.TransitionSettings.Instrument, copy.TransitionSettings.Instrument, defTran.Instrument);
             Cloned(target.TransitionSettings.FullScan, copy.TransitionSettings.FullScan, defTran.FullScan);
             Cloned(target.TransitionSettings, copy.TransitionSettings);
+            var defData = defSet.DataSettings;
+            Cloned(target.DataSettings.AnnotationDefs, copy.DataSettings.AnnotationDefs, defData.AnnotationDefs);
+            Cloned(target.DataSettings.GroupComparisonDefs, copy.DataSettings.GroupComparisonDefs, defData.GroupComparisonDefs);
+            Cloned(target.DataSettings.Lists, copy.DataSettings.Lists, defData.Lists);
+            Cloned(target.DataSettings.ViewSpecList, copy.DataSettings.ViewSpecList, defData.ViewSpecList);
+            Assert.AreEqual(target.DataSettings, copy.DataSettings);  // Might both by DataSettings.DEFAULT
+            if (!DataSettings.DEFAULT.Equals(target.DataSettings))
+                Assert.AreNotSame(target.DataSettings, copy.DataSettings);
+            Assert.AreEqual(target.MeasuredResults, copy.MeasuredResults);
+            if (target.MeasuredResults != null)
+                Assert.AreNotSame(target.MeasuredResults, copy.MeasuredResults);
             Cloned(target, copy);
         }
 
@@ -960,6 +1003,30 @@ namespace pwiz.SkylineTestUtil
         public static void AreEqualLines(string expected, string actual)
         {
             Assert.AreEqual(LineBracket(expected), LineBracket(actual));
+        }
+
+        public static void IsLessThan<T>(T actual, T expectedBound) where T : IComparable<T>
+        {
+            if (actual.CompareTo(expectedBound) >= 0)
+                Assert.Fail("\"{0}\" is not less than \"{1}\"", actual, expectedBound);
+        }
+
+        public static void IsLessThanOrEqual<T>(T actual, T expectedBound) where T : IComparable<T>
+        {
+            if (actual.CompareTo(expectedBound) > 0)
+                Assert.Fail("\"{0}\" is not less than or equal to \"{1}\"", actual, expectedBound);
+        }
+
+        public static void IsGreaterThan<T>(T actual, T expectedBound) where T : IComparable<T>
+        {
+            if (actual.CompareTo(expectedBound) <= 0)
+                Assert.Fail("\"{0}\" is not greater than \"{1}\"", actual, expectedBound);
+        }
+
+        public static void IsGreaterThanOrEqual<T>(T actual, T expectedBound) where T : IComparable<T>
+        {
+            if (actual.CompareTo(expectedBound) < 0)
+                Assert.Fail("\"{0}\" is not greater than or equal to \"{1}\"", actual, expectedBound);
         }
 
         /// <summary>
@@ -1006,7 +1073,7 @@ namespace pwiz.SkylineTestUtil
                         Assert.AreEqual(mol.Note ?? string.Empty,
                             convertedMol.Note.Replace(RefinementSettings.TestingConvertedFromProteomic, string.Empty));
                     else
-                        Assert.AreEqual(mol.CustomMolecule.InvariantName, SrmDocument.TestingNonProteomicMoleculeName); // This was the magic test molecule
+                        Assert.Fail(@"unexpected empty note"); 
                     Assert.AreEqual(mol.SourceKey, convertedMol.SourceKey);
                     Assert.AreEqual(mol.Rank, convertedMol.Rank);
                     Assert.AreEqual(mol.Results, convertedMol.Results);

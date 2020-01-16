@@ -27,6 +27,7 @@
 #include "pwiz/data/msdata/IO.hpp"
 #include "pwiz/data/msdata/SpectrumInfo.hpp"
 #include "pwiz/utility/misc/IterationListener.hpp"
+#include "pwiz/utility/misc/IntegerSet.hpp"
 #include "pwiz/analysis/spectrum_processing/SpectrumListFactory.hpp"
 #include "pwiz/analysis/chromatogram_processing/ChromatogramListFactory.hpp"
 #include "pwiz/Version.hpp"
@@ -60,6 +61,10 @@ struct Config : public Reader::Config
     MSDataFile::WriteConfig writeConfig;
     string contactFilename;
     bool merge;
+    IntegerSet runIndexSet;
+    bool stripLocationFromSourceFiles;
+    bool stripVersionFromSoftware;
+    bool singleThreaded;
 
     Config()
         : outputPath("."), verbose(false), merge(false)
@@ -68,6 +73,9 @@ struct Config : public Reader::Config
         srmAsSpectra = false;
         combineIonMobilitySpectra = false;
         unknownInstrumentIsError = true;
+        stripLocationFromSourceFiles = false;
+        stripVersionFromSoftware = false;
+        singleThreaded = false;
     }
 
     string outputFilename(const string& inputFilename, const MSData& inputMSData) const;
@@ -118,6 +126,7 @@ ostream& operator<<(ostream& os, const Config& config)
     os << "outputPath: " << config.outputPath << endl;
     os << "extension: " << config.extension << endl; 
     os << "contactFilename: " << config.contactFilename << endl;
+    os << "runIndexSet: " << config.runIndexSet << endl;
     os << endl;
 
     os << "spectrum list filters:\n  ";
@@ -191,20 +200,18 @@ Config parseCommandLine(int argc, char** argv)
     bool gzip = false;
     bool ms_numpress_all = false; // if true, use this numpress compression with default tolerance
     double ms_numpress_linear = -1; // if >= 0, use this numpress linear compression with this tolerance
-	std::string ms_numpress_linear_str; // input as text, to help with the "msconvert --numpresslinear foo.raw" case
-    stringstream ss;
-    ss << boost::format("%4.2g") % BinaryDataEncoder_default_numpressLinearErrorTolerance;
-    std::string ms_numpress_linear_default = ss.str();
+	string ms_numpress_linear_str; // input as text, to help with the "msconvert --numpresslinear foo.raw" case
+    string ms_numpress_linear_default = (boost::format("%4.2g") % BinaryDataEncoder_default_numpressLinearErrorTolerance).str();
     bool ms_numpress_pic = false; // if true, use this numpress Pic compression
     double ms_numpress_slof = -1; // if >= 0, use this numpress slof compression with this tolerance
     double ms_numpress_linear_abs_tolerance = -1; // if >= 0, use this numpress linear compression with this absolute Th tolerance
-	std::string ms_numpress_linear_abs_tolerance_str; // input as text
-	std::string ms_numpress_linear_abs_tolerance_str_default("-1"); // input as text
-	std::string ms_numpress_slof_str; // input as text, to help with the "msconvert --numpressslof foo.raw" case
-    stringstream ss2;
-    ss2 << boost::format("%4.2g") % BinaryDataEncoder_default_numpressSlofErrorTolerance;
-    std::string ms_numpress_slof_default = ss2.str();
+	string ms_numpress_linear_abs_tolerance_str; // input as text
+	string ms_numpress_linear_abs_tolerance_str_default("-1"); // input as text
+	string ms_numpress_slof_str; // input as text, to help with the "msconvert --numpressslof foo.raw" case
+    string ms_numpress_slof_default = (boost::format("%4.2g") % BinaryDataEncoder_default_numpressSlofErrorTolerance).str();
+    string runIndexSet;
     bool detailedHelp = false;
+    string helpForFilter;
 
     pair<int, int> consoleBounds = get_console_bounds(); // get platform-specific console bounds, or default values if an error occurs
 
@@ -315,6 +322,9 @@ Config parseCommandLine(int argc, char** argv)
         ("merge",
             po::value<bool>(&config.merge)->zero_tokens(),
             ": create a single output file from multiple input files by merging file-level metadata and concatenating spectrum lists")
+        ("runIndexSet",
+            po::value<string>(&runIndexSet),
+            ": for multi-run sources, select only the specified run indices")
         ("simAsSpectra",
             po::value<bool>(&config.simAsSpectra)->zero_tokens(),
             ": write selected ion monitoring as spectra, not chromatograms")
@@ -329,10 +339,22 @@ Config parseCommandLine(int argc, char** argv)
             ": some vendor readers have an efficient way of filtering out empty spectra, but it takes more time to open the file")
         ("ignoreUnknownInstrumentError",
             po::value<bool>(&config.unknownInstrumentIsError)->zero_tokens()->default_value(!config.unknownInstrumentIsError),
-            ": if true, if an instrument cannot be determined from a vendor file, it will not be an error ")
+            ": if true, if an instrument cannot be determined from a vendor file, it will not be an error")
+        ("stripLocationFromSourceFiles",
+            po::value<bool>(&config.stripLocationFromSourceFiles)->zero_tokens(),
+            ": if true, sourceFile elements will be stripped of location information, so the same file converted from different locations will produce the same mzML")
+        ("stripVersionFromSoftware",
+            po::value<bool>(&config.stripVersionFromSoftware)->zero_tokens(),
+            ": if true, software elements will be stripped of version information, so the same file converted with different versions will produce the same mzML")
+        ("singleThreaded",
+            po::value<bool>(&config.singleThreaded)->zero_tokens(),
+            ": if true, reading and writing spectra will be done on a single thread")
         ("help",
             po::value<bool>(&detailedHelp)->zero_tokens(),
             ": show this message, with extra detail on filter options")
+        ("help-filter",
+            po::value<string>(&helpForFilter),
+            ": name of a single filter to get detailed help for")
         ;
 
     // handle positional arguments
@@ -358,86 +380,94 @@ Config parseCommandLine(int argc, char** argv)
     // negate unknownInstrumentIsError value since command-line parameter (ignoreUnknownInstrumentError) and the Config parameters use inverse semantics
     config.unknownInstrumentIsError = !config.unknownInstrumentIsError;
 
-    // append options description to usage string
+    if (!runIndexSet.empty())
+        config.runIndexSet.parse(runIndexSet);
 
-    usage << od_config;
+    if (!helpForFilter.empty())
+    {
+        usage << SpectrumListFactory::usage(helpForFilter) << endl;
+    }
+    else
+    {
+        // append options description to usage string
+        usage << od_config;
 
-    // extra usage
+        // extra usage
+        usage << SpectrumListFactory::usage(detailedHelp, "run this command with --help to see more detail", consoleBounds.first) << endl;
 
-    usage << SpectrumListFactory::usage(detailedHelp, "run this command with --help to see more detail", consoleBounds.first) << endl;
+        usage << "Examples:\n"
+              << endl
+              << "# convert data.RAW to data.mzML\n"
+              << "msconvert data.RAW\n"
+              << endl
+              << "# convert data.RAW to data.mzXML\n"
+              << "msconvert data.RAW --mzXML\n"
+              << endl
+              << "# put output file in my_output_dir\n"
+              << "msconvert data.RAW -o my_output_dir\n"
+              << endl
+              << "# combining options to create a smaller mzML file, much like the old ReAdW converter program\n"
+              << "msconvert data.RAW --32 --zlib --filter \"peakPicking true 1-\" --filter \"zeroSamples removeExtra\"\n"
+              << endl
+              << "# extract scan indices 5...10 and 20...25\n"
+              << "msconvert data.RAW --filter \"index [5,10] [20,25]\"\n"
+              << endl
+              << "# extract MS1 scans only\n"
+              << "msconvert data.RAW --filter \"msLevel 1\"\n"
+              << endl
+              << "# extract MS2 and MS3 scans only\n"
+              << "msconvert data.RAW --filter \"msLevel 2-3\"\n"
+              << endl
+              << "# extract MSn scans for n>1\n"
+              << "msconvert data.RAW --filter \"msLevel 2-\"\n"
+              << endl
+              << "# apply ETD precursor mass filter\n"
+              << "msconvert data.RAW --filter ETDFilter\n"
+              << endl
+              << "# remove non-flanking zero value samples\n"
+              << "msconvert data.RAW --filter \"zeroSamples removeExtra\"\n"
+              << endl
+              << "# remove non-flanking zero value samples in MS2 and MS3 only\n"
+              << "msconvert data.RAW --filter \"zeroSamples removeExtra 2 3\"\n"
+              << endl
+              << "# add missing zero value samples (with 5 flanking zeros) in MS2 and MS3 only\n"
+              << "msconvert data.RAW --filter \"zeroSamples addMissing=5 2 3\"\n"
+              << endl
+              << "# keep only HCD spectra from a decision tree data file\n"
+              << "msconvert data.RAW --filter \"activation HCD\"\n"
+              << endl
+              << "# keep the top 42 peaks or samples (depending on whether spectra are centroid or profile):\n"
+              << "msconvert data.RAW --filter \"threshold count 42 most-intense\"\n"
+              << endl
+              << "# multiple filters: select scan numbers and recalculate precursors\n"
+              << "msconvert data.RAW --filter \"scanNumber [500,1000]\" --filter \"precursorRecalculation\"\n"
+              << endl
+              << "# multiple filters: apply peak picking and then keep the bottom 100 peaks:\n"
+              << "msconvert data.RAW --filter \"peakPicking true 1-\" --filter \"threshold count 100 least-intense\"\n"
+              << endl
+              << "# multiple filters: apply peak picking and then keep all peaks that are at least 50% of the intensity of the base peak:\n"
+              << "msconvert data.RAW --filter \"peakPicking true 1-\" --filter \"threshold bpi-relative .5 most-intense\"\n"
+              << endl
+              << "# use a configuration file\n"
+              << "msconvert data.RAW -c config.txt\n"
+              << endl
+              << "# example configuration file\n"
+              << "mzXML=true\n"
+              << "zlib=true\n"
+              << "filter=\"index [3,7]\"\n"
+              << "filter=\"precursorRecalculation\"\n"
+              << endl
+              << endl
 
-    usage << "Examples:\n"
-          << endl
-          << "# convert data.RAW to data.mzML\n"
-          << "msconvert data.RAW\n"
-          << endl
-          << "# convert data.RAW to data.mzXML\n"
-          << "msconvert data.RAW --mzXML\n"
-          << endl
-          << "# put output file in my_output_dir\n"
-          << "msconvert data.RAW -o my_output_dir\n"
-          << endl
-          << "# combining options to create a smaller mzML file, much like the old ReAdW converter program\n"
-          << "msconvert data.RAW --32 --zlib --filter \"peakPicking true 1-\" --filter \"zeroSamples removeExtra\"\n"
-          << endl
-          << "# extract scan indices 5...10 and 20...25\n"
-          << "msconvert data.RAW --filter \"index [5,10] [20,25]\"\n"
-          << endl
-          << "# extract MS1 scans only\n"
-          << "msconvert data.RAW --filter \"msLevel 1\"\n"
-          << endl
-          << "# extract MS2 and MS3 scans only\n"
-          << "msconvert data.RAW --filter \"msLevel 2-3\"\n"
-          << endl
-          << "# extract MSn scans for n>1\n"
-          << "msconvert data.RAW --filter \"msLevel 2-\"\n"
-          << endl
-          << "# apply ETD precursor mass filter\n"
-          << "msconvert data.RAW --filter ETDFilter\n"
-          << endl
-          << "# remove non-flanking zero value samples\n"
-          << "msconvert data.RAW --filter \"zeroSamples removeExtra\"\n"
-          << endl
-          << "# remove non-flanking zero value samples in MS2 and MS3 only\n"
-          << "msconvert data.RAW --filter \"zeroSamples removeExtra 2 3\"\n"
-          << endl
-          << "# add missing zero value samples (with 5 flanking zeros) in MS2 and MS3 only\n"
-          << "msconvert data.RAW --filter \"zeroSamples addMissing=5 2 3\"\n"
-          << endl
-          << "# keep only HCD spectra from a decision tree data file\n"
-          << "msconvert data.RAW --filter \"activation HCD\"\n"
-          << endl
-          << "# keep the top 42 peaks or samples (depending on whether spectra are centroid or profile):\n"
-          << "msconvert data.RAW --filter \"threshold count 42 most-intense\"\n"
-          << endl
-          << "# multiple filters: select scan numbers and recalculate precursors\n"
-          << "msconvert data.RAW --filter \"scanNumber [500,1000]\" --filter \"precursorRecalculation\"\n"
-          << endl
-          << "# multiple filters: apply peak picking and then keep the bottom 100 peaks:\n"
-          << "msconvert data.RAW --filter \"peakPicking true 1-\" --filter \"threshold count 100 least-intense\"\n"
-          << endl
-          << "# multiple filters: apply peak picking and then keep all peaks that are at least 50% of the intensity of the base peak:\n"
-          << "msconvert data.RAW --filter \"peakPicking true 1-\" --filter \"threshold bpi-relative .5 most-intense\"\n"
-          << endl
-          << "# use a configuration file\n"
-          << "msconvert data.RAW -c config.txt\n"
-          << endl
-          << "# example configuration file\n"
-          << "mzXML=true\n"
-          << "zlib=true\n"
-          << "filter=\"index [3,7]\"\n"
-          << "filter=\"precursorRecalculation\"\n"
-          << endl
-          << endl
+              << "Questions, comments, and bug reports:\n"
+              << "https://github.com/ProteoWizard\n"
+              << "support@proteowizard.org\n"
+              << "\n"
+              << "ProteoWizard release: " << pwiz::Version::str() << " (" << pwiz::Version::LastModified() << ")" << endl
+              << "Build date: " << __DATE__ << " " << __TIME__ << endl;
+    }
 
-          << "Questions, comments, and bug reports:\n"
-          << "https://github.com/ProteoWizard\n"
-          << "support@proteowizard.org\n"
-          << "\n"
-          << "ProteoWizard release: " << pwiz::Version::str() << " (" << pwiz::Version::LastModified() << ")" << endl
-          << "Build date: " << __DATE__ << " " << __TIME__ << endl;
-
-    if ((argc <= 1) || detailedHelp)
+    if ((argc <= 1) || detailedHelp || !helpForFilter.empty())
         throw usage_exception(usage.str().c_str());
 
     // parse config file if required
@@ -626,6 +656,8 @@ Config parseCommandLine(int argc, char** argv)
     if (zlib)
         config.writeConfig.binaryDataEncoderConfig.compression = BinaryDataEncoder::Compression_Zlib;
 
+    config.writeConfig.useWorkerThreads = !config.singleThreaded;
+
     if ((ms_numpress_slof>=0) && ms_numpress_pic)
         throw user_error("[msconvert] Incompatible compression flags 'numpressPic' and 'numpressSlof'.");
 
@@ -679,6 +711,20 @@ void addContactInfo(MSData& msd, const string& contactFilename)
     Contact contact;
     IO::read(is, contact);
     msd.fileDescription.contacts.push_back(contact);
+}
+
+
+void stripSourceFileLocation(MSData& msd)
+{
+    for (const auto& sourceFilePtr : msd.fileDescription.sourceFilePtrs)
+        sourceFilePtr->location = "file:///";
+}
+
+
+void stripSoftwareVersion(MSData& msd)
+{
+    for (const auto& softwarePtr : msd.softwarePtrs)
+        softwarePtr->version = "";
 }
 
 
@@ -752,6 +798,18 @@ int mergeFiles(const vector<string>& filenames, const Config& config, const Read
     iterationListenerRegistry.addListener(IterationListenerPtr(new UserFeedbackIterationListener), iterationPeriod);
     IterationListenerRegistry* pILR = config.verbose ? &iterationListenerRegistry : 0;
 
+    if (!config.runIndexSet.empty())
+    {
+        vector<MSDataPtr> msdListFiltered;
+        for (int i = 0; i < msdList.size(); ++i)
+            if (config.runIndexSet.contains(i))
+                msdListFiltered.push_back(msdList[i]);
+        msdList.swap(msdListFiltered);
+
+        if (msdList.empty())
+            throw user_error("[msconvert] No runs correspond to the specified indices");
+    }
+
     // MSDataMerger handles combining all files in msdList into a single MSDataFile object.
     try
     {
@@ -763,11 +821,17 @@ int mergeFiles(const vector<string>& filenames, const Config& config, const Read
         if (!config.contactFilename.empty())
             addContactInfo(msd, config.contactFilename);
 
-        SpectrumListFactory::wrap(msd, config.filters);
-        ChromatogramListFactory::wrap(msd, config.chromatogramFilters);
+        SpectrumListFactory::wrap(msd, config.filters, pILR);
+        ChromatogramListFactory::wrap(msd, config.chromatogramFilters, pILR);
 
         string outputFilename = config.outputFilename("merged-spectra", msd);
         *os_ << "writing output file: " << outputFilename << endl;
+
+        if (config.stripLocationFromSourceFiles)
+            stripSourceFileLocation(msd);
+
+        if (config.stripVersionFromSoftware)
+            stripSoftwareVersion(msd);
 
         if (config.outputPath == "-")
             MSDataFile::write(msd, cout, config.writeConfig);
@@ -795,8 +859,8 @@ void processFile(const string& filename, const Config& config, const ReaderList&
 
     IterationListenerRegistry iterationListenerRegistry;
     // update on the first spectrum, the last spectrum, the 100th spectrum, the 200th spectrum, etc.
-    const size_t iterationPeriod = 100;
-    iterationListenerRegistry.addListener(IterationListenerPtr(new UserFeedbackIterationListener), iterationPeriod);
+    //const size_t iterationPeriod = 100;
+    iterationListenerRegistry.addListenerWithTimer(IterationListenerPtr(new UserFeedbackIterationListener), 0.5);
     IterationListenerRegistry* pILR = config.verbose ? &iterationListenerRegistry : 0;
 
     ReaderList::Config readerConfig(config);
@@ -806,12 +870,25 @@ void processFile(const string& filename, const Config& config, const ReaderList&
     vector<MSDataPtr> msdList;
     readers.read(filename, msdList, readerConfig);
 
+    if (!config.runIndexSet.empty())
+    {
+        vector<MSDataPtr> msdListFiltered;
+        for (int i = 0; i < msdList.size(); ++i)
+            if (config.runIndexSet.contains(i))
+                msdListFiltered.push_back(msdList[i]);
+        msdList.swap(msdListFiltered);
+
+        if (msdList.empty())
+            throw user_error("[msconvert] No runs correspond to the specified indices");
+    }
+
     for (size_t i=0; i < msdList.size(); ++i)
     {
         MSData& msd = *msdList[i];
         try
         {
-            // calculate SHA1 checksums
+            *os_ << "calculating source file checksums" << endl;
+            os_->flush();
             calculateSHA1Checksums(msd);
 
             // process the data 
@@ -819,12 +896,18 @@ void processFile(const string& filename, const Config& config, const ReaderList&
             if (!config.contactFilename.empty())
                 addContactInfo(msd, config.contactFilename);
 
-            SpectrumListFactory::wrap(msd, config.filters);
-            ChromatogramListFactory::wrap(msd, config.chromatogramFilters);
+            SpectrumListFactory::wrap(msd, config.filters, pILR);
+            ChromatogramListFactory::wrap(msd, config.chromatogramFilters, pILR);
 
             // write out the new data file
             string outputFilename = config.outputFilename(filename, msd);
             *os_ << "writing output file: " << outputFilename << endl;
+
+            if (config.stripLocationFromSourceFiles)
+                stripSourceFileLocation(msd);
+
+            if (config.stripVersionFromSoftware)
+                stripSoftwareVersion(msd);
 
             if (config.outputPath == "-")
                 MSDataFile::write(msd, cout, config.writeConfig, pILR);
@@ -833,7 +916,7 @@ void processFile(const string& filename, const Config& config, const ReaderList&
                 // String compare of filenames is case-sensitive, which is a problem on Windows. bfs::equivalent() fixes this.
                 if (!isHTTP(filename) && (filename == outputFilename || bfs::equivalent(filename, outputFilename)))
                 {
-                    throw user_error("Output filepath is the same as input filepath");
+                    throw user_error("[msconvert] Output filepath is the same as input filepath");
                 }
                 MSDataFile::write(msd, outputFilename, config.writeConfig, pILR);
             }
@@ -854,7 +937,8 @@ int go(const Config& config)
 {
     *os_ << config;
 
-    boost::filesystem::create_directories(config.outputPath);
+    if (config.outputPath != "-" && !bfs::exists(config.outputPath))
+        boost::filesystem::create_directories(config.outputPath);
 
     FullReaderList readers;
 
@@ -864,6 +948,8 @@ int go(const Config& config)
         failedFileCount = mergeFiles(config.filenames, config, readers);
     else
     {
+        if (config.filenames.size() > 1 && running_on_wine())
+            *os_ << "Warning: when running on Wine it is recommended to only process one file at a time" << endl;
 
         for (vector<string>::const_iterator it=config.filenames.begin(); 
              it!=config.filenames.end(); ++it)

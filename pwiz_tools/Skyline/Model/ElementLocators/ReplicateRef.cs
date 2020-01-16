@@ -32,7 +32,7 @@ namespace pwiz.Skyline.Model.ElementLocators
 
         public override string ElementType
         {
-            get { return "Replicate"; } // Not L10N
+            get { return @"Replicate"; }
         }
 
         public ChromatogramSet FindChromatogramSet(SrmDocument document)
@@ -85,7 +85,7 @@ namespace pwiz.Skyline.Model.ElementLocators
 
         public override string ElementType
         {
-            get { return "ResultFile"; } // Not L10N
+            get { return @"ResultFile"; }
         }
 
         public MsDataFileUri FilePath { get; private set; }
@@ -115,6 +115,15 @@ namespace pwiz.Skyline.Model.ElementLocators
                     yield return resultFileRef;
                 }
             }
+        }
+
+        public bool Matches(MsDataFileUri msDataFilePath)
+        {
+            if (null != FilePath && !FilePath.Equals(msDataFilePath))
+            {
+                return false;
+            }
+            return Name.Equals(GetName(msDataFilePath));
         }
 
         public static bool UseFullPath(ChromatogramSet chromatogramSet)

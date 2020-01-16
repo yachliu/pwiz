@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TestPerf</RootNamespace>
     <AssemblyName>TestPerf</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <FileUpgradeFlags>
@@ -135,14 +135,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AreaCVHistogramQValueAndRatioTest.cs" />
+    <Compile Include="PerfImportHundredsOfReplicatesTest.cs" />
     <Compile Include="HiResMetabolomicsTutorial.cs" />
     <Compile Include="ImportMassOnlyMoleculesTest.cs" />
     <Compile Include="DriftTimePredictorTutorialTest.cs" />
     <Compile Include="PeakSortingTest.cs" />
-    <Compile Include="PerfChorusGenerateChromatograms.cs" />
     <Compile Include="PerfDecoysMatchTest.cs" />
-    <Compile Include="PerfGenerateChorusRequests.cs" />
+    <Compile Include="PerfElectronIonizationAllIonsTest.cs" />
     <Compile Include="PerfImportAgilentSpectrumMillRampedIMSTest.cs" />
+    <Compile Include="PerfImportDiaPasefTest.cs" />
+    <Compile Include="PerfImportPasefMascotTest.cs" />
+    <Compile Include="PerfImportPrmPasefTest.cs" />
     <Compile Include="PerfImportResultsAgilentIMSTest.cs" />
     <Compile Include="PerfImportResultsAgilentSpectrumMillIMSTest.cs" />
     <Compile Include="PerfImportResultsHugeTest.cs" />
@@ -151,6 +154,7 @@
     <Compile Include="PerfLockmassTest.cs" />
     <Compile Include="PerfMeasuredDriftTimes.cs" />
     <Compile Include="PerfMeasuredInverseK0.cs" />
+    <Compile Include="PerfMs3ChromatogramTest.cs" />
     <Compile Include="PerfNegativeIonDIATest.cs" />
     <Compile Include="PerfOpenSwathConvert.cs" />
     <Compile Include="PerfOptimizeCEImportResultsNativeVsMz5Test.cs" />
@@ -158,6 +162,7 @@
     <Compile Include="PerfMinimizeResultsTest.cs" />
     <Compile Include="PerfPeakTest.cs" />
     <Compile Include="PerfPeakViewConvert.cs" />
+    <Compile Include="PerfThermoFAIMSTest.cs" />
     <Compile Include="PerfUniquePeptidesTest.cs" />
     <Compile Include="SmallMolDriftTimePredictorTest.cs" />
   </ItemGroup>
@@ -225,8 +230,11 @@
     <EmbeddedResource Include="ThermoDIA.ChorusRequest.xml" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="DriftTimePredictorExtra.zip" />
     <None Include="DriftTimePredictorViews.zip" />
+    <None Include="PerfImportHundredsOfReplicatesTest.zip" />
     <None Include="HiResMetabolomicsViews.zip" />
+    <None Include="PerfMs3ChromatogramTest.zip" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

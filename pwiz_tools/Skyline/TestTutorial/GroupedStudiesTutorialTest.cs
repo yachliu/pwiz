@@ -37,7 +37,13 @@ namespace pwiz.SkylineTestTutorial
     [TestClass]
     public class GroupedStudiesTutorialTest : AbstractFunctionalTestEx
     {
+        protected override bool UseRawFiles
+        {
+            get { return !ForceMzml && ExtensionTestContext.CanImportAbWiff; }
+        }
+
         [TestMethod]
+        [Timeout(60*60*1000)]  // These can take a long time in code coverage mode (1 hour)
         public void TestGroupedStudiesTutorial()
         {
             // Set true to look at tutorial screenshots.
@@ -71,8 +77,6 @@ namespace pwiz.SkylineTestTutorial
                        ? Path.Combine(dirPath, fileName)
                        : dirPath;
         }
-
-        private bool IsFullData { get { return IsPauseForScreenShots || IsDemoMode || IsPass0; } }
 
         protected override void DoTest()
         {

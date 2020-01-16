@@ -45,7 +45,7 @@ namespace pwiz.SkylineTestTutorial
     /// Testing the tutorial for Skyline Targeted Method Refinement
     /// </summary>
     [TestClass]
-    public class MethodRefinementTutorialTest : AbstractFunctionalTest
+    public class MethodRefinementTutorialTest : AbstractFunctionalTestEx
     {
         [TestMethod]
         public void TestMethodRefinementTutorial()
@@ -56,7 +56,7 @@ namespace pwiz.SkylineTestTutorial
             // Multi-file import has problems with mzML on this test
             ForceMzml = true; // (Settings.Default.ImportResultsSimultaneousFiles == 0);   // 2-3x faster than raw files for this test.
 
-            LinkPdf = "https://skyline.gs.washington.edu/labkey/_webdav/home/software/Skyline/%40files/tutorials/MethodRefine-1_4.pdf";
+            LinkPdf = "https://skyline.gs.washington.edu/labkey/_webdav/home/software/Skyline/%40files/tutorials/MethodRefine-3_7.pdf";
 
             // Set to use MzML for speed, especially during debugging.
             //Skyline.Program.NoVendorReaders = true;
@@ -184,6 +184,7 @@ namespace pwiz.SkylineTestTutorial
                 SkylineWindow.EditDelete();
                 SkylineWindow.ShowRTRegressionGraphScoreToRun();
             });
+            WaitForRegression();
             Assert.AreEqual(SkylineWindow.SequenceTree.Nodes[0].GetNodeCount(false), startingNodeCount - 1);
             Assert.AreEqual("VLEAGGLDCDMENANSVVDALK", SkylineWindow.SequenceTree.Nodes[0].Nodes[0].Text); // Not L10N
             PauseForScreenShot("Retention Times Regression plot metafile", 8);
@@ -193,8 +194,7 @@ namespace pwiz.SkylineTestTutorial
                 rtThresholdDlg.Threshold = 0.95;
                 rtThresholdDlg.OkDialog();
             });
-            WaitForConditionUI(() => SkylineWindow.RTGraphController.RegressionRefined != null);
-            WaitForGraphs();
+            WaitForRegression();
             PauseForScreenShot("Retention Times Regression plot metafile with 0.95 threshold", 9); // Not L10N
 
             TestRTResidualsSwitch();
@@ -339,17 +339,21 @@ namespace pwiz.SkylineTestTutorial
             PauseForScreenShot("Targetes view clipped from main window and chromatogram graph metafile", 15);
 
             // Automated Refinement, p. 16
-            RunDlg<RefineDlg>(SkylineWindow.ShowRefineDlg, refineDlg =>
+            var refineDlgLoose = ShowDialog<RefineDlg>(SkylineWindow.ShowRefineDlg);
+            RunUI(() =>
             {
-                refineDlg.MaxTransitionPeakRank = 3;
-                refineDlg.PreferLargerIons = true;
-                refineDlg.RemoveMissingResults = true;
-                refineDlg.RTRegressionThreshold = 0.95;
-                refineDlg.DotProductThreshold = Statistics.AngleToNormalizedContrastAngle(0.95);    // Convert from original cos(angle) dot-product
-                refineDlg.OkDialog();
+                refineDlgLoose.SelectedTab = RefineDlg.TABS.Results;
+                refineDlgLoose.MaxTransitionPeakRank = 3;
+                refineDlgLoose.PreferLargerIons = true;
+                refineDlgLoose.RemoveMissingResults = true;
+                refineDlgLoose.RTRegressionThreshold = 0.95;
+                refineDlgLoose.DotProductThreshold = 0.8;
             });
+            PauseForForm(typeof(RefineDlg.ResultsTab));
+            OkDialog(refineDlgLoose, refineDlgLoose.OkDialog);
+
             // TODO(nicksh): Update tutorial document: we used to expect 75 peptides
-            const int expectedRefinedPeptideCount = 81;
+            const int expectedRefinedPeptideCount = 80;
             WaitForCondition(() => SkylineWindow.Document.PeptideCount <= expectedRefinedPeptideCount);
 //            foreach (var peptideDocNode in SkylineWindow.Document.Peptides)
 //            {
@@ -359,25 +363,25 @@ namespace pwiz.SkylineTestTutorial
 //            }
             RunUI(() =>
             {
-                Assert.AreEqual(expectedRefinedPeptideCount, SkylineWindow.Document.PeptideCount);
-                // TODO (nicksh): Update tutorial document: expected transition count used to be 225.
-                Assert.AreEqual(243, SkylineWindow.Document.PeptideTransitionCount);
+                Assert.AreEqual(expectedRefinedPeptideCount, SkylineWindow.Document.PeptideCount);   // TODO: Tutorial says 71 and 213
+                Assert.AreEqual(240, SkylineWindow.Document.PeptideTransitionCount);
                 SkylineWindow.CollapsePeptides();
                 SkylineWindow.Undo();
             });
             RunDlg<RefineDlg>(SkylineWindow.ShowRefineDlg, refineDlg =>
             {
+                refineDlgLoose.SelectedTab = RefineDlg.TABS.Results;
                 refineDlg.MaxTransitionPeakRank = 6;
                 refineDlg.RemoveMissingResults = true;
                 refineDlg.RTRegressionThreshold = 0.90;
-                refineDlg.DotProductThreshold = Statistics.AngleToNormalizedContrastAngle(0.90);    // Convert from original cos(angle) dot-product
+                refineDlg.DotProductThreshold = 0.712;
                 refineDlg.OkDialog();
             });
             const int expectedPeptideCount = 127;
             WaitForCondition(() => SkylineWindow.Document.PeptideCount <= expectedPeptideCount);
             RunUI(() =>
             {
-                Assert.AreEqual(expectedPeptideCount, SkylineWindow.Document.PeptideCount);
+                Assert.AreEqual(expectedPeptideCount, SkylineWindow.Document.PeptideCount);   // TODO: Tutorial says 113
 
                 // Scheduling for Efficient Acquisition, p. 17 
                 SkylineWindow.Undo();
@@ -428,6 +432,7 @@ namespace pwiz.SkylineTestTutorial
 
             RunUI(SkylineWindow.ShowRTRegressionGraphScoreToRun);
             WaitForGraphs();
+            WaitForRegression();
 
             TestRTResidualsSwitch();
 
@@ -526,6 +531,12 @@ namespace pwiz.SkylineTestTutorial
             RestoreViewOnScreen(24);
             WaitForGraphs();
             PauseForScreenShot("Main window", 24); // Not L10N
+
+            // Show the RefineDlg.ConsistencyTab for localization text review
+            var refineDlgConsistency = ShowDialog<RefineDlg>(SkylineWindow.ShowRefineDlg);
+            RunUI(() => refineDlgConsistency.SelectedTab = RefineDlg.TABS.Consistency);
+            PauseForForm(typeof(RefineDlg.ConsistencyTab));
+            OkDialog(refineDlgConsistency, refineDlgConsistency.OkDialog);
 
             RunUI(() => SkylineWindow.SaveDocument());
             RunUI(SkylineWindow.NewDocument);

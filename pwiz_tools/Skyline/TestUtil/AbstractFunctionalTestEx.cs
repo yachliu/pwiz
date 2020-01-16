@@ -72,6 +72,13 @@ namespace pwiz.SkylineTestUtil
             WaitForDocumentLoaded();
         }
 
+        public void OpenDocumentNoWait(string documentPath)
+        {
+            var documentFile = TestFilesDir.GetTestPath(documentPath);
+            WaitForCondition(() => File.Exists(documentFile));
+            SkylineWindow.BeginInvoke((Action) (() => SkylineWindow.OpenFile(documentFile)));
+        }
+
         public static void CheckConsistentLibraryInfo(SrmDocument doc = null)
         {
             foreach (var nodeGroup in (doc ?? SkylineWindow.Document).MoleculeTransitionGroups)
@@ -193,20 +200,33 @@ namespace pwiz.SkylineTestUtil
                 WaitForDocumentChange(doc);
         }
 
+        public void WaitForRegression()
+        {
+            WaitForGraphs();
+            WaitForConditionUI(() => SkylineWindow.RTGraphController != null);
+            WaitForPaneCondition<RTLinearRegressionGraphPane>(SkylineWindow.RTGraphController.GraphSummary, pane => !pane.IsCalculating);
+        }
+
         /// <summary>
         /// Wait for the built library to be loaded, and contain the expected
         /// number of spectra.
         /// </summary>
         /// <param name="expectedSpectra">Number of spectra expected in the library</param>
-        public static void WaitForLibrary(int expectedSpectra)
+        /// <param name="libIndex">Index of library to wait for</param>
+        public static void WaitForLibrary(int expectedSpectra, int libIndex = 0)
         {
-            WaitForCondition(() =>
+            TryWaitForCondition(() =>
             {
                 var librarySettings = SkylineWindow.Document.Settings.PeptideSettings.Libraries;
                 return librarySettings.IsLoaded &&
-                       librarySettings.Libraries.Count > 0 &&
-                       librarySettings.Libraries[0].Keys.Count() == expectedSpectra;
+                       librarySettings.Libraries.Count > libIndex &&
+                       librarySettings.Libraries[libIndex].Keys.Count() == expectedSpectra;
             });
+            var librarySettingsFinal = SkylineWindow.Document.Settings.PeptideSettings.Libraries;
+            var libraries = librarySettingsFinal.Libraries;
+            Assert.IsTrue(librarySettingsFinal.IsLoaded, string.Format("Libraries not loaded: {0}", librarySettingsFinal.IsNotLoadedExplained));
+            Assert.IsTrue(libraries.Count > libIndex, string.Format("Library count {0} does not support the index {1}.", libraries.Count, libIndex));
+            Assert.AreEqual(expectedSpectra, libraries[libIndex].Keys.Count());
         }
 
         public static void AddLibrary(LibrarySpec libSpec, Library lib)
@@ -465,7 +485,7 @@ namespace pwiz.SkylineTestUtil
                         string.Format(Resources.BuildBackgroundProteomeDlg_AddFastaFile_The_added_file_included__0__repeated_protein_sequences__Their_names_were_added_as_aliases_to_ensure_the_protein_list_contains_only_one_copy_of_each_sequence_,
                         repeats), messageDlg.Message);
                     messageDlg.OkDialog();
-                }); // Not L10N
+                });
             
         }
     }

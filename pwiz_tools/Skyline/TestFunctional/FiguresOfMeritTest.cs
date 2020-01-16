@@ -39,6 +39,7 @@ namespace pwiz.SkylineTestFunctional
     public class FiguresOfMeritTest : AbstractFunctionalTest
     {
         [TestMethod]
+        [Timeout(36000000)]  // These can take a long time in code coverage mode
         public void TestFiguresOfMerit()
         {
             TestFilesZip = @"TestFunctional\FiguresOfMeritTest.zip";
@@ -60,11 +61,12 @@ namespace pwiz.SkylineTestFunctional
             Assert.IsNotNull(calibrationForm);
             var results = new List<Tuple<FiguresOfMeritOptions, ModifiedSequence, FiguresOfMerit>>();
             int count = 0;
-            foreach (var options in EnumerateFiguresOfMeritOptions().OrderBy(x=>random.Next()))
+            foreach (var options in EnumerateFiguresOfMeritOptions().OrderBy(x=>random.Next()).Take(10))
             {
                 count++;
                 bool doFullTest = count < 5;
                 var newQuantification = SkylineWindow.Document.Settings.PeptideSettings.Quantification;
+                // ReSharper disable once PossibleNullReferenceException
                 newQuantification = newQuantification
                         .ChangeRegressionFit(options.RegressionFit)
                         .ChangeLodCalculation(options.LodCalculation)

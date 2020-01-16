@@ -22,11 +22,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using pwiz.Common.Chemistry;
 using pwiz.Common.SystemUtil;
 using pwiz.ProteowizardWrapper;
 using pwiz.Skyline.Model.DocSettings;
 using pwiz.Skyline.Model.Lib;
-using pwiz.Skyline.Model.Results.RemoteApi.Chorus;
 using pwiz.Skyline.Properties;
 using pwiz.Skyline.Util;
 using pwiz.Skyline.Util.Extensions;
@@ -49,6 +49,9 @@ namespace pwiz.Skyline.Model.Results
         private readonly IProgressMonitor _progressMonitor;
         private IProgressStatus _progressStatus;
         private Exception _dataFileScanHelperException;
+        private double _maxHighEnergyDriftOffsetMsec;
+        private bool _useHighEnergyOffset;
+        private IonMobilityValue _ms1IonMobilityBest;
 
         private struct IonMobilityIntensityPair
         {
@@ -70,6 +73,17 @@ namespace pwiz.Skyline.Model.Results
             _progressMonitor = progressMonitor;
         }
 
+        public bool UseHighEnergyOffset
+        {
+            get => _useHighEnergyOffset;
+            set
+            {
+                _useHighEnergyOffset = value;
+                _maxHighEnergyDriftOffsetMsec =
+                    _useHighEnergyOffset ? 2 : 0; // CONSIDER(bspratt): user definable? or dynamically set by looking at scan to scan drift delta? Or resolving power?
+            }
+        }
+
         /// <summary>
         /// Looks through the result and finds ion mobility values.
         /// Note that this method only returns new values that were found in results.
@@ -83,12 +97,12 @@ namespace pwiz.Skyline.Model.Results
             if (_document.Settings.MeasuredResults == null)
                 return measured;
 
-            var filepaths = _document.Settings.MeasuredResults.MSDataFilePaths.ToArray();
-            _totalSteps = filepaths.Length * _document.MoleculeTransitionGroupCount;
+            var fileInfos = _document.Settings.MeasuredResults.MSDataFileInfos.ToArray();
+            _totalSteps = fileInfos.Length * _document.MoleculeTransitionGroupCount;
             if (_totalSteps == 0)
                 return measured;
 
-            using (_msDataFileScanHelper = new MsDataFileScanHelper(SetScans, HandleLoadScanException))
+            using (_msDataFileScanHelper = new MsDataFileScanHelper(SetScans, HandleLoadScanException, true))
             {
                 //
                 // Avoid opening and re-opening raw files - make these the outer loop
@@ -101,15 +115,15 @@ namespace pwiz.Skyline.Model.Results
                 _currentStep = twopercent;
                 if (_progressMonitor != null)
                 {
-                    _progressStatus = new ProgressStatus(filepaths.First().GetFileName());
-                    _progressStatus = _progressStatus.UpdatePercentCompleteProgress(_progressMonitor, _currentStep, _totalSteps); // Make that inital lag seem less dismal to the user
+                    _progressStatus = new ProgressStatus(fileInfos.First().FilePath.GetFileName());
+                    _progressStatus = _progressStatus.UpdatePercentCompleteProgress(_progressMonitor, _currentStep, _totalSteps); // Make that initial lag seem less dismal to the user
                 }
-                foreach (var fp in filepaths)
+                foreach (var fileInfo in fileInfos)
                 {
-                    if (!ProcessFile(fp))
+                    if (!ProcessFile(fileInfo))
                         return null; // User cancelled
                 }
-                // Find ion mobilitiess based on MS1 data
+                // Find ion mobilities based on MS1 data
                 foreach (var dt in _ms1IonMobilities)
                 {
                     // Choose the ion mobility which gave the largest signal
@@ -120,7 +134,8 @@ namespace pwiz.Skyline.Model.Results
                     var ms2IonMobility = _ms2IonMobilities.TryGetValue(dt.Key, out listDt)
                         ? listDt.OrderByDescending(p => p.Intensity).First().IonMobility
                         : ms1IonMobility;
-                    var value =  IonMobilityAndCCS.GetIonMobilityAndCCS(ms1IonMobility.IonMobility, ms1IonMobility.CollisionalCrossSectionSqA, ms2IonMobility.IonMobility.Mobility.Value - ms1IonMobility.IonMobility.Mobility.Value);
+                    var highEnergyIonMobilityValueOffset = Math.Round(ms2IonMobility.IonMobility.Mobility.Value - ms1IonMobility.IonMobility.Mobility.Value, 6); // Excessive precision is just distracting noise TODO(bspratt) ask vendors what "excessive" means here
+                    var value =  IonMobilityAndCCS.GetIonMobilityAndCCS(ms1IonMobility.IonMobility, ms1IonMobility.CollisionalCrossSectionSqA, highEnergyIonMobilityValueOffset);
                     if (!measured.ContainsKey(dt.Key))
                         measured.Add(dt.Key, value);
                     else
@@ -131,14 +146,15 @@ namespace pwiz.Skyline.Model.Results
                 {
                     if (!_ms1IonMobilities.ContainsKey(im.Key))
                     {
-                        // Only MS2 ion mobility values found, use that
+                        // Only MS2 ion mobility values found, use that as a reasonable inference of MS1 ion mobility
                         var driftTimeIntensityPair = im.Value.OrderByDescending(p => p.Intensity).First();
                         var value = driftTimeIntensityPair.IonMobility;
                         // Note collisional cross section
                         if (_msDataFileScanHelper.ProvidesCollisionalCrossSectionConverter)
                         {
+                            var mz = im.Key.PrecursorMz ?? GetMzFromDocument(im.Key);
                             var ccs = _msDataFileScanHelper.CCSFromIonMobility(value.IonMobility,
-                                im.Key.PrecursorMz.Value, im.Key.Charge);
+                                mz, im.Key.Charge);
                             if (ccs.HasValue)
                             {
                                 value =  IonMobilityAndCCS.GetIonMobilityAndCCS(value.IonMobility, ccs, value.HighEnergyIonMobilityValueOffset);
@@ -155,12 +171,28 @@ namespace pwiz.Skyline.Model.Results
             return measured;
         }
 
+        double GetMzFromDocument(LibKey key)
+        {
+            foreach (var pair in _document.MoleculePrecursorPairs)
+            {
+                var nodePep = pair.NodePep;
+                var nodeGroup = pair.NodeGroup;
+                var libKey = nodeGroup.GetLibKey(_document.Settings, nodePep);
+                if (key.Equals(libKey))
+                {
+                    return nodeGroup.PrecursorMz;
+                }
+            }
+            return 0.0;
+        }
+
         // Returns false on cancellation
-        private bool ProcessFile(MsDataFileUri filePath)
+        private bool ProcessFile(ChromFileInfo fileInfo)
         {
             var results = _document.Settings.MeasuredResults;
-            if (!results.MSDataFilePaths.Contains(filePath))
+            if (!results.MSDataFileInfos.Contains(fileInfo))
                 return true; // Nothing to do
+            var filePath = fileInfo.FilePath;
             if (_progressStatus != null)
             {
                 _progressStatus = _progressStatus.ChangeMessage(filePath.GetFileName());
@@ -171,7 +203,7 @@ namespace pwiz.Skyline.Model.Results
             {
                 var nodePep = pair.NodePep;
                 var nodeGroup = pair.NodeGroup;
-                var libKey = nodeGroup.GetLibKey(nodePep);
+                var libKey = nodeGroup.GetLibKey(_document.Settings, nodePep);
                 // Across all replicates for this precursor, note the ion mobility at max intensity for this mz
                 for (var i = 0; i < results.Chromatograms.Count; i++)
                 {
@@ -182,7 +214,7 @@ namespace pwiz.Skyline.Model.Results
                     results.TryLoadChromatogram(i, nodePep, nodeGroup, tolerance, true, out chromGroupInfos);
                     foreach (var chromInfo in chromGroupInfos.Where(c => Equals(filePath, c.FilePath)))
                     {
-                        if (!ProcessChromInfo(filePath, chromInfo, pair, nodeGroup, tolerance, libKey)) 
+                        if (!ProcessChromInfo(fileInfo, chromInfo, pair, nodeGroup, tolerance, libKey)) 
                             return false; // User cancelled
                     }
                 }
@@ -190,12 +222,13 @@ namespace pwiz.Skyline.Model.Results
             return true;
         }
 
-        private bool ProcessChromInfo(MsDataFileUri filePath, ChromatogramGroupInfo chromInfo, PeptidePrecursorPair pair,
+        private bool ProcessChromInfo(ChromFileInfo fileInfo, ChromatogramGroupInfo chromInfo, PeptidePrecursorPair pair,
             TransitionGroupDocNode nodeGroup, float tolerance, LibKey libKey)
         {
             if (chromInfo.NumPeaks == 0)  // Due to data polarity mismatch, probably
                 return true;
             Assume.IsTrue(chromInfo.BestPeakIndex != -1);
+            var filePath = fileInfo.FilePath;
             var resultIndex = _document.Settings.MeasuredResults.Chromatograms.IndexOf(c => c.GetFileInfo(filePath) != null);
             if (resultIndex == -1)
                 return true;
@@ -205,8 +238,11 @@ namespace pwiz.Skyline.Model.Results
             // Determine apex RT for DT measurement using most intense MS1 peak
             var apexRT = GetApexRT(nodeGroup, resultIndex, chromFileInfo, true) ??
                 GetApexRT(nodeGroup, resultIndex, chromFileInfo, false);
-
-            Assume.IsTrue(chromInfo.PrecursorMz.CompareTolerant(pair.NodeGroup.PrecursorMz, 1.0E-9f) == 0 , "mismatch in precursor values"); // Not L10N
+            if (!apexRT.HasValue)
+            {
+                return true;
+            }
+            Assume.IsTrue(chromInfo.PrecursorMz.CompareTolerant(pair.NodeGroup.PrecursorMz, 1.0E-9f) == 0 , @"mismatch in precursor values");
             // Only use the transitions currently enabled
             var transitionPointSets = chromInfo.TransitionPointSets.Where(
                 tp => nodeGroup.Transitions.Any(
@@ -216,7 +252,7 @@ namespace pwiz.Skyline.Model.Results
 
             for (var msLevel = 1; msLevel <= 2; msLevel++)
             {
-                if (!ProcessMSLevel(filePath, msLevel, transitionPointSets, chromInfo, apexRT, nodeGroup, libKey, tolerance))
+                if (!ProcessMSLevel(fileInfo, msLevel, transitionPointSets, chromInfo, apexRT, nodeGroup, libKey, tolerance))
                     return false; // User cancelled
             }
             return true;
@@ -244,7 +280,7 @@ namespace pwiz.Skyline.Model.Results
             return apexRT;
         }
 
-        private bool ProcessMSLevel(MsDataFileUri filePath, int msLevel, IEnumerable<ChromatogramInfo> transitionPointSets,
+        private bool ProcessMSLevel(ChromFileInfo fileInfo, int msLevel, IEnumerable<ChromatogramInfo> transitionPointSets,
             ChromatogramGroupInfo chromInfo, double? apexRT, TransitionGroupDocNode nodeGroup, LibKey libKey, float tolerance)
         {
             var transitions = new List<TransitionFullScanInfo>();
@@ -256,7 +292,7 @@ namespace pwiz.Skyline.Model.Results
                 {
                     //Name = tranPointSet.Header.,
                     Source = chromSource,
-                    ScanIndexes = null == tranPointSet.ScanIndexes ? null : tranPointSet.ScanIndexes.ToArray(),
+                    TimeIntensities =  tranPointSet.TimeIntensities,
                     PrecursorMz = chromInfo.PrecursorMz,
                     ProductMz = tranPointSet.ProductMz,
                     ExtractionWidth = tranPointSet.ExtractionWidth,
@@ -270,22 +306,9 @@ namespace pwiz.Skyline.Model.Results
                 return true; // Nothing to do at this ms level
             }
 
-            var chorusUrl = filePath as ChorusUrl;
-            IScanProvider scanProvider;
-            if (null == chorusUrl)
-            {
-                scanProvider = new ScanProvider(_documentFilePath,
-                    filePath,
-                    chromSource, times, transitions.ToArray(),
-                    _document.Settings.MeasuredResults,
-                    () => _document.Settings.MeasuredResults.LoadMSDataFileScanIds(filePath));
-            }
-            else
-            {
-                scanProvider = new ChorusScanProvider(_documentFilePath,
-                    chorusUrl,
-                    chromSource, times, transitions.ToArray());
-            }
+            var filePath = fileInfo.FilePath;
+            IScanProvider scanProvider = new ScanProvider(_documentFilePath, filePath,
+                chromSource, times, transitions.ToArray(), _document.Settings.MeasuredResults);
 
             // Across all spectra at the peak retention time, find the one with max total 
             // intensity for the mz's of interest (ie the isotopic distribution) and note its ion mobility.
@@ -323,56 +346,88 @@ namespace pwiz.Skyline.Model.Results
             IonMobilityValue ionMobilityValue = IonMobilityValue.EMPTY;
             double maxIntensity = 0;
 
-            // Avoid picking MS2 ion mobility values wildly different from MS1 valuess
-            IonMobilityValue ms1IonMobilityBest;
+            // Avoid picking MS2 ion mobility values wildly different from MS1 values
             if ((msLevel == 2) && _ms1IonMobilities.ContainsKey(libKey))
             {
-                ms1IonMobilityBest =
+                _ms1IonMobilityBest =
                     _ms1IonMobilities[libKey].OrderByDescending(p => p.Intensity)
                         .FirstOrDefault()
                         .IonMobility.IonMobility;
             }
             else
             {
-                ms1IonMobilityBest = IonMobilityValue.EMPTY;
+                _ms1IonMobilityBest = IonMobilityValue.EMPTY;
             }
 
-            const int maxHighEnergyDriftOffsetMsec = 2; // CONSIDER(bspratt): user definable? or dynamically set by looking at scan to scan drift delta? Or resolving power?
+            var totalIntensitiesPerIM = new Dictionary<double, double>();
+            double ionMobilityAtMaxIntensity = 0;
+            var isThreeArrayFormat = false;
             foreach (var scan in _msDataFileScanHelper.MsDataSpectra.Where(scan => scan != null))
             {
-                if (!scan.IonMobility.HasValue || !scan.Mzs.Any())
-                    continue;
-                if (ms1IonMobilityBest.HasValue &&
-                    (scan.IonMobility.Mobility <
-                     ms1IonMobilityBest.Mobility - maxHighEnergyDriftOffsetMsec ||
-                     scan.IonMobility.Mobility >
-                     ms1IonMobilityBest.Mobility + maxHighEnergyDriftOffsetMsec))
-                    continue;
-
-                // Get the total intensity for all transitions of current msLevel
-                double totalIntensity = 0;
-                foreach (var t in transitions)
+                isThreeArrayFormat = scan.IonMobilities != null;
+                if (!isThreeArrayFormat)
                 {
-                    Assume.IsTrue(t.ProductMz.IsNegative == scan.NegativeCharge);  // It would be strange if associated scan did not have same polarity
-                    var mzPeak = t.ProductMz;
-                    var halfwin = (t.ExtractionWidth ?? tolerance)/2;
-                    var mzLow = mzPeak - halfwin;
-                    var mzHigh = mzPeak + halfwin;
-                    var first = Array.BinarySearch(scan.Mzs, mzLow);
-                    if (first < 0)
-                        first = ~first;
-                    for (var i = first; i < scan.Mzs.Length; i++)
+                    if (!scan.IonMobility.HasValue || !scan.Mzs.Any())
+                        continue;
+                    if (IsExtremeMs2Value(scan.IonMobility.Mobility.Value))
+                        continue;
+
+                    // Get the total intensity for all transitions of current msLevel
+                    double totalIntensity = 0;
+                    foreach (var t in transitions)
                     {
-                        if (scan.Mzs[i] > mzHigh)
-                            break;
-                        totalIntensity += scan.Intensities[i];
+                        var mzHigh = FindRangeMz(tolerance, t, scan, out var first);
+                        for (var i = first; i < scan.Mzs.Length; i++)
+                        {
+                            if (scan.Mzs[i] > mzHigh)
+                                break;
+                            totalIntensity += scan.Intensities[i];
+                        }
+                    }
+                    if (maxIntensity < totalIntensity)
+                    {
+                        ionMobilityValue = scan.IonMobility;
+                        maxIntensity = totalIntensity;
                     }
                 }
-                if (maxIntensity < totalIntensity)
+                else // 3-array IMS format
                 {
-                    ionMobilityValue = scan.IonMobility;
-                    maxIntensity = totalIntensity;
+                    // Get the total intensity for all transitions of current msLevel
+                    foreach (var t in transitions)
+                    {
+                        var mzHigh = FindRangeMz(tolerance, t, scan, out var first);
+                        for (var i = first; i < scan.Mzs.Length; i++)
+                        {
+                            if (scan.Mzs[i] > mzHigh)
+                                break;
+                            var im = scan.IonMobilities[i];
+                            if (IsExtremeMs2Value(im))
+                                continue;
+
+                            var intensityThisMzAndIM = scan.Intensities[i];
+                            if (!totalIntensitiesPerIM.TryGetValue(im, out var totalIntensityThisIM))
+                            {
+                                totalIntensityThisIM = intensityThisMzAndIM;
+                                totalIntensitiesPerIM.Add(im, totalIntensityThisIM);
+                            }
+                            else
+                            {
+                                totalIntensityThisIM += intensityThisMzAndIM;
+                                totalIntensitiesPerIM[im] = totalIntensityThisIM;
+                            }
+                            if (maxIntensity < totalIntensityThisIM)
+                            {
+                                maxIntensity = totalIntensityThisIM;
+                                ionMobilityAtMaxIntensity = im;
+                            }
+                        }
+                    }
                 }
+            }
+
+            if (isThreeArrayFormat)
+            {
+                ionMobilityValue = IonMobilityValue.GetIonMobilityValue(ionMobilityAtMaxIntensity, _msDataFileScanHelper.ScanProvider.IonMobilityUnits);
             }
             if (ionMobilityValue.HasValue)
             {
@@ -391,6 +446,26 @@ namespace pwiz.Skyline.Model.Results
                 }
                 listPairs.Add(result);
             }
+        }
+
+        private static SignedMz FindRangeMz(float tolerance, TransitionFullScanInfo t, MsDataSpectrum scan, out int first)
+        {
+            Assume.IsTrue(t.ProductMz.IsNegative == scan.NegativeCharge);  // It would be strange if associated scan did not have same polarity
+            var mzPeak = t.ProductMz;
+            var halfwin = (t.ExtractionWidth ?? tolerance) / 2;
+            var mzLow = mzPeak - halfwin;
+            var mzHigh = mzPeak + halfwin;
+            first = Array.BinarySearch(scan.Mzs, mzLow);
+            if (first < 0)
+                first = ~first;
+            return mzHigh;
+        }
+
+        private bool IsExtremeMs2Value(double im)
+        {
+            return _ms1IonMobilityBest.HasValue &&
+                   (im < _ms1IonMobilityBest.Mobility - _maxHighEnergyDriftOffsetMsec ||
+                    im > _ms1IonMobilityBest.Mobility + _maxHighEnergyDriftOffsetMsec);
         }
 
         private void HandleLoadScanException(Exception ex)

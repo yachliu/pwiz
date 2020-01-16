@@ -32,8 +32,8 @@
 #include <map>
 #include "pwiz/utility/misc/IterationListener.hpp"
 #include "pwiz/utility/chemistry/MZTolerance.hpp"
+#include "pwiz/utility/misc/Filesystem.hpp"
 #include <boost/date_time.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enum.hpp>
 #include "sqlite3pp.h"
@@ -92,7 +92,7 @@ struct QuantitationConfiguration
 
 
 /// the default source extensions to search for, ordered by descending priority
-extern const string defaultSourceExtensionPriorityList;
+string defaultSourceExtensionPriorityList();
 
 /// search for source files of the idpDB using the given search path, using the default source extensions,
 /// and embed a MZ5 representation of the source's spectra in the MSDataBytes column of the idpDB

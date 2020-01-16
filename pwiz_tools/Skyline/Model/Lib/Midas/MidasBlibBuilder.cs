@@ -28,7 +28,7 @@ namespace pwiz.Skyline.Model.Lib.Midas
 {
     public class MidasBlibBuilder : ILibraryBuilder
     {
-        private const string BLIB_NAME_INTERNAL = "midas"; // Not L10N
+        private const string BLIB_NAME_INTERNAL = "midas";
 
         private readonly SrmDocument _doc;
         private readonly MidasLibrary _library;
@@ -77,7 +77,7 @@ namespace pwiz.Skyline.Model.Lib.Midas
                             SourceFile = bestSpectrum.ResultsFile.FilePath,
                             PrecursorMz = bestSpectrum.PrecursorMz,
                             SpectrumPeaks = _library.LoadSpectrum(bestSpectrum),
-                            Key = nodeTranGroup.GetLibKey(nodePep),
+                            Key = nodeTranGroup.GetLibKey(_doc.Settings, nodePep),
                             RetentionTimes = new[] { new SpectrumMzInfo.IonMobilityAndRT(bestSpectrum.ResultsFile.FilePath, IonMobilityAndCCS.EMPTY, bestSpectrum.RetentionTime, true) }.ToList()
                         });
                     }

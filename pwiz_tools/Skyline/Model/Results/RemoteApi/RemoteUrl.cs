@@ -32,8 +32,8 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
         public static readonly RemoteUrl EMPTY = new Empty();
         private enum Attr
         {
-            centroid_ms1,
-            centroid_ms2,
+            centroid_ms1,   // Legacy
+            centroid_ms2,   // Legacy
             lockmass_pos,
             lockmass_neg,
             lockmass_tol,
@@ -52,10 +52,10 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
         // ReSharper disable VirtualMemberCallInConstructor
         protected RemoteUrl(string url)
         {
-            string prefix = AccountType.Name + ":"; // Not L10N
+            string prefix = AccountType.Name + @":";
             if (!url.StartsWith(prefix))
             {
-                throw new ArgumentException("URL must start with " + prefix); // Not L10N
+                throw new ArgumentException(@"URL must start with " + prefix);
             }
             var nameValueParameters = NameValueParameters.Parse(url.Substring(prefix.Length));
             Init(nameValueParameters);
@@ -64,8 +64,8 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
 
         protected virtual void Init(NameValueParameters nameValueParameters)
         {
-            CentroidMs1 = nameValueParameters.GetBoolValue(Attr.centroid_ms1.ToString());
-            CentroidMs2 = nameValueParameters.GetBoolValue(Attr.centroid_ms2.ToString());
+            LegacyCentroidMs1 = nameValueParameters.GetBoolValue(Attr.centroid_ms1.ToString());
+            LegacyCentroidMs2 = nameValueParameters.GetBoolValue(Attr.centroid_ms2.ToString());
             LockMassParameters = new LockMassParameters(
                 nameValueParameters.GetDoubleValue(Attr.lockmass_pos.ToString()),
                 nameValueParameters.GetDoubleValue(Attr.lockmass_neg.ToString()),
@@ -76,22 +76,13 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
             ModifiedTime = nameValueParameters.GetDateValue(Attr.modified_time.ToString());
         }
 
-        public override MsDataFileUri ChangeCentroiding(bool centroidMS1, bool centroidMS2)
-        {
-            return ChangeProp(ImClone(this), im =>
-            {
-                im.CentroidMs1 = centroidMS1;
-                im.CentroidMs2 = centroidMS2;
-            });
-        }
-
         public override MsDataFileUri ChangeLockMassParameters(LockMassParameters lockMassParameters)
         {
             return ChangeProp(ImClone(this), im => im.LockMassParameters = lockMassParameters);
         }
 
-        public bool CentroidMs1 { get; private set; }
-        public bool CentroidMs2 { get; private set; }
+        public bool LegacyCentroidMs1 { get; private set; }
+        public bool LegacyCentroidMs2 { get; private set; }
         public LockMassParameters LockMassParameters { get; private set; }
         public string ServerUrl { get; private set; }
         public string Username { get; private set; }
@@ -112,14 +103,14 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
             return ChangeProp(ImClone(this), im => im.Username = username);
         }
 
-        public override bool GetCentroidMs1()
+        public override bool LegacyGetCentroidMs1()
         {
-            return CentroidMs1;
+            return LegacyCentroidMs1;
         }
 
-        public override bool GetCentroidMs2()
+        public override bool LegacyGetCentroidMs2()
         {
-            return CentroidMs2;
+            return LegacyCentroidMs2;
         }
 
         public override string GetExtension()
@@ -150,8 +141,8 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
         protected virtual NameValueParameters GetParameters()
         {
             var nameValuePairs = new NameValueParameters();
-            nameValuePairs.SetBoolValue(Attr.centroid_ms1.ToString(), CentroidMs1);
-            nameValuePairs.SetBoolValue(Attr.centroid_ms2.ToString(), CentroidMs2);
+            nameValuePairs.SetBoolValue(Attr.centroid_ms1.ToString(), LegacyCentroidMs1);
+            nameValuePairs.SetBoolValue(Attr.centroid_ms2.ToString(), LegacyCentroidMs2);
             nameValuePairs.SetDoubleValue(Attr.lockmass_neg.ToString(), LockMassParameters.LockmassNegative);
             nameValuePairs.SetDoubleValue(Attr.lockmass_pos.ToString(), LockMassParameters.LockmassPositive);
             nameValuePairs.SetDoubleValue(Attr.lockmass_tol.ToString(), LockMassParameters.LockmassTolerance);
@@ -164,7 +155,7 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
 
         public override string ToString()
         {
-            return AccountType.Name + ":" + GetParameters(); // Not L10N
+            return AccountType.Name + @":" + GetParameters();
         }
 
         public override int GetSampleIndex()
@@ -192,7 +183,7 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
         public RemoteUrl ChangePathParts(IEnumerable<string> parts)
         {
             return ChangeProp(ImClone(this),
-                im => im.EncodedPath = string.Join("/", parts.Select(Uri.EscapeDataString))); // Not L10N
+                im => im.EncodedPath = string.Join(@"/", parts.Select(Uri.EscapeDataString)));
         }
 
         public IEnumerable<string> GetPathParts()
@@ -217,6 +208,15 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
         public string LastPathPart
         {
             get { return GetPathParts().LastOrDefault(); }
+        }
+
+        public override MsDataFileUri RemoveLegacyParameters()
+        {
+            return ChangeProp(ImClone(this), im =>
+            {
+                im.LegacyCentroidMs1 = false;
+                im.LegacyCentroidMs2 = false;
+            });
         }
 
         private class Empty : RemoteUrl
@@ -246,7 +246,8 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
                 return string.Empty;
             }
 
-            public override MsDataFileImpl OpenMsDataFile(bool simAsSpectra, int preferOnlyMsLevel)
+            public override MsDataFileImpl OpenMsDataFile(bool simAsSpectra, bool preferOnlyMs1,
+                bool centroidMs1, bool centroidMs2, bool ignoreZeroIntensityPoints)
             {
                 throw new InvalidOperationException();
             }
@@ -254,10 +255,10 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
 
         protected NameValueParameters ParseNameValueParameters(string url)
         {
-            string prefix = AccountType.Name + ":"; // Not L10N
+            string prefix = AccountType.Name + @":";
             if (!url.StartsWith(prefix))
             {
-                throw new ArgumentException(string.Format("URL must start with '{0}'", prefix)); // Not L10N
+                throw new ArgumentException(string.Format(@"URL must start with '{0}'", prefix));
             }
             return NameValueParameters.Parse(url.Substring(prefix.Length));
         }
@@ -274,7 +275,7 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
 
         protected bool Equals(RemoteUrl other)
         {
-            return CentroidMs1 == other.CentroidMs1 && CentroidMs2 == other.CentroidMs2 &&
+            return LegacyCentroidMs1 == other.LegacyCentroidMs1 && LegacyCentroidMs2 == other.LegacyCentroidMs2 &&
                    Equals(LockMassParameters, other.LockMassParameters) && string.Equals(ServerUrl, other.ServerUrl) &&
                    string.Equals(Username, other.Username) && ModifiedTime.Equals(other.ModifiedTime) &&
                    string.Equals(EncodedPath, other.EncodedPath);
@@ -292,8 +293,8 @@ namespace pwiz.Skyline.Model.Results.RemoteApi
         {
             unchecked
             {
-                var hashCode = CentroidMs1.GetHashCode();
-                hashCode = (hashCode * 397) ^ CentroidMs2.GetHashCode();
+                var hashCode = LegacyCentroidMs1.GetHashCode();
+                hashCode = (hashCode * 397) ^ LegacyCentroidMs2.GetHashCode();
                 hashCode = (hashCode * 397) ^ (LockMassParameters != null ? LockMassParameters.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (ServerUrl != null ? ServerUrl.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Username != null ? Username.GetHashCode() : 0);

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Original author: Brendan MacLean <brendanx .at. u.washington.edu>,
  *                  MacCoss Lab, Department of Genome Sciences, UW
  *
@@ -29,14 +29,15 @@ using pwiz.Skyline.Model.DocSettings.Extensions;
 using pwiz.Skyline.Properties;
 using pwiz.Skyline.Util;
 using pwiz.Skyline.Model.Proteome;
+using pwiz.Skyline.Model.Serialization;
 using pwiz.Skyline.Util.Extensions;
 
 namespace pwiz.Skyline.Model
 {
     public class SrmDocumentSharing
     {
-        public const string EXT = ".zip"; // Not L10N
-        public const string EXT_SKY_ZIP = ".sky.zip"; // Not L10N
+        public const string EXT = ".zip";
+        public const string EXT_SKY_ZIP = ".sky.zip";
 
         public static string FILTER_SHARING
         {
@@ -85,11 +86,7 @@ namespace pwiz.Skyline.Model
             ProgressMonitor = progressMonitor;
             ProgressMonitor.UpdateProgress(_progressStatus = new ProgressStatus(DefaultMessage));
 
-            string extractDir = Path.GetFileName(SharedPath) ?? string.Empty;
-            if (PathEx.HasExtension(extractDir, EXT_SKY_ZIP))
-                extractDir = extractDir.Substring(0, extractDir.Length - EXT_SKY_ZIP.Length);
-            else if (PathEx.HasExtension(extractDir, EXT))
-                extractDir = extractDir.Substring(0, extractDir.Length - EXT.Length);
+            var extractDir = ExtractDir(SharedPath);
 
             using (ZipFile zip = ZipFile.Read(SharedPath))
             {
@@ -131,6 +128,16 @@ namespace pwiz.Skyline.Model
             }
         }
 
+        public static string ExtractDir(string sharedPath)
+        {
+            string extractDir = Path.GetFileName(sharedPath) ?? string.Empty;
+            if (PathEx.HasExtension(extractDir, EXT_SKY_ZIP))
+                extractDir = extractDir.Substring(0, extractDir.Length - EXT_SKY_ZIP.Length);
+            else if (PathEx.HasExtension(extractDir, EXT))
+                extractDir = extractDir.Substring(0, extractDir.Length - EXT.Length);
+            return extractDir;
+        }
+
         private static string GetNonExistentDir(string dirPath)
         {
             int count = 1;
@@ -140,7 +147,7 @@ namespace pwiz.Skyline.Model
             {
                 // If a directory with the given name already exists, add
                 // a suffix to create a unique folder name.
-                dirResult = dirPath + "(" + count + ")"; // Not L10N
+                dirResult = dirPath + @"(" + count + @")";
                 count++;
             }
             return dirResult;
@@ -188,6 +195,23 @@ namespace pwiz.Skyline.Model
             }
         }
 
+        public static bool ShouldShareAuditLog(SrmDocument doc, ShareType shareType)
+        {
+            return doc.Settings.DataSettings.AuditLogging &&
+                   (shareType.SkylineVersion ?? SkylineVersion.CURRENT).SrmDocumentVersion >=
+                   DocumentFormat.VERSION_4_13;
+        }
+
+        private void SafeAuditLog(ZipFileShare zip, string docPath)
+        {
+            if (ShouldShareAuditLog(Document, ShareType))
+            {
+                var path = SrmDocument.GetAuditLogPath(docPath);
+                if (File.Exists(path))
+                    zip.AddFile(path);
+            }
+        }
+
         private void ShareComplete(ZipFileShare zip)
         {
             TemporaryDirectory tempDir = null;
@@ -204,6 +228,7 @@ namespace pwiz.Skyline.Model
                     zip.AddFile(transitionSettings.Prediction.OptimizedLibrary.PersistencePath);
                 if (Document.Settings.HasIonMobilityLibraryPersisted)
                     zip.AddFile(pepSettings.Prediction.IonMobilityPredictor.IonMobilityLibrary.PersistencePath);
+                    
                 var libfiles = new HashSet<string>();
                 foreach (var librarySpec in pepSettings.Libraries.LibrarySpecs)
                 {
@@ -221,17 +246,17 @@ namespace pwiz.Skyline.Model
                     }
                 }
 
+                var auditLogDocPath = DocumentPath;
                 // ReSharper disable ExpressionIsAlwaysNull
                 tempDir = ShareDataAndView(zip, tempDir);
                 // ReSharper restore ExpressionIsAlwaysNull
                 if (null == ShareType.SkylineVersion)
-                {
                     zip.AddFile(DocumentPath); // CONSIDER(bpratt) there's no check to see if this is a current representation of the document - a dirty check would be good
-                }
                 else
-                {
-                    tempDir = ShareDocument(zip, tempDir);
-                }
+                    tempDir = ShareDocument(zip, tempDir, out auditLogDocPath);
+
+                SafeAuditLog(zip, auditLogDocPath);
+
                 Save(zip);
             }
             finally
@@ -303,13 +328,15 @@ namespace pwiz.Skyline.Model
                     }
                 }
 
+                var auditLogDocPath = DocumentPath;
                 tempDir = ShareDataAndView(zip, tempDir);
                 if (ReferenceEquals(docOriginal, Document) && null == ShareType.SkylineVersion)
                     zip.AddFile(DocumentPath);
                 else
-                {
-                    tempDir = ShareDocument(zip, tempDir);
-                }
+                    tempDir = ShareDocument(zip, tempDir, out auditLogDocPath);
+
+                SafeAuditLog(zip, auditLogDocPath);
+
                 Save(zip);
             }
             finally
@@ -357,13 +384,13 @@ namespace pwiz.Skyline.Model
             return tempDir;
         }
 
-        private TemporaryDirectory ShareDocument(ZipFileShare zip, TemporaryDirectory tempDir)
+        private TemporaryDirectory ShareDocument(ZipFileShare zip, TemporaryDirectory tempDir, out string tempDocPath)
         {
             if (tempDir == null)
                 tempDir = new TemporaryDirectory();
             string fileName = Path.GetFileName(DocumentPath) ?? string.Empty;
-            string tempDocPath = Path.Combine(tempDir.DirPath, fileName);
-            Document.SerializeToFile(tempDocPath, fileName, 
+            tempDocPath = Path.Combine(tempDir.DirPath, fileName);
+            Document.SerializeToFile(tempDocPath, tempDocPath, 
                 ShareType.SkylineVersion ?? SkylineVersion.CURRENT, ProgressMonitor);
             zip.AddFile(tempDocPath);
             return tempDir;
@@ -576,7 +603,7 @@ namespace pwiz.Skyline.Model
     {
         public static readonly ShareType COMPLETE = new ShareType(true, null);
         public static readonly ShareType MINIMAL = new ShareType(false, null);
-        public static readonly ShareType DEFAULT = MINIMAL;
+        public static readonly ShareType DEFAULT = COMPLETE;
         public ShareType(bool complete, SkylineVersion skylineVersion)
         {
             Complete = complete;

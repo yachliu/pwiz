@@ -20,9 +20,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using pwiz.Common.DataAnalysis.Matrices;
+using pwiz.Skyline.Util.Extensions;
 
 namespace pwiz.Skyline.Model.GroupComparison
 {
@@ -171,7 +171,7 @@ namespace pwiz.Skyline.Model.GroupComparison
                     }
                     if (!_modelChangedListeners.Add(value))
                     {
-                        throw new ArgumentException("Listener already added"); // Not L10N
+                        throw new ArgumentException(@"Listener already added");
                     }
                     RestartCalculation();
                 }
@@ -182,7 +182,7 @@ namespace pwiz.Skyline.Model.GroupComparison
                 {
                     if (!_modelChangedListeners.Remove(value))
                     {
-                        throw new ArgumentException("Listener not added"); // Not L10N
+                        throw new ArgumentException(@"Listener not added");
                     }
                     if (_modelChangedListeners.Count == 0)
                     {
@@ -255,26 +255,24 @@ namespace pwiz.Skyline.Model.GroupComparison
                 _percentComplete = 0;
                 GroupComparer groupComparer = _groupComparer;
                 var cancellationToken = _cancellationTokenSource.Token;
-                AddErrorHandler(Task.Factory.StartNew(() =>
-                {
-                    var results = ComputeComparisonResults(groupComparer, srmDocument, cancellationToken);
-                    lock (_lock)
+                RunAsync(() =>
                     {
-                        if (!cancellationToken.IsCancellationRequested)
+                        var results = ComputeComparisonResults(groupComparer, srmDocument, cancellationToken);
+                        lock (_lock)
                         {
-                            Results = results;
-                            _percentComplete = 100;
+                            if (!cancellationToken.IsCancellationRequested)
+                            {
+                                Results = results;
+                                _percentComplete = 100;
+                            }
                         }
-                    }
-                }, _cancellationTokenSource.Token));
+                    });
             }
         }
 
-        // ReSharper disable UnusedMethodReturnValue.Local
-        private Task AddErrorHandler(Task task)
-        // ReSharper restore UnusedMethodReturnValue.Local
+        private void RunAsync(Action action)
         {
-            return task.ContinueWith(t => Program.ReportException(t.Exception), TaskContinuationOptions.OnlyOnFaulted);
+            ActionUtil.RunAsync(action, @"Group Comparison");
         }
 
         private void FireModelChanged()

@@ -19,6 +19,8 @@ AreaCVToolbarProperties,TestAreaCVHistograms
 AreaGraphController,TestEditDialogs
 ArrangeGraphsGroupedDlg,TestManageResults
 AssociateProteinsDlg,TestAssociateProteins
+AuditLogForm,*
+AuditLogExtraInfoForm,TestAuditLogSaving
 BuildBackgroundProteomeDlg,TestBackgroundProteome
 BuildLibraryDlg,TestFullScanId
 BuildLibraryNotification,*
@@ -39,10 +41,10 @@ CreateMatchExpressionDlg,TestVolcanoPlotFormatting
 DefineAnnotationDlg,TestAnnotations
 DiaIsolationWindowsGraphForm,TestIsolationScheme
 DocumentationViewer,TestStandardType
+DocumentChangeLogEntryDlg,TestAuditLogSaving
 DocumentGridForm,TestReportSummary
 DocumentSettingsDlg,TestAnnotations
 EditCEDlg,TestOptimization
-EditChorusAccountDlg,*
 EditCoVDlg,TestOptimization
 EditCustomMoleculeDlg,TestEditCustomMoleculeDlg
 EditCustomThemeDlg, TestEditCustomTheme
@@ -73,7 +75,7 @@ EditServerDlg,TestAccessServer
 EditStaticModDlg.IsotopeModView,TestEditStaticMod
 EditStaticModDlg.StructuralModView,TestEditStaticMod
 EmptyProteinsDlg,TestImportPeptideSearch
-ExportChorusRequestDlg,*
+ExportAnnotationsDlg,TestExportAnnotations
 ExportChromatogramDlg,TestExportChromatogram
 ExportLiveReportDlg,TestReportSummary
 ExportMethodDlg.IsolationListView,TestExportDiaList
@@ -113,6 +115,8 @@ ImportResultsLockMassDlg,WatersLockmassPerfTest
 ImportResultsRetryCountdownDlg,TestMiscForms
 ImportResultsSamplesDlg,TestExistingExperimentsTutorial
 ImportTransitionListErrorDlg,TestExistingExperimentsTutorial
+ListDesigner,TestListDesigner
+ListGridForm,TestListDesigner
 LiveResultsGrid,TestAnnotations
 LocateFileDlg,TestInstallTools
 LongWaitDlg,TestLongWait
@@ -126,6 +130,7 @@ MissingFileDlg,TestSynchSiblings
 MProphetFeaturesDlg,TestPeakPickingTutorial
 MultiButtonMsgDlg,TestShareSettings
 NameLayoutForm,TestPivotEditor
+NoModeUIDlg,UIModeSettingsTest
 OpenDataSourceDialog,TestRetentionTimeAlignment
 PasteDlg.FastaTab,ProteinMetadataFunctionalTests
 PasteDlg.PeptideListTab,TestMethodEditTutorial
@@ -138,6 +143,7 @@ PeptideSettingsUI.DigestionTab,TestMethodEditTutorial
 PeptideSettingsUI.FilterTab,TestEditDialogs
 PeptideSettingsUI.LibraryTab,TestMethodEditTutorial
 PeptideSettingsUI.ModificationsTab,TestNeutralLoss
+PeptideSettingsUI.LabelsTab,UIModeSettingsTest
 PeptideSettingsUI.PredictionTab,IrtFunctionalTest
 PeptideSettingsUI.QuantificationTab,TestCalibration
 PeptidesPerProteinDlg,TestImportPeptideSearch
@@ -147,8 +153,9 @@ PreviewReportDlg,TestReportSummaryWithOldReports
 PublishDocumentDlg,TestAccessServer
 PythonInstaller,TestPythonInstaller
 QuickFilterForm,TestLiveReportsFilter
-RecalibrateIrtDlg,IrtFunctionalTest
-RefineDlg,TestMethodEditTutorial
+RefineDlg.ConsistencyTab,TestMethodRefinementTutorial
+RefineDlg.DocumentTab,TestMethodEditTutorial
+RefineDlg.ResultsTab,TestMethodRefinementTutorial
 RefineListDlg,TestRefineListDlg
 RefineProteinListDlg,TestRefineProteinListDlg
 RegressionRTThresholdDlg,TestIrtTutorial

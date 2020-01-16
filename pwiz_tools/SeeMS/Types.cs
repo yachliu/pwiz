@@ -297,7 +297,7 @@ namespace seems
         {
             source = metaChromatogram.source;
             this.chromatogramList = metaChromatogram.chromatogramList;
-            this.index = index;
+            this.index = chromatogram.index;
             Tag = metaChromatogram.Tag;
             AnnotationSettings = metaChromatogram.AnnotationSettings;
             //element = chromatogram;
@@ -476,12 +476,35 @@ namespace seems
                     if (element.defaultArrayLength == 0)
                         return new ZedGraph.PointPairList();
 
-                    IList<double> mzArray = element.getMZArray().data;
-                    IList<double> intensityArray = element.getIntensityArray().data;
+                    IList<double> mzArray = element.getMZArray().data.Storage();
+                    IList<double> intensityArray = element.getIntensityArray().data.Storage();
 
                     // only sort centroid spectra; profile spectra are assumed to already be sorted
-                    if (element.hasCVParam(CVID.MS_centroid_spectrum))
+                    if (element.hasCVParam(CVID.MS_centroid_spectrum) || element.id.StartsWith("merged="))
+                    {
                         mzArray.Sort(intensityArray);
+
+                        if (element.id.StartsWith("merged="))
+                        {
+                            var uniqueMz = new List<double>(mzArray.Count);
+                            var summedIntensity = new List<double>(mzArray.Count);
+                            uniqueMz.Add(mzArray[0]);
+                            summedIntensity.Add(intensityArray[0]);
+                            for (int i = 1; i < mzArray.Count; ++i)
+                            {
+                                if (mzArray[i] == uniqueMz[uniqueMz.Count - 1])
+                                    summedIntensity[uniqueMz.Count - 1] += intensityArray[i];
+                                else
+                                {
+                                    uniqueMz.Add(mzArray[i]);
+                                    summedIntensity.Add(intensityArray[i]);
+                                }
+                            }
+
+                            mzArray = uniqueMz;
+                            intensityArray = summedIntensity;
+                        }
+                    }
 
                     return new ZedGraph.PointPairList(mzArray, intensityArray);
                 }
@@ -569,11 +592,11 @@ namespace seems
         {
             string label = null;
             if( ShowXValues && ShowYValues )
-                label = String.Format( "{0:f2}\n{1:f2}", point.X, point.Y );
+                label = String.Format( "{0]\n{1}", point.X.ToString("f" + Properties.Settings.Default.DefaultDecimalPlaces), point.Y.ToString("f" + Properties.Settings.Default.DefaultDecimalPlaces));
             else if( ShowXValues )
-                label = String.Format( "{0:f2}", point.X );
+                label = String.Format( "{0}", point.X.ToString("f" + Properties.Settings.Default.DefaultDecimalPlaces));
             else if( ShowYValues )
-                label = String.Format( "{0:f2}", point.Y );
+                label = String.Format( "{0}", point.Y.ToString("f" + Properties.Settings.Default.DefaultDecimalPlaces));
 
             if( label != null )
                 return new pwiz.MSGraph.PointAnnotation( label, pointFontSpec );

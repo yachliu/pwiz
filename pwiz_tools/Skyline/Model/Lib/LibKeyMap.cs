@@ -90,11 +90,11 @@ namespace pwiz.Skyline.Model.Lib
             return indexItem.HasValue ? indexItem.Value.OriginalIndex : -1;
         }
 
-        public IList<TItem> ItemsWithUnmodifiedSequence(Target target)
+        public IEnumerable<TItem> ItemsWithUnmodifiedSequence(Target target)
         {
             var libraryKey = new LibKey(target, Adduct.EMPTY).LibraryKey;
             var matches = _index.ItemsWithUnmodifiedSequence(libraryKey);
-            return new ItemIndexList(this, matches);
+            return matches.Select(item => _allItems[item.OriginalIndex]);
         }
 
         public IEnumerable<TItem> ItemsMatching(LibraryKey libraryKey, bool matchAdductAlso)
@@ -139,27 +139,6 @@ namespace pwiz.Skyline.Model.Lib
             return new LibKeyMap<TItem>(newItems, newKeys);
         }
 
-        private class ItemIndexList : AbstractReadOnlyList<TItem>
-        {
-            private IList<TItem> _allItems;
-            private IList<LibKeyIndex.IndexItem> _indexItems;
-            public ItemIndexList(IList<TItem> allItems, IList<LibKeyIndex.IndexItem> indexItems)
-            {
-                _allItems = allItems;
-                _indexItems = indexItems;
-            }
-
-            public override int Count
-            {
-                get { return _indexItems.Count; }
-            }
-
-            public override TItem this[int index]
-            {
-                get { return _allItems[_indexItems[index].OriginalIndex]; }
-            }
-        }
-
         private class LibKeyDictionary : AbstractReadOnlyDictionary<LibKey, TItem>
         {
             private readonly LibKeyMap<TItem> _libKeyMap;
@@ -171,14 +150,15 @@ namespace pwiz.Skyline.Model.Lib
 
             public override ICollection<LibKey> Keys
             {
-                get { return ReadOnlyList.Create(_libKeyMap.Count, i=>new LibKey(_libKeyMap.Index[i].LibraryKey)); }
+                get { return ReadOnlyList.CreateCollection(_libKeyMap.Count, _libKeyMap._index.Select(item=>new LibKey(item.LibraryKey))); }
             }
 
             public override ICollection<TItem> Values
             {
                 get
                 {
-                    return ReadOnlyList.Create(_libKeyMap.Count, i => _libKeyMap[_libKeyMap._index[i].OriginalIndex]);
+                    return ReadOnlyList.CreateCollection(_libKeyMap.Count,
+                        _libKeyMap._index.Select(item => _libKeyMap[item.OriginalIndex]));
                 }
             }
             public override bool TryGetValue(LibKey key, out TItem value)

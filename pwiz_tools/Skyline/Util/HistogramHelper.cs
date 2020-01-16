@@ -11,7 +11,7 @@ using ZedGraph;
 
 namespace pwiz.Skyline.Util
 {
-    class HistogramHelper
+    static class HistogramHelper
     {
         public const int MAX_FINDRESULTS_PEPTIDES = 100;
 
@@ -20,7 +20,7 @@ namespace pwiz.Skyline.Util
             return PeptidesAndTransitionGroups.Get(graphSummary.StateProvider.SelectedNodes, graphSummary.ResultsIndex, int.MaxValue);
         }
 
-        public static void CreateAndShowFindResults(ZedGraphControl sender, SrmDocument document, AreaCVGraphData.CVData data)
+        public static void CreateAndShowFindResults(ZedGraphControl sender, GraphSummary graphSummary, SrmDocument document, CVData data)
         {
             var peptideAnnotationPairs = data.PeptideAnnotationPairs.ToList();
             var results = new List<FindResult>(peptideAnnotationPairs.Count);
@@ -44,12 +44,18 @@ namespace pwiz.Skyline.Util
                 results = results.GetRange(0, MAX_FINDRESULTS_PEPTIDES);
             }
 
+            if (peptideAnnotationPairs.Count == 1)
+            {
+                var nodes = peptideAnnotationPairs[0];
+                graphSummary.StateProvider.SelectedPath = new IdentityPath(nodes.PeptideGroup.PeptideGroup, nodes.Peptide.Peptide);
+            }
+
             Program.MainWindow.ShowFindResults(results);
         }
 
         public static string FormatDouble(double d, int decimals)
         {
-            return d.ToString("F0" + decimals, LocalizationHelper.CurrentCulture); // Not L10N
+            return d.ToString(@"F0" + decimals, LocalizationHelper.CurrentCulture);
         }
     }
 }

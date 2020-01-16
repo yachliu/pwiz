@@ -626,7 +626,7 @@ void diff(const SpectrumList& a,
 
     {
         SpectrumPtr dummy(new Spectrum);
-        dummy->userParams.push_back(UserParam("SpectrumList sizes differ"));
+        dummy->userParams.push_back(UserParam((boost::format("SpectrumList sizes differ (expected %1%, got %2%)") % b.size() % a.size()).str()));
         a_b.spectra.push_back(dummy);
         return;
     }
@@ -710,7 +710,7 @@ void diff(const ChromatogramList& a,
     if (a.size() != b.size())
     {
         ChromatogramPtr dummy(new Chromatogram);
-        dummy->userParams.push_back(UserParam("ChromatogramList sizes differ"));
+        dummy->userParams.push_back(UserParam((boost::format("ChromatogramList sizes differ (expected %1%, got %2%)") % b.size() % a.size()).str()));
         a_b.chromatograms.push_back(dummy);
         return;
     }
@@ -905,7 +905,7 @@ std::ostream& os_write_spectra(std::ostream& os, const SpectrumListPtr a_b, cons
 
     if(a_b->size()!=b_a->size())
     {
-        os<<"in SpectrumList diff: SpectrumList sizes differ"<<endl;
+        os << "in SpectrumList diff: " << a_b->spectrum(0)->userParams.front().name << endl;
         return os;
     }
 
@@ -938,7 +938,7 @@ std::ostream& os_write_chromatograms(std::ostream& os, const ChromatogramListPtr
 
     if(a_b->size()!=b_a->size())
     {
-        os<<"in ChromatogramList diff: ChromatogramList sizes differ"<<endl;
+        os << "in ChromatogramList diff: " << a_b->chromatogram(0)->userParams.front().name << endl;
         return os;
     }
 
