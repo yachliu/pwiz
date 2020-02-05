@@ -47,7 +47,7 @@ namespace pwiz.SkylineTestFunctional
             RunUI(SkylineWindow.Undo);
             //WaitForDocumentChange(document);
             
-            WaitForCondition(() => ReferenceEquals(volcanoPlot.FoldChangeBindingSource.GroupComparisonModel.Results?.Document, SkylineWindow.Document));
+            WaitForCondition(() => Equals(volcanoPlot.FoldChangeBindingSource.GroupComparisonModel.Results?.Document, SkylineWindow.Document));
             WaitForConditionUI(() => grid.DataboundGridControl.IsComplete);
 
             GroupComparisonVolcanoPlotTest.OpenVolcanoPlotProperties(volcanoPlot, p =>
@@ -114,7 +114,6 @@ namespace pwiz.SkylineTestFunctional
                 doc.PeptideTransitionCount);
             Assert.AreEqual(graphStates[0], refineDocState);
             RunUI(SkylineWindow.Undo);
-
             // Verify that using only fold change cutoff works
             refineDlg = ShowDialog<RefineDlg>(() => SkylineWindow.ShowRefineDlg());
             RunUI(() =>
@@ -128,7 +127,7 @@ namespace pwiz.SkylineTestFunctional
             doc = SkylineWindow.Document;
             refineDocState = (doc.PeptideGroupCount, doc.PeptideCount, doc.PeptideTransitionGroupCount,
                 doc.PeptideTransitionCount);
-            Assert.AreEqual(graphStates[1], refineDocState);
+            Assert.AreEqual(plotStateFC, refineDocState);
             RunUI(SkylineWindow.Undo);
 
             // Verify using only adjusted p value cutoff works
