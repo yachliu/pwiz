@@ -197,7 +197,7 @@ namespace pwiz.SkylineTestFunctional
             Assert.AreEqual(inCount, curveCounts.InCount);
         }
 
-        private static void OpenVolcanoPlotProperties(FoldChangeVolcanoPlot volcanoPlot, Action<VolcanoPlotPropertiesDlg> action)
+        public static void OpenVolcanoPlotProperties(FoldChangeVolcanoPlot volcanoPlot, Action<VolcanoPlotPropertiesDlg> action)
         {
             RunDlg<VolcanoPlotPropertiesDlg>(volcanoPlot.ShowProperties, d =>
             {
