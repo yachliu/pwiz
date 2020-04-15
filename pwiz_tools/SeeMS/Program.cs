@@ -43,6 +43,8 @@ namespace seems
 
         static seemsForm MainForm;
 
+	    public static bool TestMode { get; private set; }
+
 		/// <summary>
 		/// The main entry point for the application.
 		/// </summary>
@@ -100,19 +102,32 @@ namespace seems
 
             try
             {
+                TestMode = args.Contains("--test");
                 singleInstanceHandler.Connect(args);
             }
             catch (Exception e)
             {
-                string message = e.ToString();
-                if (e.InnerException != null)
-                    message += "\n\nAdditional information: " + e.InnerException.ToString();
-                MessageBox.Show(message,
-                                "Unhandled Exception",
-                                MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1,
-                                0, false);
+                HandleException("Error connecting to single instance", e);
             }
 		}
+
+	    public static void HandleException(string title, Exception e)
+	    {
+	        string message = e?.ToString() ?? "Unknown exception.";
+            if (e?.InnerException != null)
+	            message += "\n\nAdditional information: " + e.InnerException;
+
+	        if (!TestMode)
+	            MessageBox.Show(message,
+	                title,
+	                MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1,
+	                0, false);
+	        else
+	        {
+	            Console.Error.WriteLine(message);
+	            Environment.Exit(1);
+	        }
+	    }
 
 		private static void UIThread_UnhandledException( object sender, ThreadExceptionEventArgs e )
 		{
@@ -122,29 +137,19 @@ namespace seems
 				newSeems.StartInfo.Arguments = "\"" + MainForm.CurrentFilepath + "\" " + MainForm.CurrentScanIndex;
 			newSeems.Start();
 			Process.GetCurrentProcess().Kill();*/
-
-			string message = e.Exception.ToString();
-			if( e.Exception.InnerException != null )
-                message += "\n\nAdditional information: " + e.Exception.InnerException.ToString();
-			MessageBox.Show( message,
-							"Unhandled Exception",
-							MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1,
-							0, false );
+            HandleException("Unhandled Exception", e.Exception);
 		}
 
 		private static void CurrentDomain_UnhandledException( object sender, UnhandledExceptionEventArgs e )
 		{
-			/*Process newSeems = new Process();
+            /*Process newSeems = new Process();
 			newSeems.StartInfo.FileName = Application.ExecutablePath;
 			if( MainForm.CurrentGraphForm.CurrentSourceFilepath.Length > 0 )
 				newSeems.StartInfo.Arguments = "\"" + MainForm.CurrentGraphForm.CurrentSourceFilepath + "\" " + MainForm.CurrentGraphForm.CurrentGraphItemIndex;
 			newSeems.Start();
 			Process.GetCurrentProcess().Kill();*/
 
-			MessageBox.Show( (e.ExceptionObject is Exception ? (e.ExceptionObject as Exception).Message : "Unknown error."),
-							"Unhandled Exception",
-							MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1,
-							0, false );
-		}
+		    HandleException("Unhandled Exception", e.ExceptionObject as Exception);
+        }
 	}
 }

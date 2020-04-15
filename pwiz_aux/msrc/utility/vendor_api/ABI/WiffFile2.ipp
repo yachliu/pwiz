@@ -27,13 +27,12 @@
 #error compiler is not MSVC or DLL not available
 #else // PWIZ_READER_ABI
 
-#include <msclr/auto_gcroot.h>
-
 using namespace System::Collections::Generic;
 
 #ifdef __INTELLISENSE__
 #using <SCIEX.Apis.Data.v1.dll>
 #endif
+#include "pwiz/utility/misc/Filesystem.hpp"
 
 using namespace SCIEX::Apis::Data::v1;
 using namespace SCIEX::Apis::Data::v1::Contracts;
@@ -42,20 +41,28 @@ namespace pwiz {
 namespace vendor_api {
 namespace ABI {
 
-
 class WiffFile2Impl : public WiffFile
 {
     public:
     WiffFile2Impl(const std::string& wiffpath);
     ~WiffFile2Impl()
     {
-        delete dataReader;
+        DataReader->CloseFile(((IList<ISample^>^) allSamples)[0]->Sources[0]);
+        System::GC::Collect();
     }
 
-    // prevent multiple Wiff2 files from opening at once, because it currently rewrites DataReader.config every time
-    static gcroot<System::Object^> mutex;
+    ref class DataReaderSingleton
+    {
+        static ISampleDataApi^ dataReader = (gcnew DataApiFactory())->CreateSampleDataApi();
 
-    msclr::auto_gcroot<ISampleDataApi^> dataReader;
+        public:
+        static property ISampleDataApi^ Instance
+        {
+            ISampleDataApi^ get() { return dataReader; }
+        }
+    };
+
+    static gcroot<ISampleDataApi^> DataReader;
     mutable gcroot<IList<ISample^>^> allSamples;
     mutable gcroot<ISample^> msSample;
     mutable gcroot<IList<IExperiment^>^> currentSampleExperiments;
@@ -93,6 +100,8 @@ class WiffFile2Impl : public WiffFile
     mutable vector<string> sampleNames;
 };
 
+gcroot<ISampleDataApi^> WiffFile2Impl::DataReader = WiffFile2Impl::DataReaderSingleton::Instance;
+
 typedef boost::shared_ptr<WiffFile2Impl> WiffFile2ImplPtr;
 
 
@@ -113,10 +122,6 @@ struct Experiment2Impl : public Experiment
     virtual void getSIC(size_t index, pwiz::util::BinaryData<double>& times, pwiz::util::BinaryData<double>& intensities) const;
     virtual void getSIC(size_t index, pwiz::util::BinaryData<double>& times, pwiz::util::BinaryData<double>& intensities,
                         double& basePeakX, double& basePeakY) const;
-
-    virtual bool getHasIsolationInfo() const;
-    virtual void getIsolationInfo(int cycle, double& centerMz, double& lowerLimit, double& upperLimit) const;
-    virtual void getPrecursorInfo(int cycle, double& centerMz, int& charge) const;
 
     virtual void getAcquisitionMassRange(double& startMz, double& stopMz) const;
     virtual ScanType getScanType() const;
@@ -157,7 +162,7 @@ typedef boost::shared_ptr<Experiment2Impl> Experiment2ImplPtr;
 
 struct Spectrum2Impl : public Spectrum
 {
-    Spectrum2Impl(Experiment2ImplPtr experiment, int cycle);
+    Spectrum2Impl(Experiment2ImplPtr experiment, int cycle, double scanTime);
 
     virtual int getSampleNumber() const {return experiment->sample;}
     virtual int getPeriodNumber() const {return experiment->period;}
@@ -167,12 +172,12 @@ struct Spectrum2Impl : public Spectrum
     virtual int getMSLevel() const;
 
     virtual bool getHasIsolationInfo() const;
-    virtual void getIsolationInfo(double& centerMz, double& lowerLimit, double& upperLimit) const;
+    virtual void getIsolationInfo(double& centerMz, double& lowerLimit, double& upperLimit, double& collisionEnergy) const;
 
     virtual bool getHasPrecursorInfo() const;
     virtual void getPrecursorInfo(double& selectedMz, double& intensity, int& charge) const;
 
-    virtual double getStartTime() const;
+    virtual double getStartTime() const { return scanTime; }
 
     virtual bool getDataIsContinuous() const { return true; }
     virtual size_t getDataSize(bool doCentroid, bool ignoreZeroIntensityPoints = false) const;
@@ -195,17 +200,20 @@ struct Spectrum2Impl : public Spectrum
         auto& msSpectrum = msSpectrumCache[addZeros ? 1 : 0][doCentroid ? 1 : 0];
         if ((ISpectrum^) msSpectrum == nullptr)
         {
-            auto spectrumRequest = experiment->wiffFile_->dataReader->RequestFactory->CreateSpectraReadRequest();
+            auto spectrumRequest = WiffFile2Impl::DataReader->RequestFactory->CreateSpectraReadRequest();
             spectrumRequest->SampleId = experiment->wiffFile_->msSample->Id;
             spectrumRequest->ExperimentId = experiment->msExperiment->Id;
-            spectrumRequest->Range->Start = cycle;
-            spectrumRequest->Range->End = cycle;
+            spectrumRequest->Range->Start = scanTime;
+            spectrumRequest->Range->End = scanTime;
+            spectrumRequest->ConvertToCentroid = doCentroid;
+            spectrumRequest->AddFramingZeros = addZeros;
 
-            auto spectraReader = experiment->wiffFile_->dataReader->GetSpectra(spectrumRequest);
+            auto spectraReader = WiffFile2Impl::DataReader->GetSpectra(spectrumRequest);
             if (spectraReader->MoveNext())
                 msSpectrum = spectraReader->GetCurrent();
             else
-                msSpectrum = nullptr;
+                throw gcnew Exception(String::Format("[WiffFile2::getSpectrumWithOptions] sample={0} experiment={1} cycle={2} returned null spectrum",
+                                                     spectrumRequest->SampleId, spectrumRequest->ExperimentId, cycle));
         }
 
         lastSpectrum = msSpectrum;
@@ -220,6 +228,7 @@ struct Spectrum2Impl : public Spectrum
     }
 
     int cycle;
+    double scanTime;
 
     // data points
     double sumY, minX, maxX;
@@ -233,41 +242,34 @@ struct Spectrum2Impl : public Spectrum
     mutable double bpX, bpY;
     void initializeBasePeak() const
     {
+        bpX = bpY = 0;
     }
 };
 
 typedef boost::shared_ptr<Spectrum2Impl> Spectrum2ImplPtr;
 
 
-gcroot<System::Object^> WiffFile2Impl::mutex = gcnew System::Object();
-
 WiffFile2Impl::WiffFile2Impl(const string& wiffpath)
 : currentSampleIndex(-1), currentPeriod(-1), currentExperiment(-1), currentCycle(-1), wiffpath_(wiffpath)
 {
     try
     {
-        System::Threading::Monitor::Enter(mutex);
-        auto factory = gcnew DataApiFactory();
-        dataReader = factory->CreateSampleDataApi();
 
-        auto sampleRequest = dataReader->RequestFactory->CreateSamplesReadRequest();
-        sampleRequest->AbsolutePathToWiffFile = ToSystemString(wiffpath);
+        auto sampleRequest = DataReader->RequestFactory->CreateSamplesReadRequest();
+        sampleRequest->AbsolutePathToWiffFile = ToSystemString(bfs::canonical(wiffpath, bfs::current_path()).string());
 
         allSamples = gcnew List<ISample^>();
 
-        auto sampleReader = dataReader->GetSamples(sampleRequest);
+        auto sampleReader = DataReader->GetSamples(sampleRequest);
         while (sampleReader->MoveNext())
             allSamples->Add(sampleReader->GetCurrent());
-
-        System::Threading::Monitor::Exit(mutex);
 
         // This caused WIFF files where the first sample had been interrupted to
         // throw before they could be successfully constructed, which made investigators
         // unhappy when they were seeking access to later, successfully acquired samples.
         // setSample(1);
     }
-    catch (std::exception&) { System::Threading::Monitor::Exit(mutex); throw; }
-    catch (System::Exception^ e) { System::Threading::Monitor::Exit(mutex); throw std::runtime_error(trimFunctionMacro(__FUNCTION__, "") + pwiz::util::ToStdString(e->Message)); }
+    CATCH_AND_FORWARD
 }
 
 
@@ -304,11 +306,11 @@ int WiffFile2Impl::getCycleCount(int sample, int period, int experiment) const
         IList<IExperiment^>^ unwrappedExperiments = currentSampleExperiments;
         auto currentExperiment = unwrappedExperiments[experiment - 1];
 
-        auto experimentCyclesRequest = dataReader->RequestFactory->CreateExperimentCyclesReadRequest();
+        auto experimentCyclesRequest = DataReader->RequestFactory->CreateExperimentCyclesReadRequest();
         experimentCyclesRequest->SampleId = msSample->Id;
         experimentCyclesRequest->ExperimentId = currentExperiment->Id;
 
-        auto experimentCycles = dataReader->GetExperimentCycles(experimentCyclesRequest);
+        auto experimentCycles = DataReader->GetExperimentCycles(experimentCyclesRequest);
         return experimentCycles->Cycles->Length;
     }
     CATCH_AND_FORWARD
@@ -482,11 +484,11 @@ void Experiment2Impl::initializeTIC() const
 
     try
     {
-        auto experimentTicRequest = wiffFile_->dataReader->RequestFactory->CreateExperimentTicReadRequest();
+        auto experimentTicRequest = WiffFile2Impl::DataReader->RequestFactory->CreateExperimentTicReadRequest();
         experimentTicRequest->SampleId = wiffFile_->msSample->Id;
         experimentTicRequest->ExperimentId = msExperiment->Id;
 
-        auto experimentTic = wiffFile_->dataReader->GetExperimentTic(experimentTicRequest);
+        auto experimentTic = WiffFile2Impl::DataReader->GetExperimentTic(experimentTicRequest);
         ToBinaryData(experimentTic->XValues, cycleTimes_);
         ToBinaryData(experimentTic->YValues, cycleIntensities_);
         
@@ -577,9 +579,9 @@ void Experiment2Impl::getAcquisitionMassRange(double& startMz, double& stopMz) c
     {
         if (experimentType != MRM)
         {
-            auto massRanges = (cli::array<IMassRange^>^) msExperiment->MassRanges;
-            startMz = massRanges[0]->Start;
-            stopMz = massRanges[0]->End;
+            auto massRanges = (cli::array<IMassRangeInfo^>^) msExperiment->MassRanges;
+            startMz = massRanges[0]->SelectionWindow->Start;
+            stopMz = massRanges[0]->SelectionWindow->End;
         }
         else
             startMz = stopMz = 0;
@@ -644,46 +646,21 @@ void Experiment2Impl::getBPC(std::vector<double>& times, std::vector<double>& in
 {
     try
     {
+        times.clear();
+        intensities.clear();
         //times = cycleTimes();
         //intensities = basePeakIntensities();
     }
     CATCH_AND_FORWARD
 }
 
-bool Experiment2Impl::getHasIsolationInfo() const
-{
-    return experimentType == Product;
-}
 
-void Experiment2Impl::getIsolationInfo(int cycle, double& centerMz, double& lowerLimit, double& upperLimit) const
-{
-    if (!getHasIsolationInfo())
-        return;
-
-    try
-    {
-    }
-    CATCH_AND_FORWARD
-}
-
-void Experiment2Impl::getPrecursorInfo(int cycle, double& centerMz, int& charge) const
-{
-    if (!getHasIsolationInfo())
-        return;
-
-    try
-    {
-    }
-    CATCH_AND_FORWARD
-}
-
-
-Spectrum2Impl::Spectrum2Impl(Experiment2ImplPtr experiment, int cycle)
-: experiment(experiment), cycle(cycle), selectedMz(0), bpY(-1), bpX(-1)
+Spectrum2Impl::Spectrum2Impl(Experiment2ImplPtr experiment, int cycle, double scanTime)
+: experiment(experiment), cycle(cycle), scanTime(scanTime), selectedMz(0), bpY(-1), bpX(-1)
 {
     try
     {
-        sumY = experiment->cycleIntensities()[cycle-1];
+        sumY = experiment->cycleIntensities()[cycle];
         //minX = experiment->; // TODO Mass range?
         //maxX = spectrum->MaximumXValue;
 
@@ -697,26 +674,45 @@ int Spectrum2Impl::getMSLevel() const
     try { return experiment->getMsLevel(cycle) == 0 ? 1 : experiment->getMsLevel(cycle); } CATCH_AND_FORWARD
 }
 
-bool Spectrum2Impl::getHasIsolationInfo() const { return experiment->getHasIsolationInfo(); }
+bool Spectrum2Impl::getHasIsolationInfo() const { return experiment->experimentType == Product; }
 
-void Spectrum2Impl::getIsolationInfo(double& centerMz, double& lowerLimit, double& upperLimit) const
+void Spectrum2Impl::getIsolationInfo(double& centerMz, double& lowerLimit, double& upperLimit, double& collisionEnergy) const
 {
-    if (!getHasIsolationInfo())
-        return;
-
     try
     {
-        auto isolationWindow = getLastSpectrum()->Precursor->IsolationWindow;
+        auto precursor = getLastSpectrum()->Precursor;
+        if (precursor == nullptr)
+            return;
+        auto isolationWindow = precursor->IsolationWindow;
+        if (isolationWindow == nullptr)
+            return;
         centerMz = isolationWindow->IsolationWindowTarget;
         lowerLimit = centerMz - isolationWindow->LowerOffset;
         upperLimit = centerMz + isolationWindow->UpperOffset;
+
+        auto collisionEnergyRamp = precursor->CollisionEnergy;
+        if (collisionEnergyRamp == nullptr)
+            return;
+        if (collisionEnergyRamp->CollisionEnergyRampStart == 0)
+            collisionEnergy = collisionEnergyRamp->CollisionEnergyRampEnd;
+        else if (collisionEnergyRamp->CollisionEnergyRampEnd == 0)
+            collisionEnergy = collisionEnergyRamp->CollisionEnergyRampStart;
+        else
+            collisionEnergy = (collisionEnergyRamp->CollisionEnergyRampEnd + collisionEnergyRamp->CollisionEnergyRampStart) / 2;
     }
     CATCH_AND_FORWARD
 }
 
 bool Spectrum2Impl::getHasPrecursorInfo() const
 {
-    return selectedMz != 0;
+    try
+    {
+        auto s = getLastSpectrum();
+        return s->Precursor != nullptr &&
+               s->Precursor->IsolationWindow != nullptr &&
+               s->Precursor->IsolationWindow->IsolationWindowTarget != 0;
+    }
+    CATCH_AND_FORWARD
 }
 
 void Spectrum2Impl::getPrecursorInfo(double& selectedMz, double& intensity, int& charge) const
@@ -724,16 +720,16 @@ void Spectrum2Impl::getPrecursorInfo(double& selectedMz, double& intensity, int&
     try
     {
         auto precursor = getLastSpectrum()->Precursor;
-        selectedMz = precursor->IsolationWindow->IsolationWindowTarget;
+        if (precursor == nullptr)
+            return;
+        auto isolationWindow = precursor->IsolationWindow;
+        if (isolationWindow == nullptr)
+            return;
+        selectedMz = isolationWindow->IsolationWindowTarget;
         intensity = 0;
         charge = precursor->PrecursorChargeState;
     }
     CATCH_AND_FORWARD
-}
-
-double Spectrum2Impl::getStartTime() const
-{
-    return getLastSpectrum()->ScanStartTime;
 }
 
 size_t Spectrum2Impl::getDataSize(bool doCentroid, bool ignoreZeroIntensityPoints) const
@@ -769,7 +765,7 @@ SpectrumPtr WiffFile2Impl::getSpectrum(int sample, int period, int experiment, i
 
 SpectrumPtr WiffFile2Impl::getSpectrum(ExperimentPtr experiment, int cycle) const
 {
-    Spectrum2ImplPtr spectrum(new Spectrum2Impl(boost::static_pointer_cast<Experiment2Impl>(experiment), cycle));
+    Spectrum2ImplPtr spectrum(new Spectrum2Impl(boost::static_pointer_cast<Experiment2Impl>(experiment), cycle-1, experiment->convertCycleToRetentionTime(cycle)));
     return spectrum;
 }
 
@@ -784,12 +780,12 @@ void WiffFile2Impl::setSample(int sample) const
             IList<ISample^>^ unwrappedAllSamples = allSamples;
             this->msSample = (ISample^)unwrappedAllSamples[sample - 1];
 
-            auto experimentRequest = dataReader->RequestFactory->CreateExperimentsReadRequest();
+            auto experimentRequest = DataReader->RequestFactory->CreateExperimentsReadRequest();
             experimentRequest->SampleId = msSample->Id;
 
             currentSampleExperiments = gcnew List<IExperiment^>();
 
-            auto experimentReader = dataReader->GetExperiments(experimentRequest);
+            auto experimentReader = DataReader->GetExperiments(experimentRequest);
             while (experimentReader->MoveNext())
                 currentSampleExperiments->Add(experimentReader->GetCurrent());
 

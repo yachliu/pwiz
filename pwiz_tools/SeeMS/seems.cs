@@ -196,6 +196,7 @@ namespace seems
                 var idOrIndexList = new List<object>();
                 var idOrIndexListByFile = new Dictionary<string, List<object>>();
                 var annotationByFile = new Dictionary<string, IAnnotation>();
+                bool testMode = false;
 
                 for (int i=0; i < args.Length; ++i)
                 {
@@ -215,6 +216,10 @@ namespace seems
                     {
                         annotation = AnnotationFactory.ParseArgument(args[i+1]);
                         ++i;
+                    }
+                    else if (arg == "--test")
+                    {
+                        testMode = true;
                     }
                     else
                     {
@@ -242,23 +247,21 @@ namespace seems
                     annotation = null;
                 }
 
+                bool success = true;
                 foreach (var fileListPair in idOrIndexListByFile)
                 {
                     if (fileListPair.Value.Count > 0)
-                        Manager.OpenFile(fileListPair.Key, fileListPair.Value, annotationByFile[fileListPair.Key]);
+                        success &= Manager.OpenFile(fileListPair.Key, fileListPair.Value, annotationByFile[fileListPair.Key]);
                     else
-                        Manager.OpenFile(fileListPair.Key);
+                        success &= Manager.OpenFile(fileListPair.Key);
                 }
+
+                if (testMode)
+                    Environment.Exit(success ? 0 : 1);
             }
             catch (Exception ex)
             {
-                string message = ex.Message;
-                if (ex.InnerException != null)
-                    message += "\n\nAdditional information: " + ex.InnerException.Message;
-                MessageBox.Show(message,
-                                "Error parsing command line arguments",
-                                MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1,
-                                0, false);
+                Program.HandleException("Error parsing command line arguments", ex);
             }
         }
 

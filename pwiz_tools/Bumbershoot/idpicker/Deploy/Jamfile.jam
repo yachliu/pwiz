@@ -92,6 +92,7 @@ make setup.exe
         <dependency>..//install
         <dependency>..//IDPicker
         <dependency>..//IDPICKER_VERSION
+        <dependency>$(PWIZ_ROOT_PATH)//INSTALLER_VENDOR_FILES.txt
         <conditional>@build-location
         <conditional>@msvc-requirement
     ;
