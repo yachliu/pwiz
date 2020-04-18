@@ -1168,21 +1168,6 @@ namespace pwiz.Skyline.Properties
         }
 
         [UserScopedSetting]
-        public bool EnableChorus
-        {
-            get
-            {
-                var value = this[@"EnableChorus"];
-                if (value == null)
-                {
-                    return false;
-                }
-                return (bool) value;
-            }
-            set { this[@"EnableChorus"] = value; }
-        }
-
-        [UserScopedSetting]
         public CalibrationCurveOptions CalibrationCurveOptions
         {
             get { 
@@ -1893,7 +1878,7 @@ namespace pwiz.Skyline.Properties
 
     public sealed class DeclusterPotentialList : SettingsList<DeclusteringPotentialRegression>
     {
-        private static readonly DeclusteringPotentialRegression NONE =
+        public static readonly DeclusteringPotentialRegression NONE =
             new DeclusteringPotentialRegression(ELEMENT_NONE, 0, 0);
 
         public override int RevisionIndexCurrent { get { return 1; } }
@@ -1962,7 +1947,7 @@ namespace pwiz.Skyline.Properties
 
     public sealed class CompensationVoltageList : SettingsList<CompensationVoltageParameters>
     {
-        private static readonly CompensationVoltageParameters NONE = new CompensationVoltageParameters(ELEMENT_NONE, 0, 0, 0, 0, 0);
+        public static readonly CompensationVoltageParameters NONE = new CompensationVoltageParameters(ELEMENT_NONE, 0, 0, 0, 0, 0);
 
         public override int RevisionIndexCurrent { get { return 1; } }
 
@@ -2025,10 +2010,11 @@ namespace pwiz.Skyline.Properties
     
     public sealed class RTScoreCalculatorList : SettingsListNotifying<RetentionScoreCalculatorSpec>
     {
-        private static readonly RetentionScoreCalculator[] DEFAULTS =
+        public static readonly RetentionScoreCalculator[] DEFAULTS =
         {
             new RetentionScoreCalculator(RetentionTimeRegression.SSRCALC_100_A),
-            new RetentionScoreCalculator(RetentionTimeRegression.SSRCALC_300_A)
+            new RetentionScoreCalculator(RetentionTimeRegression.SSRCALC_300_A),
+            // new RetentionScoreCalculator(RetentionTimeRegression.PROSITRTCALC)
         };
 
         /// <summary>

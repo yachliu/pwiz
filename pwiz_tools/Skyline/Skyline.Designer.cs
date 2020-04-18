@@ -87,6 +87,9 @@ namespace pwiz.Skyline
             this.toolStripSeparator13 = new System.Windows.Forms.ToolStripSeparator();
             this.lockYaxisContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator14 = new System.Windows.Forms.ToolStripSeparator();
+            this.prositLibMatchItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.mirrorMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator61 = new System.Windows.Forms.ToolStripSeparator();
             this.spectrumPropsContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator15 = new System.Windows.Forms.ToolStripSeparator();
             this.zoomSpectrumContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -95,6 +98,8 @@ namespace pwiz.Skyline
             this.contextMenuChromatogram = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.applyPeakAllGraphMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.applyPeakSubsequentGraphMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.applyPeakGroupGraphMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.groupApplyToByGraphMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.removePeakGraphMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator33 = new System.Windows.Forms.ToolStripSeparator();
             this.legendChromContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -182,6 +187,7 @@ namespace pwiz.Skyline
             this.setRegressionMethodContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.linearRegressionContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.kernelDensityEstimationContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.logRegressionContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loessContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator22 = new System.Windows.Forms.ToolStripSeparator();
             this.createRTRegressionContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -243,6 +249,7 @@ namespace pwiz.Skyline
             this.areaCVdecoysToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.areaCVTransitionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.areaCVAllTransitionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.areaCVCountTransitionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.areaCVBestTransitionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator58 = new System.Windows.Forms.ToolStripSeparator();
             this.areaCVPrecursorsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -313,7 +320,6 @@ namespace pwiz.Skyline
             this.exportSpectralLibraryMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.chromatogramsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mProphetFeaturesMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.chorusRequestToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportAnnotationsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mruBeforeToolStripSeparator = new System.Windows.Forms.ToolStripSeparator();
             this.mruAfterToolStripSeparator = new System.Windows.Forms.ToolStripSeparator();
@@ -336,6 +342,8 @@ namespace pwiz.Skyline
             this.integrationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.applyPeakAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.applyPeakSubsequentToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.applyPeakGroupToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.groupApplyToByToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.removePeakToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.insertToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.insertFASTAMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -386,11 +394,12 @@ namespace pwiz.Skyline
             this.toolStripSeparator35 = new System.Windows.Forms.ToolStripSeparator();
             this.refineAdvancedMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.peptidesMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewProteinsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showTargetsByNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showTargetsByAccessionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showTargetsByPreferredNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showTargetsByGeneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewModificationsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.textZoomToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.defaultTextToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.largeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -793,6 +802,9 @@ namespace pwiz.Skyline
             this.toolStripSeparator13,
             this.lockYaxisContextMenuItem,
             this.toolStripSeparator14,
+            this.prositLibMatchItem,
+            this.mirrorMenuItem,
+            this.toolStripSeparator61,
             this.spectrumPropsContextMenuItem,
             this.toolStripSeparator15,
             this.zoomSpectrumContextMenuItem,
@@ -953,6 +965,23 @@ namespace pwiz.Skyline
             this.toolStripSeparator14.Name = "toolStripSeparator14";
             resources.ApplyResources(this.toolStripSeparator14, "toolStripSeparator14");
             // 
+            // prositLibMatchItem
+            // 
+            this.prositLibMatchItem.Name = "prositLibMatchItem";
+            resources.ApplyResources(this.prositLibMatchItem, "prositLibMatchItem");
+            this.prositLibMatchItem.Click += new System.EventHandler(this.prositLibMatchItem_Click);
+            // 
+            // mirrorMenuItem
+            // 
+            this.mirrorMenuItem.Name = "mirrorMenuItem";
+            resources.ApplyResources(this.mirrorMenuItem, "mirrorMenuItem");
+            this.mirrorMenuItem.Click += new System.EventHandler(this.mirrorMenuItem_Click);
+            // 
+            // toolStripSeparator61
+            // 
+            this.toolStripSeparator61.Name = "toolStripSeparator61";
+            resources.ApplyResources(this.toolStripSeparator61, "toolStripSeparator61");
+            // 
             // spectrumPropsContextMenuItem
             // 
             this.spectrumPropsContextMenuItem.Name = "spectrumPropsContextMenuItem";
@@ -986,6 +1015,8 @@ namespace pwiz.Skyline
             this.contextMenuChromatogram.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.applyPeakAllGraphMenuItem,
             this.applyPeakSubsequentGraphMenuItem,
+            this.applyPeakGroupGraphMenuItem,
+            this.groupApplyToByGraphMenuItem,
             this.removePeakGraphMenuItem,
             this.toolStripSeparator33,
             this.legendChromContextMenuItem,
@@ -1021,6 +1052,17 @@ namespace pwiz.Skyline
             this.applyPeakSubsequentGraphMenuItem.Name = "applyPeakSubsequentGraphMenuItem";
             resources.ApplyResources(this.applyPeakSubsequentGraphMenuItem, "applyPeakSubsequentGraphMenuItem");
             this.applyPeakSubsequentGraphMenuItem.Click += new System.EventHandler(this.applyPeakSubsequentMenuItem_Click);
+            // 
+            // applyPeakGroupGraphMenuItem
+            // 
+            this.applyPeakGroupGraphMenuItem.Name = "applyPeakGroupGraphMenuItem";
+            resources.ApplyResources(this.applyPeakGroupGraphMenuItem, "applyPeakGroupGraphMenuItem");
+            this.applyPeakGroupGraphMenuItem.Click += new System.EventHandler(this.applyPeakGroupGraphMenuItem_Click);
+            // 
+            // groupApplyToByGraphMenuItem
+            // 
+            this.groupApplyToByGraphMenuItem.Name = "groupApplyToByGraphMenuItem";
+            resources.ApplyResources(this.groupApplyToByGraphMenuItem, "groupApplyToByGraphMenuItem");
             // 
             // removePeakGraphMenuItem
             // 
@@ -1618,6 +1660,7 @@ namespace pwiz.Skyline
             this.setRegressionMethodContextMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.linearRegressionContextMenuItem,
             this.kernelDensityEstimationContextMenuItem,
+            this.logRegressionContextMenuItem,
             this.loessContextMenuItem});
             this.setRegressionMethodContextMenuItem.Name = "setRegressionMethodContextMenuItem";
             resources.ApplyResources(this.setRegressionMethodContextMenuItem, "setRegressionMethodContextMenuItem");
@@ -1633,6 +1676,12 @@ namespace pwiz.Skyline
             this.kernelDensityEstimationContextMenuItem.Name = "kernelDensityEstimationContextMenuItem";
             resources.ApplyResources(this.kernelDensityEstimationContextMenuItem, "kernelDensityEstimationContextMenuItem");
             this.kernelDensityEstimationContextMenuItem.Click += new System.EventHandler(this.kernelDensityEstimationContextMenuItem_Click);
+            // 
+            // logRegressionContextMenuItem
+            // 
+            this.logRegressionContextMenuItem.Name = "logRegressionContextMenuItem";
+            resources.ApplyResources(this.logRegressionContextMenuItem, "logRegressionContextMenuItem");
+            this.logRegressionContextMenuItem.Click += new System.EventHandler(this.logRegressionContextMenuItem_Click);
             // 
             // loessContextMenuItem
             // 
@@ -2043,6 +2092,7 @@ namespace pwiz.Skyline
             // 
             this.areaCVTransitionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.areaCVAllTransitionsToolStripMenuItem,
+            this.areaCVCountTransitionsToolStripMenuItem,
             this.areaCVBestTransitionsToolStripMenuItem,
             this.toolStripSeparator58,
             this.areaCVPrecursorsToolStripMenuItem,
@@ -2055,6 +2105,11 @@ namespace pwiz.Skyline
             this.areaCVAllTransitionsToolStripMenuItem.Name = "areaCVAllTransitionsToolStripMenuItem";
             resources.ApplyResources(this.areaCVAllTransitionsToolStripMenuItem, "areaCVAllTransitionsToolStripMenuItem");
             this.areaCVAllTransitionsToolStripMenuItem.Click += new System.EventHandler(this.areaCVAllTransitionsToolStripMenuItem_Click);
+            // 
+            // areaCVCountTransitionsToolStripMenuItem
+            // 
+            this.areaCVCountTransitionsToolStripMenuItem.Name = "areaCVCountTransitionsToolStripMenuItem";
+            resources.ApplyResources(this.areaCVCountTransitionsToolStripMenuItem, "areaCVCountTransitionsToolStripMenuItem");
             // 
             // areaCVBestTransitionsToolStripMenuItem
             // 
@@ -2500,7 +2555,6 @@ namespace pwiz.Skyline
             this.exportSpectralLibraryMenuItem,
             this.chromatogramsToolStripMenuItem,
             this.mProphetFeaturesMenuItem,
-            this.chorusRequestToolStripMenuItem,
             this.exportAnnotationsMenuItem});
             this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
             resources.ApplyResources(this.exportToolStripMenuItem, "exportToolStripMenuItem");
@@ -2563,12 +2617,6 @@ namespace pwiz.Skyline
             this.mProphetFeaturesMenuItem.Name = "mProphetFeaturesMenuItem";
             resources.ApplyResources(this.mProphetFeaturesMenuItem, "mProphetFeaturesMenuItem");
             this.mProphetFeaturesMenuItem.Click += new System.EventHandler(this.mProphetFeaturesMenuItem_Click);
-            // 
-            // chorusRequestToolStripMenuItem
-            // 
-            this.chorusRequestToolStripMenuItem.Name = "chorusRequestToolStripMenuItem";
-            resources.ApplyResources(this.chorusRequestToolStripMenuItem, "chorusRequestToolStripMenuItem");
-            this.chorusRequestToolStripMenuItem.Click += new System.EventHandler(this.chorusRequestToolStripMenuItem_Click);
             // 
             // exportAnnotationsMenuItem
             // 
@@ -2714,6 +2762,8 @@ namespace pwiz.Skyline
             this.integrationToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.applyPeakAllToolStripMenuItem,
             this.applyPeakSubsequentToolStripMenuItem,
+            this.applyPeakGroupToolStripMenuItem,
+            this.groupApplyToByToolStripMenuItem,
             this.removePeakToolStripMenuItem});
             this.integrationToolStripMenuItem.Name = "integrationToolStripMenuItem";
             resources.ApplyResources(this.integrationToolStripMenuItem, "integrationToolStripMenuItem");
@@ -2729,6 +2779,17 @@ namespace pwiz.Skyline
             this.applyPeakSubsequentToolStripMenuItem.Name = "applyPeakSubsequentToolStripMenuItem";
             resources.ApplyResources(this.applyPeakSubsequentToolStripMenuItem, "applyPeakSubsequentToolStripMenuItem");
             this.applyPeakSubsequentToolStripMenuItem.Click += new System.EventHandler(this.applyPeakSubsequentMenuItem_Click);
+            // 
+            // applyPeakGroupToolStripMenuItem
+            // 
+            this.applyPeakGroupToolStripMenuItem.Name = "applyPeakGroupToolStripMenuItem";
+            resources.ApplyResources(this.applyPeakGroupToolStripMenuItem, "applyPeakGroupToolStripMenuItem");
+            this.applyPeakGroupToolStripMenuItem.Click += new System.EventHandler(this.applyPeakGroupGraphMenuItem_Click);
+            // 
+            // groupApplyToByToolStripMenuItem
+            // 
+            this.groupApplyToByToolStripMenuItem.Name = "groupApplyToByToolStripMenuItem";
+            resources.ApplyResources(this.groupApplyToByToolStripMenuItem, "groupApplyToByToolStripMenuItem");
             // 
             // removePeakToolStripMenuItem
             // 
@@ -3070,7 +3131,8 @@ namespace pwiz.Skyline
             // viewToolStripMenuItem
             // 
             this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.peptidesMenuItem,
+            this.viewProteinsMenuItem,
+            this.viewModificationsMenuItem,
             this.textZoomToolStripMenuItem,
             this.userInterfaceToolStripMenuItem,
             this.toolStripSeparator41,
@@ -3102,16 +3164,17 @@ namespace pwiz.Skyline
             resources.ApplyResources(this.viewToolStripMenuItem, "viewToolStripMenuItem");
             this.viewToolStripMenuItem.DropDownOpening += new System.EventHandler(this.viewToolStripMenuItem_DropDownOpening);
             // 
-            // peptidesMenuItem
+            // viewProteinsMenuItem
             // 
-            this.peptidesMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.viewProteinsMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.showTargetsByNameToolStripMenuItem,
             this.showTargetsByAccessionToolStripMenuItem,
             this.showTargetsByPreferredNameToolStripMenuItem,
             this.showTargetsByGeneToolStripMenuItem});
-            this.peptidesMenuItem.Name = "peptidesMenuItem";
-            resources.ApplyResources(this.peptidesMenuItem, "peptidesMenuItem");
-            this.peptidesMenuItem.DropDownOpening += new System.EventHandler(this.peptidesMenuItem_DropDownOpening);
+            this.viewProteinsMenuItem.Name = "viewProteinsMenuItem";
+            resources.ApplyResources(this.viewProteinsMenuItem, "viewProteinsMenuItem");
+            this.modeUIHandler.SetUIMode(this.viewProteinsMenuItem, pwiz.Skyline.Util.Helpers.ModeUIExtender.MODE_UI_HANDLING_TYPE.proteomic);
+            this.viewProteinsMenuItem.DropDownOpening += new System.EventHandler(this.peptidesMenuItem_DropDownOpening);
             // 
             // showTargetsByNameToolStripMenuItem
             // 
@@ -3141,6 +3204,11 @@ namespace pwiz.Skyline
             resources.ApplyResources(this.showTargetsByGeneToolStripMenuItem, "showTargetsByGeneToolStripMenuItem");
             this.modeUIHandler.SetUIMode(this.showTargetsByGeneToolStripMenuItem, pwiz.Skyline.Util.Helpers.ModeUIExtender.MODE_UI_HANDLING_TYPE.proteomic);
             this.showTargetsByGeneToolStripMenuItem.Click += new System.EventHandler(this.showTargetsByGeneToolStripMenuItem_Click);
+            // 
+            // viewModificationsMenuItem
+            // 
+            this.viewModificationsMenuItem.Name = "viewModificationsMenuItem";
+            resources.ApplyResources(this.viewModificationsMenuItem, "viewModificationsMenuItem");
             // 
             // textZoomToolStripMenuItem
             // 
@@ -4642,7 +4710,7 @@ namespace pwiz.Skyline
         private System.Windows.Forms.ToolStripMenuItem peptideIDTimesContextMenuItem;
         private System.Windows.Forms.ToolStripMenuItem generateDecoysMenuItem;
         private System.Windows.Forms.ToolStripMenuItem eSPFeaturesMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem peptidesMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem viewProteinsMenuItem;
         private System.Windows.Forms.ToolStripMenuItem retentionTimeAlignmentsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exportIsolationListMenuItem;
         private System.Windows.Forms.ToolStripMenuItem toolsMenu;
@@ -4701,7 +4769,6 @@ namespace pwiz.Skyline
         private System.Windows.Forms.ToolStripMenuItem irtStandardMenuItem;
         private System.Windows.Forms.ToolStripMenuItem toolStoreMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorTools;
-        private System.Windows.Forms.ToolStripMenuItem chorusRequestToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem showTargetsByNameToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem showTargetsByAccessionToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem showTargetsByPreferredNameToolStripMenuItem;
@@ -4822,6 +4889,7 @@ namespace pwiz.Skyline
         private System.Windows.Forms.ToolStripMenuItem importAnnotationsMenuItem;
         private System.Windows.Forms.ToolStripMenuItem areaCVTransitionsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem areaCVAllTransitionsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem areaCVCountTransitionsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem areaCVBestTransitionsToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator58;
         private System.Windows.Forms.ToolStripMenuItem areaCVPrecursorsToolStripMenuItem;
@@ -4845,6 +4913,15 @@ namespace pwiz.Skyline
         private System.Windows.Forms.ToolStripMenuItem toggleQuantitativeContextMenuItem;
         private System.Windows.Forms.ToolStripMenuItem markTransitionsQuantitativeContextMenuItem;
         private System.Windows.Forms.ToolStripMenuItem scoreContextMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator61;
+        private System.Windows.Forms.ToolStripMenuItem prositLibMatchItem;
+        private System.Windows.Forms.ToolStripMenuItem mirrorMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem viewModificationsMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem applyPeakGroupGraphMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem groupApplyToByGraphMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem applyPeakGroupToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem groupApplyToByToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem logRegressionContextMenuItem;
     }
 }
 
