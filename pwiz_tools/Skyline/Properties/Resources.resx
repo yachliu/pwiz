@@ -10976,4 +10976,13 @@ Click 'Retry' to try building again with original spectrum files placed next to 
   <data name="FastaImporter_Import__0__proteins_and__1__peptides_added" xml:space="preserve">
     <value>{0} proteins and {1} peptides added</value>
   </data>
+  <data name="Caret_icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Caret_icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Caret_icon_small" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Caret_icon_small.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="tick_small" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\tick_small.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 </root>

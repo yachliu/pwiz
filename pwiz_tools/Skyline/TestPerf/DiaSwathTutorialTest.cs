@@ -108,6 +108,12 @@ namespace TestPerf
         [Timeout(int.MaxValue)] // These can take a long time
         public void TestDiaTtofTutorial()
         {
+
+            //DEBUG
+            RunPerfTests = true;
+            IsPauseForScreenShots = true;
+            PauseStartPage = 17;
+
             _analysisValues = new AnalysisValues
             {
                 KeepPrecursors = false,

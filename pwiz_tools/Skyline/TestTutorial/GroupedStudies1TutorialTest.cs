@@ -898,6 +898,7 @@ namespace pwiz.SkylineTestTutorial
                 SkylineWindow.OpenFile(Settings.Default.MruList[0]);
             });
             WaitForDocumentLoaded();
+            WaitForGraphs();
             AssertUserSetCount(count);
         }
 
