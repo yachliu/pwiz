@@ -70,7 +70,7 @@ namespace pwiz.Skyline.Model.Results
             {
                 Ratio = meanRatioFloat,
                 StdDev = (float) ratios.StdDev(statsDenominators),
-                DotProduct = (float) statsNumerators.Angle(statsDenominators),
+                DotProduct = (float) statsNumerators.NormalizedContrastAngleSqrt(statsDenominators),
             };
         }
 

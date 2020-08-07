@@ -546,7 +546,7 @@ namespace pwiz.Skyline.Model
                 }
                 var statisticsThis = new Statistics(abundancesThis);
                 var statisticsOther = new Statistics(abundancesOther);
-                return statisticsThis.Angle(statisticsOther);
+                return statisticsThis.NormalizedContrastAngleSqrt(statisticsOther);
             }
         }
     }
