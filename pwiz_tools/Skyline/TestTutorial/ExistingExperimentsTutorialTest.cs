@@ -104,6 +104,8 @@ namespace pwiz.SkylineTestTutorial
             if (!IsPauseForCoverShot)
                 DoMrmerTest();
             DoStudy7Test();
+
+            Assert.IsFalse(IsRecordMode);
         }
 
         private void DoMrmerTest()
@@ -680,22 +682,24 @@ namespace pwiz.SkylineTestTutorial
             });
         }
 
+        private static bool IsRecordMode { get { return false; } }
+
         private static void TestApplyToAll()
         {
             RunUI(() =>
             {
                 PeakMatcherTestUtil.SelectAndApplyPeak("ESDTSYVSLK", 568.7817, "A_01", false, false, 20.2587);
-                PeakMatcherTestUtil.VerifyPeaks(MakeVerificationDictionary(20.24220, 20.25878, 20.09352, 20.09353));
+                PeakMatcherTestUtil.VerifyPeaks(MakeVerificationDictionary(20.24220, 20.25878, 20.09352, 20.09353), IsRecordMode);
             });
             RunUI(() =>
             {
                 PeakMatcherTestUtil.SelectAndApplyPeak("ESDTSYVSLK", 564.7746, "A_02", false, false, 18.34195);
-                PeakMatcherTestUtil.VerifyPeaks(MakeVerificationDictionary(18.34, 18.34, 18.28, 18.28));
+                PeakMatcherTestUtil.VerifyPeaks(MakeVerificationDictionary(18.34, 18.34, 18.28, 18.28), IsRecordMode);
             });
             RunUI(() =>
             {
                 PeakMatcherTestUtil.SelectAndApplyPeak("ESDTSYVSLK", 568.7817, "C_03", false, false, 18.0611);
-                PeakMatcherTestUtil.VerifyPeaks(MakeVerificationDictionary(18.12708, 18.12713, 18.06105, 18.06107));
+                PeakMatcherTestUtil.VerifyPeaks(MakeVerificationDictionary(18.12708, 18.12713, 18.06105, 18.06107), IsRecordMode);
             });
 
             // For each test, a peak was picked and applied - undo two actions per test

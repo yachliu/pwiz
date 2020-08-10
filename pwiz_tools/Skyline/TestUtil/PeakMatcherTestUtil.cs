@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using pwiz.Skyline;
 using pwiz.Skyline.Controls.SeqNode;
@@ -61,13 +60,13 @@ namespace pwiz.SkylineTestUtil
             skylineWindow.ApplyPeak(subsequent, group);
         }
 
-        public static void VerifyPeaks(IReadOnlyDictionary<string, double> expected)
+        public static void VerifyPeaks(IReadOnlyDictionary<string, double> expected, bool writePeaks)
         {
             var skylineWindow = Program.MainWindow;
             bool fail = false;
 
-            var expectedBuilder = new StringBuilder();
-            var observedBuilder = new StringBuilder();
+            var expectList = new List<double>();
+            var observeList = new List<float>();
 
             var selectedTreeNode = skylineWindow.SelectedNode as PeptideTreeNode;
             TransitionGroupDocNode nodeTranGroup = selectedTreeNode != null
@@ -89,16 +88,24 @@ namespace pwiz.SkylineTestUtil
                 var chromName = chromSet.Name;
                 Assert.IsTrue(expected.ContainsKey(chromName));
                 var expectedRt = expected[chromName];
-                expectedBuilder.AppendLine(string.Format("{0}", expectedRt));
-                observedBuilder.AppendLine(string.Format("{0}", rt.Value));
+                expectList.Add(expectedRt);
+                observeList.Add(rt.Value);
                 if (Math.Abs(expectedRt - rt.Value) > 0.01)
                     fail = true;
             }
-            Assert.IsFalse(fail, TextUtil.LineSeparate(
-                string.Format("{0}", nodeTranGroup),
-                "Expected RTs:", expectedBuilder.ToString(),
-                "but found RTs:", observedBuilder.ToString())
-            );
+
+            if (!writePeaks)
+            {
+                Assert.IsFalse(fail, TextUtil.LineSeparate(
+                    string.Format("{0}", nodeTranGroup),
+                    "Expected RTs:", TextUtil.LineSeparate(expectList.Select(x => string.Format("{0}", x))),
+                    "but found RTs:", TextUtil.LineSeparate(observeList.Select(x => string.Format("{0}", x))))
+                );
+            }
+            else
+            {
+                Console.WriteLine(string.Join(", ", observeList.Select(x => string.Format("{0:0.00000}", x))));
+            }
         }
     }
 }
