@@ -46,6 +46,7 @@
             this.btnUp = new System.Windows.Forms.ToolStripButton();
             this.btnDown = new System.Windows.Forms.ToolStripButton();
             this.btnEdit = new System.Windows.Forms.ToolStripButton();
+            this.label1 = new System.Windows.Forms.Label();
             this.boundDataGridViewEx1 = new pwiz.Skyline.Controls.Databinding.BoundDataGridViewEx();
             this.bindingListSourceResults = new pwiz.Common.DataBinding.Controls.BindingListSource(this.components);
             this.panelButtons = new System.Windows.Forms.FlowLayoutPanel();
@@ -79,6 +80,7 @@
             // 
             // splitContainer1.Panel2
             // 
+            this.splitContainer1.Panel2.Controls.Add(this.label1);
             this.splitContainer1.Panel2.Controls.Add(this.boundDataGridViewEx1);
             resources.ApplyResources(this.splitContainer1.Panel2, "splitContainer1.Panel2");
             // 
@@ -106,6 +108,7 @@
             // 
             // dataGridViewRules
             // 
+            resources.ApplyResources(this.dataGridViewRules, "dataGridViewRules");
             this.dataGridViewRules.AutoGenerateColumns = false;
             this.dataGridViewRules.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridViewRules.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
@@ -115,7 +118,6 @@
             this.colReplacement,
             this.colTarget});
             this.dataGridViewRules.DataSource = this.bindingSourceRules;
-            resources.ApplyResources(this.dataGridViewRules, "dataGridViewRules");
             this.dataGridViewRules.Name = "dataGridViewRules";
             this.dataGridViewRules.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dataGridViewRules.CurrentCellChanged += new System.EventHandler(this.dataGridViewRules_CurrentCellChanged);
@@ -196,12 +198,17 @@
             this.btnEdit.Name = "btnEdit";
             this.btnEdit.Click += new System.EventHandler(this.btnEdit_Click);
             // 
+            // label1
+            // 
+            resources.ApplyResources(this.label1, "label1");
+            this.label1.Name = "label1";
+            // 
             // boundDataGridViewEx1
             // 
+            resources.ApplyResources(this.boundDataGridViewEx1, "boundDataGridViewEx1");
             this.boundDataGridViewEx1.AutoGenerateColumns = false;
             this.boundDataGridViewEx1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.boundDataGridViewEx1.DataSource = this.bindingListSourceResults;
-            resources.ApplyResources(this.boundDataGridViewEx1, "boundDataGridViewEx1");
             this.boundDataGridViewEx1.MaximumColumnCount = 2000;
             this.boundDataGridViewEx1.Name = "boundDataGridViewEx1";
             // 
@@ -232,8 +239,10 @@
             // 
             // MetadataRuleEditor
             // 
+            this.AcceptButton = this.btnOK;
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.CancelButton = this.btnCancel;
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.panelButtons);
             this.MaximizeBox = false;
@@ -245,6 +254,7 @@
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel1.PerformLayout();
             this.splitContainer1.Panel2.ResumeLayout(false);
+            this.splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
@@ -282,5 +292,6 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn colPattern;
         private System.Windows.Forms.DataGridViewTextBoxColumn colReplacement;
         private System.Windows.Forms.DataGridViewComboBoxColumn colTarget;
+        private System.Windows.Forms.Label label1;
     }
 }

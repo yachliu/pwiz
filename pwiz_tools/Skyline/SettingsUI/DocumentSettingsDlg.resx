@@ -132,7 +132,7 @@
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="btnAddAnnotation.Location" type="System.Drawing.Point, System.Drawing">
-    <value>541, 48</value>
+    <value>540, 46</value>
   </data>
   <data name="btnAddAnnotation.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
@@ -172,7 +172,7 @@
     <value>7</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>Annotations are extra pieces of data which you can attach to elements in a Skyline document. Use this dialog to control which annotations are available in this document, as well as to define new annotations.</value>
+    <value>Annotations are user defined attributes which you can associate with elements in a Skyline document. Use this dialog to control which annotations are available in this document, as well as to define new annotations.</value>
   </data>
   <data name="&gt;&gt;label1.Name" xml:space="preserve">
     <value>label1</value>
@@ -193,7 +193,7 @@
     <value>NoControl</value>
   </data>
   <data name="btnEditAnnotationList.Location" type="System.Drawing.Point, System.Drawing">
-    <value>541, 77</value>
+    <value>540, 75</value>
   </data>
   <data name="btnEditAnnotationList.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
@@ -220,7 +220,7 @@
     <value>Top, Bottom, Left, Right</value>
   </data>
   <data name="checkedListBoxAnnotations.Location" type="System.Drawing.Point, System.Drawing">
-    <value>9, 48</value>
+    <value>8, 46</value>
   </data>
   <data name="checkedListBoxAnnotations.Size" type="System.Drawing.Size, System.Drawing">
     <value>526, 199</value>
@@ -267,6 +267,147 @@
   <data name="&gt;&gt;tabPageAnnotations.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
+  <data name="lblMetadataRulesDescription.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Left, Right</value>
+  </data>
+  <data name="lblMetadataRulesDescription.Location" type="System.Drawing.Point, System.Drawing">
+    <value>6, 3</value>
+  </data>
+  <data name="lblMetadataRulesDescription.Size" type="System.Drawing.Size, System.Drawing">
+    <value>609, 39</value>
+  </data>
+  <data name="lblMetadataRulesDescription.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="lblMetadataRulesDescription.Text" xml:space="preserve">
+    <value>Result file rules specify annotations and other properties that should be automatically set when result files are imported into a Skyline document. The source of these values can be parts of the result file name as well as other attributes of the result files.</value>
+  </data>
+  <data name="&gt;&gt;lblMetadataRulesDescription.Name" xml:space="preserve">
+    <value>lblMetadataRulesDescription</value>
+  </data>
+  <data name="&gt;&gt;lblMetadataRulesDescription.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;lblMetadataRulesDescription.Parent" xml:space="preserve">
+    <value>tabPageResultFileRules</value>
+  </data>
+  <data name="&gt;&gt;lblMetadataRulesDescription.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="btnEditRule.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Right</value>
+  </data>
+  <data name="btnEditRule.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="btnEditRule.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="btnEditRule.Location" type="System.Drawing.Point, System.Drawing">
+    <value>540, 75</value>
+  </data>
+  <data name="btnEditRule.Size" type="System.Drawing.Size, System.Drawing">
+    <value>75, 23</value>
+  </data>
+  <data name="btnEditRule.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="btnEditRule.Text" xml:space="preserve">
+    <value>&amp;Edit List...</value>
+  </data>
+  <data name="&gt;&gt;btnEditRule.Name" xml:space="preserve">
+    <value>btnEditRule</value>
+  </data>
+  <data name="&gt;&gt;btnEditRule.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;btnEditRule.Parent" xml:space="preserve">
+    <value>tabPageResultFileRules</value>
+  </data>
+  <data name="&gt;&gt;btnEditRule.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="btnAddRule.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Right</value>
+  </data>
+  <data name="btnAddRule.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="btnAddRule.Location" type="System.Drawing.Point, System.Drawing">
+    <value>540, 46</value>
+  </data>
+  <data name="btnAddRule.Size" type="System.Drawing.Size, System.Drawing">
+    <value>75, 23</value>
+  </data>
+  <data name="btnAddRule.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="btnAddRule.Text" xml:space="preserve">
+    <value>&amp;Add...</value>
+  </data>
+  <data name="&gt;&gt;btnAddRule.Name" xml:space="preserve">
+    <value>btnAddRule</value>
+  </data>
+  <data name="&gt;&gt;btnAddRule.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;btnAddRule.Parent" xml:space="preserve">
+    <value>tabPageResultFileRules</value>
+  </data>
+  <data name="&gt;&gt;btnAddRule.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="checkedListBoxRuleSets.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Bottom, Left, Right</value>
+  </data>
+  <data name="checkedListBoxRuleSets.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 46</value>
+  </data>
+  <data name="checkedListBoxRuleSets.Size" type="System.Drawing.Size, System.Drawing">
+    <value>526, 199</value>
+  </data>
+  <data name="checkedListBoxRuleSets.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;checkedListBoxRuleSets.Name" xml:space="preserve">
+    <value>checkedListBoxRuleSets</value>
+  </data>
+  <data name="&gt;&gt;checkedListBoxRuleSets.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckedListBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;checkedListBoxRuleSets.Parent" xml:space="preserve">
+    <value>tabPageResultFileRules</value>
+  </data>
+  <data name="&gt;&gt;checkedListBoxRuleSets.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="tabPageResultFileRules.Location" type="System.Drawing.Point, System.Drawing">
+    <value>4, 22</value>
+  </data>
+  <data name="tabPageResultFileRules.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 3, 3, 3</value>
+  </data>
+  <data name="tabPageResultFileRules.Size" type="System.Drawing.Size, System.Drawing">
+    <value>622, 260</value>
+  </data>
+  <data name="tabPageResultFileRules.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="tabPageResultFileRules.Text" xml:space="preserve">
+    <value>Result Files</value>
+  </data>
+  <data name="&gt;&gt;tabPageResultFileRules.Name" xml:space="preserve">
+    <value>tabPageResultFileRules</value>
+  </data>
+  <data name="&gt;&gt;tabPageResultFileRules.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tabPageResultFileRules.Parent" xml:space="preserve">
+    <value>tabControl</value>
+  </data>
+  <data name="&gt;&gt;tabPageResultFileRules.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
   <data name="lblListsDescription.Location" type="System.Drawing.Point, System.Drawing">
     <value>6, 3</value>
   </data>
@@ -277,8 +418,7 @@
     <value>12</value>
   </data>
   <data name="lblListsDescription.Text" xml:space="preserve">
-    <value>Lists can contain arbitrary data to be associated with the Skyline document. 
-You can associate list items with elements in the document by defining a lookup Annotation.</value>
+    <value>Lists can contain arbitrary data to be associated with the Skyline document. You can associate list items with elements in the document by defining a lookup Annotation.</value>
   </data>
   <data name="&gt;&gt;lblListsDescription.Name" xml:space="preserve">
     <value>lblListsDescription</value>
@@ -359,7 +499,7 @@ You can associate list items with elements in the document by defining a lookup 
     <value>8, 46</value>
   </data>
   <data name="checkedListBoxLists.Size" type="System.Drawing.Size, System.Drawing">
-    <value>506, 184</value>
+    <value>506, 199</value>
   </data>
   <data name="checkedListBoxLists.TabIndex" type="System.Int32, mscorlib">
     <value>9</value>
@@ -401,7 +541,7 @@ You can associate list items with elements in the document by defining a lookup 
     <value>tabControl</value>
   </data>
   <data name="&gt;&gt;tabPageLists.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="lblGroupComparisonsDescription.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Left, Right</value>
@@ -497,7 +637,7 @@ You can associate list items with elements in the document by defining a lookup 
     <value>8, 46</value>
   </data>
   <data name="checkedListBoxGroupComparisons.Size" type="System.Drawing.Size, System.Drawing">
-    <value>526, 184</value>
+    <value>526, 199</value>
   </data>
   <data name="checkedListBoxGroupComparisons.TabIndex" type="System.Int32, mscorlib">
     <value>9</value>
@@ -539,7 +679,7 @@ You can associate list items with elements in the document by defining a lookup 
     <value>tabControl</value>
   </data>
   <data name="&gt;&gt;tabPageGroupComparisons.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="btnAddReport.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Right</value>
@@ -548,7 +688,7 @@ You can associate list items with elements in the document by defining a lookup 
     <value>NoControl</value>
   </data>
   <data name="btnAddReport.Location" type="System.Drawing.Point, System.Drawing">
-    <value>541, 48</value>
+    <value>540, 46</value>
   </data>
   <data name="btnAddReport.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
@@ -578,7 +718,7 @@ You can associate list items with elements in the document by defining a lookup 
     <value>NoControl</value>
   </data>
   <data name="btnEditReportList.Location" type="System.Drawing.Point, System.Drawing">
-    <value>541, 77</value>
+    <value>540, 75</value>
   </data>
   <data name="btnEditReportList.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
@@ -617,7 +757,7 @@ You can associate list items with elements in the document by defining a lookup 
     <value>8</value>
   </data>
   <data name="labelReports.Text" xml:space="preserve">
-    <value>Choose which report definitions you would like saved in the Skyline document.  These reports may be available in the Document Grid, Results Grid, or other windows.</value>
+    <value>Choose which report definitions you would like saved in the Skyline document. These reports may be available in the Document Grid, Results Grid, or other windows.</value>
   </data>
   <data name="&gt;&gt;labelReports.Name" xml:space="preserve">
     <value>labelReports</value>
@@ -635,10 +775,10 @@ You can associate list items with elements in the document by defining a lookup 
     <value>Top, Bottom, Left, Right</value>
   </data>
   <data name="chooseViewsControl.Location" type="System.Drawing.Point, System.Drawing">
-    <value>6, 48</value>
+    <value>8, 46</value>
   </data>
   <data name="chooseViewsControl.Size" type="System.Drawing.Size, System.Drawing">
-    <value>529, 206</value>
+    <value>526, 199</value>
   </data>
   <data name="chooseViewsControl.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -680,180 +820,6 @@ You can associate list items with elements in the document by defining a lookup 
     <value>tabControl</value>
   </data>
   <data name="&gt;&gt;tabPageReports.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="lblMetadataRulesDescription.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Left, Right</value>
-  </data>
-  <data name="lblMetadataRulesDescription.Location" type="System.Drawing.Point, System.Drawing">
-    <value>6, 3</value>
-  </data>
-  <data name="lblMetadataRulesDescription.Size" type="System.Drawing.Size, System.Drawing">
-    <value>609, 39</value>
-  </data>
-  <data name="lblMetadataRulesDescription.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
-  </data>
-  <data name="lblMetadataRulesDescription.Text" xml:space="preserve">
-    <value>Metadata rules specify annotations and other properties that should be automatically set when result files are imported into Skyline. The source of these values can be parts of the result file name as well as other attributes of the result files.</value>
-  </data>
-  <data name="&gt;&gt;lblMetadataRulesDescription.Name" xml:space="preserve">
-    <value>lblMetadataRulesDescription</value>
-  </data>
-  <data name="&gt;&gt;lblMetadataRulesDescription.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;lblMetadataRulesDescription.Parent" xml:space="preserve">
-    <value>tabPageResultFileRules</value>
-  </data>
-  <data name="&gt;&gt;lblMetadataRulesDescription.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="btnEditRule.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Right</value>
-  </data>
-  <data name="btnEditRule.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="btnEditRule.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <data name="btnEditRule.Location" type="System.Drawing.Point, System.Drawing">
-    <value>521, 74</value>
-  </data>
-  <data name="btnEditRule.Size" type="System.Drawing.Size, System.Drawing">
-    <value>94, 23</value>
-  </data>
-  <data name="btnEditRule.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
-  </data>
-  <data name="btnEditRule.Text" xml:space="preserve">
-    <value>&amp;Edit...</value>
-  </data>
-  <data name="&gt;&gt;btnEditRule.Name" xml:space="preserve">
-    <value>btnEditRule</value>
-  </data>
-  <data name="&gt;&gt;btnEditRule.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;btnEditRule.Parent" xml:space="preserve">
-    <value>tabPageResultFileRules</value>
-  </data>
-  <data name="&gt;&gt;btnEditRule.ZOrder" xml:space="preserve">
-    <value>1</value>
-  </data>
-  <data name="btnAddRule.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Right</value>
-  </data>
-  <data name="btnAddRule.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <data name="btnAddRule.Location" type="System.Drawing.Point, System.Drawing">
-    <value>521, 45</value>
-  </data>
-  <data name="btnAddRule.Size" type="System.Drawing.Size, System.Drawing">
-    <value>94, 23</value>
-  </data>
-  <data name="btnAddRule.TabIndex" type="System.Int32, mscorlib">
-    <value>1</value>
-  </data>
-  <data name="btnAddRule.Text" xml:space="preserve">
-    <value>New...</value>
-  </data>
-  <data name="&gt;&gt;btnAddRule.Name" xml:space="preserve">
-    <value>btnAddRule</value>
-  </data>
-  <data name="&gt;&gt;btnAddRule.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;btnAddRule.Parent" xml:space="preserve">
-    <value>tabPageResultFileRules</value>
-  </data>
-  <data name="&gt;&gt;btnAddRule.ZOrder" xml:space="preserve">
-    <value>2</value>
-  </data>
-  <data name="btnDeleteRules.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Right</value>
-  </data>
-  <data name="btnDeleteRules.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="btnDeleteRules.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <data name="btnDeleteRules.Location" type="System.Drawing.Point, System.Drawing">
-    <value>521, 103</value>
-  </data>
-  <data name="btnDeleteRules.Size" type="System.Drawing.Size, System.Drawing">
-    <value>94, 23</value>
-  </data>
-  <data name="btnDeleteRules.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
-  </data>
-  <data name="btnDeleteRules.Text" xml:space="preserve">
-    <value>Delete</value>
-  </data>
-  <data name="&gt;&gt;btnDeleteRules.Name" xml:space="preserve">
-    <value>btnDeleteRules</value>
-  </data>
-  <data name="&gt;&gt;btnDeleteRules.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;btnDeleteRules.Parent" xml:space="preserve">
-    <value>tabPageResultFileRules</value>
-  </data>
-  <data name="&gt;&gt;btnDeleteRules.ZOrder" xml:space="preserve">
-    <value>3</value>
-  </data>
-  <data name="checkedListBoxRuleSets.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Bottom, Left, Right</value>
-  </data>
-  <data name="checkedListBoxRuleSets.Location" type="System.Drawing.Point, System.Drawing">
-    <value>8, 46</value>
-  </data>
-  <data name="checkedListBoxRuleSets.Size" type="System.Drawing.Size, System.Drawing">
-    <value>507, 184</value>
-  </data>
-  <data name="checkedListBoxRuleSets.TabIndex" type="System.Int32, mscorlib">
-    <value>0</value>
-  </data>
-  <data name="&gt;&gt;checkedListBoxRuleSets.Name" xml:space="preserve">
-    <value>checkedListBoxRuleSets</value>
-  </data>
-  <data name="&gt;&gt;checkedListBoxRuleSets.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckedListBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;checkedListBoxRuleSets.Parent" xml:space="preserve">
-    <value>tabPageResultFileRules</value>
-  </data>
-  <data name="&gt;&gt;checkedListBoxRuleSets.ZOrder" xml:space="preserve">
-    <value>4</value>
-  </data>
-  <data name="tabPageResultFileRules.Location" type="System.Drawing.Point, System.Drawing">
-    <value>4, 22</value>
-  </data>
-  <data name="tabPageResultFileRules.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>3, 3, 3, 3</value>
-  </data>
-  <data name="tabPageResultFileRules.Size" type="System.Drawing.Size, System.Drawing">
-    <value>622, 260</value>
-  </data>
-  <data name="tabPageResultFileRules.TabIndex" type="System.Int32, mscorlib">
-    <value>4</value>
-  </data>
-  <data name="tabPageResultFileRules.Text" xml:space="preserve">
-    <value>Metadata Rules</value>
-  </data>
-  <data name="&gt;&gt;tabPageResultFileRules.Name" xml:space="preserve">
-    <value>tabPageResultFileRules</value>
-  </data>
-  <data name="&gt;&gt;tabPageResultFileRules.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;tabPageResultFileRules.Parent" xml:space="preserve">
-    <value>tabControl</value>
-  </data>
-  <data name="&gt;&gt;tabPageResultFileRules.ZOrder" xml:space="preserve">
     <value>4</value>
   </data>
   <data name="tabControl.Location" type="System.Drawing.Point, System.Drawing">
@@ -956,12 +922,12 @@ You can associate list items with elements in the document by defining a lookup 
     <value>modeUIHandler</value>
   </data>
   <data name="&gt;&gt;modeUIHandler.Type" xml:space="preserve">
-    <value>pwiz.Skyline.Util.Helpers+ModeUIExtender, Skyline-daily, Version=20.1.1.219, Culture=neutral, PublicKeyToken=null</value>
+    <value>pwiz.Skyline.Util.Helpers+ModeUIExtender, Skyline-daily, Version=20.1.1.224, Culture=neutral, PublicKeyToken=null</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>DocumentSettingsDlg</value>
   </data>
   <data name="&gt;&gt;$this.Type" xml:space="preserve">
-    <value>pwiz.Skyline.Util.FormEx, Skyline-daily, Version=20.1.1.219, Culture=neutral, PublicKeyToken=null</value>
+    <value>pwiz.Skyline.Util.FormEx, Skyline-daily, Version=20.1.1.224, Culture=neutral, PublicKeyToken=null</value>
   </data>
 </root>
