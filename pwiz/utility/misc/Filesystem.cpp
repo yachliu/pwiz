@@ -684,7 +684,7 @@ PWIZ_API_DECL string read_file_header(const string& filepath, size_t length)
 #ifdef WIN32 // check for locked files which can be opened by ifstream but only produce garbage when read (at least in VC12)
             {
                 std::wstring wide_filepath = boost::locale::conv::utf_to_utf<wchar_t>(filepath);
-                FileWrapper handle(::CreateFileW(wide_filepath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL));
+                FileWrapper handle(::CreateFileW(wide_filepath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL));
                 if (handle == INVALID_HANDLE_VALUE)
                     throw runtime_error("[read_file_header()] Unable to open file " + filepath + " (invalid permission or file locked)");
             }
