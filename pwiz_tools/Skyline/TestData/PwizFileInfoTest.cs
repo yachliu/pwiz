@@ -54,7 +54,8 @@ namespace pwiz.SkylineTestData
                 "4000 QTRAP", "electrospray ionization", "quadrupole/quadrupole/axial ejection linear ion trap", "electron multiplier");
 
             // Sciex .wiff2 file
-            VerifyInstrumentInfo(TestFilesDir.GetVendorTestData(TestFilesDir.VendorDir.ABI, "swath.api.wiff2"),
+            string wiff2Ext = ExtensionTestContext.CanImportAbWiff2 ? ".wiff2" : "-sample-centroid.wiff2";
+            VerifyInstrumentInfo(TestFilesDir.GetVendorTestData(TestFilesDir.VendorDir.ABI, "swath.api" + wiff2Ext),
                 "X500R QTOF", "electrospray ionization", "quadrupole/quadrupole/time-of-flight", "electron multiplier");
 
             // MzWiff generated mzXML files
@@ -117,7 +118,7 @@ namespace pwiz.SkylineTestData
 
             var testFilesDir = new TestFilesDir(TestContext, testZipPath);
 
-            using (var msDataFile = new MsDataFileImpl(TestFilesDir.GetVendorTestData(TestFilesDir.VendorDir.ABI, "PressureTrace1" + ExtensionTestContext.ExtAbWiff)))
+            using (var msDataFile = new MsDataFileImpl(testFilesDir.GetTestPath("PressureTrace1" + ExtensionTestContext.ExtAbWiff)))
             {
                 var pressureTraces = msDataFile.GetQcTraces();
 

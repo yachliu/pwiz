@@ -69,7 +69,7 @@ namespace pwiz.SkylineTestData.Results
             // wiff2
             {
                 string extWiff2 = ExtensionTestContext.ExtAbWiff2;
-                string suffix = ExtensionTestContext.CanImportAbWiff2 ? "" : "-sample";
+                string suffix = ExtensionTestContext.CanImportAbWiff2 ? "" : "-sample-centroid";
 
                 // Do file type checks
                 using (var msData = new MsDataFileImpl(TestFilesDir.GetVendorTestData(TestFilesDir.VendorDir.ABI, "swath.api" + suffix + extWiff2)))
