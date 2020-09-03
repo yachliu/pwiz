@@ -35,11 +35,13 @@ buildPath = sys.argv[2]
 installPath = sys.argv[3]
 version = sys.argv[4]
 numericVersion = sys.argv[5]
-platform = sys.argv[6]
+addressModel = sys.argv[6]
 
 installerSuffix = "-x86"
-if platform == "64":
+platform = "x86"
+if addressModel == "64":
     installerSuffix = "-x86_64"
+    platform = "x64"
 
 # a unique ProductGuid every time allows multiple parallel installations of pwiz
 guid = str(uuid.uuid4())
@@ -80,7 +82,7 @@ def contextMenuRegistries() :
     return registries
 
 wxsTemplate = open(templatePath + "/pwiz-setup.wxs.template").read()
-installerVendorFiles = open(buildPath + "/x" + platform + "/INSTALLER_VENDOR_FILES.txt").read().strip().split("\n")
+installerVendorFiles = open(buildPath + "/" + platform + "/INSTALLER_VENDOR_FILES.txt").read().strip().split("\n")
 wxsVendorDlls = []
 for file in installerVendorFiles:
 	wxsVendorDlls.append(f'<Component Feature="MainFeature"><File Source="{installPath}\{file}" KeyPath="yes"/></Component>')

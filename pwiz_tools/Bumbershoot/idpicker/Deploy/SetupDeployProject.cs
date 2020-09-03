@@ -51,10 +51,11 @@ namespace SetupDeployProject
             string version = args[2];
             string numericVersion = args[3];
             string addressModel = args[4];
+            string platform = addressModel == "64" ? "x64" : "x86";
             string installerSuffix = addressModel == "64" ? "-x86_64" : "-x86";
 
             var wxsVendorDlls = new StringBuilder();
-            foreach (var line in File.ReadAllText(buildPath + "/x" + addressModel + "/INSTALLER_VENDOR_FILES.txt").Trim().Split('\n'))
+            foreach (var line in File.ReadAllText(buildPath + "/" + platform + "/INSTALLER_VENDOR_FILES.txt").Trim().Split('\n'))
                 wxsVendorDlls.Append($"<Component Feature=\"MainFeature\"><File Source=\"{installPath}\\{line.Trim()}\" KeyPath=\"yes\"/></Component>");
 
             wxsTemplate.Replace("{ProductGuid}", guid);

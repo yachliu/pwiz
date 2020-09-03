@@ -50,7 +50,7 @@ namespace seems
 		/// </summary>
 		[STAThread]
 		[SecurityPermission(SecurityAction.Demand, Flags = SecurityPermissionFlag.ControlAppDomain)]
-		public static void Main( string[] args )
+		public static int Main( string[] args )
 		{
 		    // redirect console output to parent process;
 		    // must be before any calls to Console.WriteLine()
@@ -74,7 +74,7 @@ namespace seems
                 scList.Add( a.GetSpectrumCollection( ssd.SpectrumCollectionId ) );*/
 
             // Add the event handler for handling UI thread exceptions to the event.
-            Application.ThreadException += new ThreadExceptionEventHandler( UIThread_UnhandledException );
+            Application.ThreadException += UIThread_UnhandledException;
 
 			// Set the unhandled exception mode to force all Windows Forms errors to go through
 			// our handler.
@@ -83,7 +83,7 @@ namespace seems
 			Application.SetCompatibleTextRenderingDefault( false );
 
 			// Add the event handler for handling non-UI thread exceptions to the event. 
-			AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler( CurrentDomain_UnhandledException );
+			AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
 
             var singleInstanceHandler = new SingleInstanceHandler(Application.ExecutablePath) { Timeout = 200 };
@@ -98,16 +98,18 @@ namespace seems
                 MainForm.ParseArgs(singleInstanceArgs);
                 if (!MainForm.IsDisposed)
                     Application.Run(MainForm);
+                e.ExitCode = Environment.ExitCode;
             };
 
             try
             {
                 TestMode = args.Contains("--test");
-                singleInstanceHandler.Connect(args);
+                return singleInstanceHandler.Connect(args);
             }
             catch (Exception e)
             {
                 HandleException("Error connecting to single instance", e);
+                return 1;
             }
 		}
 
@@ -125,30 +127,17 @@ namespace seems
 	        else
 	        {
 	            Console.Error.WriteLine(message);
-	            Environment.Exit(1);
-	        }
+	            Process.GetCurrentProcess().Kill();
+            }
 	    }
 
 		private static void UIThread_UnhandledException( object sender, ThreadExceptionEventArgs e )
 		{
-			/*Process newSeems = new Process();
-			newSeems.StartInfo.FileName = Application.ExecutablePath;
-			if( MainForm.CurrentFilepath.Length > 0 )
-				newSeems.StartInfo.Arguments = "\"" + MainForm.CurrentFilepath + "\" " + MainForm.CurrentScanIndex;
-			newSeems.Start();
-			Process.GetCurrentProcess().Kill();*/
             HandleException("Unhandled Exception", e.Exception);
 		}
 
 		private static void CurrentDomain_UnhandledException( object sender, UnhandledExceptionEventArgs e )
 		{
-            /*Process newSeems = new Process();
-			newSeems.StartInfo.FileName = Application.ExecutablePath;
-			if( MainForm.CurrentGraphForm.CurrentSourceFilepath.Length > 0 )
-				newSeems.StartInfo.Arguments = "\"" + MainForm.CurrentGraphForm.CurrentSourceFilepath + "\" " + MainForm.CurrentGraphForm.CurrentGraphItemIndex;
-			newSeems.Start();
-			Process.GetCurrentProcess().Kill();*/
-
 		    HandleException("Unhandled Exception", e.ExceptionObject as Exception);
         }
 	}
