@@ -124,7 +124,7 @@ actions test_msi
     $(MSVC_CURRENT_SETUP_SCRIPT)
     echo Installing $(ARTIFACT_NAME)...
     copy "$(PWIZ_BUILD_PATH)\$(ARTIFACT_NAME).msi" "%TEMP%"
-    start /wait msiexec /qn /l* "$(PWIZ_BUILD_PATH)\$(ARTIFACT_NAME).log" /norestart /i "%TEMP%\$(ARTIFACT_NAME).msi" REBOOT=ReallySuppress ALLUSERS=2 MSIINSTALLPERUSER=1
+    start /wait msiexec /qn /l* "%TEMP%\$(ARTIFACT_NAME).log" /norestart /i "%TEMP%\$(ARTIFACT_NAME).msi" REBOOT=ReallySuppress ALLUSERS=2 MSIINSTALLPERUSER=1
     set EXIT=%ERRORLEVEL%
     IF %EXIT% NEQ 0 echo Install failed with code %EXIT%.
     set status=%EXIT%
@@ -141,7 +141,7 @@ actions test_msi
     set PATH=%PATH_TMP%
 
     echo Uninstalling $(ARTIFACT_NAME)...
-    start /wait msiexec /qn /l* "$(PWIZ_BUILD_PATH)\$(ARTIFACT_NAME).log" /norestart /x "%TEMP%\$(ARTIFACT_NAME).msi" REBOOT=ReallySuppress
+    start /wait msiexec /qn /l* "%TEMP%\$(ARTIFACT_NAME).log" /norestart /x "%TEMP%\$(ARTIFACT_NAME).msi" REBOOT=ReallySuppress
     set EXIT=%ERRORLEVEL%
     IF %TEST_EXIT% NEQ 0 IF %EXIT% NEQ 0 set status=%EXIT%
     IF %EXIT% NEQ 0 echo Uninstall failed with code %EXIT%.
@@ -151,6 +151,7 @@ actions test_msi
     IF %TEST_EXIT% EQU 0 echo Deployment test passed.
     IF %TEST_EXIT% EQU 0 echo Deployment test passed. > "$(LOCATION)\Test.passed"
 
+    move "%TEMP%\$(ARTIFACT_NAME).log" "$(PWIZ_BUILD_PATH)"
     del "%TEMP%\$(ARTIFACT_NAME).msi"
 
     IF %TEST_EXIT% NEQ 0 exit 1
