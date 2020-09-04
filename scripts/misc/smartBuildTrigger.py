@@ -112,18 +112,18 @@ targets['All'] = merge(targets['Core'], targets['Skyline'], targets['Bumbershoot
 # "pwiz_tools/Bumbershoot/Jamfile.jam" matches both "pwiz_tools/Bumbershoot/.*" and "pwiz_tools/.*", but will only trigger "Bumbershoot" targets
 matchPaths = [
     (".*/smartBuildTrigger.py", {}),
-    ("libraries/.*", targets['All']),
-    ("pwiz/.*", targets['All']),
-    ("pwiz_aux/.*", targets['All']),
+    #("libraries/.*", targets['All']),
+    #("pwiz/.*", targets['All']),
+    #("pwiz_aux/.*", targets['All']),
     ("scripts/wix/.*", {"ProteoWizard_CoreWindowsX8664installerTest": "Installer test"}),# targets['CoreWindows']),
-    ("scripts/.*", targets['All']),
-    ("pwiz_tools/BiblioSpec/.*", merge(targets['Core'], targets['Skyline'], targets['Container'])),
-    ("pwiz_tools/Bumbershoot/.*", targets['Bumbershoot']),
-    ("pwiz_tools/Skyline/.*", merge(targets['Skyline'], targets['Container'])),
-    ("pwiz_tools/Topograph/.*", targets['Skyline']),
-    ("pwiz_tools/Shared/.*", merge(targets['Skyline'], targets['BumbershootRelease'], targets['Container'])),
-    ("pwiz_tools/.*", targets['All']),
-    ("Jamroot.jam", targets['All'])
+    #("scripts/.*", targets['All']),
+    #("pwiz_tools/BiblioSpec/.*", merge(targets['Core'], targets['Skyline'], targets['Container'])),
+    #("pwiz_tools/Bumbershoot/.*", targets['Bumbershoot']),
+    #("pwiz_tools/Skyline/.*", merge(targets['Skyline'], targets['Container'])),
+    #("pwiz_tools/Topograph/.*", targets['Skyline']),
+    #("pwiz_tools/Shared/.*", merge(targets['Skyline'], targets['BumbershootRelease'], targets['Container'])),
+    #("pwiz_tools/.*", targets['All']),
+    #("Jamroot.jam", targets['All'])
 ]
 
 print("Current branch: %s" % current_branch) # must be either 'master' or 'pull/#'
