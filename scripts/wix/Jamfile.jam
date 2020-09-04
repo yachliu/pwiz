@@ -124,6 +124,9 @@ actions test_msi
     IF %EXIT% NEQ 0 echo Install failed with code %EXIT%.
     set status=%EXIT%
     IF %EXIT% NEQ 0 (
+      del "%TEMP%\$(ARTIFACT_NAME).msi"
+      move "%TEMP%\$(ARTIFACT_NAME).log" "$(PWIZ_BUILD_PATH)"
+      pause
       $(TEST_POSTCOMMAND)
       exit %EXIT%
     )

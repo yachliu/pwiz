@@ -115,7 +115,7 @@ matchPaths = [
     ("libraries/.*", targets['All']),
     ("pwiz/.*", targets['All']),
     ("pwiz_aux/.*", targets['All']),
-    ("scripts/wix/.*", targets['CoreWindows']),
+    ("scripts/wix/.*", {"ProteoWizard_CoreWindowsX8664installerTest": "Installer test"}),# targets['CoreWindows']),
     ("scripts/.*", targets['All']),
     ("pwiz_tools/BiblioSpec/.*", merge(targets['Core'], targets['Skyline'], targets['Container'])),
     ("pwiz_tools/Bumbershoot/.*", targets['Bumbershoot']),
