@@ -54,7 +54,7 @@ namespace pwiz.SkylineTestData
                 "4000 QTRAP", "electrospray ionization", "quadrupole/quadrupole/axial ejection linear ion trap", "electron multiplier");
 
             // Sciex .wiff2 file
-            string wiff2Ext = ExtensionTestContext.CanImportAbWiff2 ? ".wiff2" : "-sample-centroid.wiff2";
+            string wiff2Ext = ExtensionTestContext.CanImportAbWiff2 ? ".wiff2" : "-sample-centroid.mzML";
             VerifyInstrumentInfo(TestFilesDir.GetVendorTestData(TestFilesDir.VendorDir.ABI, "swath.api" + wiff2Ext),
                 "X500R QTOF", "electrospray ionization", "quadrupole/quadrupole/time-of-flight", "electron multiplier");
 
