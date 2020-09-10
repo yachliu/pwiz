@@ -47,11 +47,17 @@ class WiffFile2Impl : public WiffFile
     WiffFile2Impl(const std::string& wiffpath);
     ~WiffFile2Impl()
     {
-        DataReader->CloseFile(((IList<ISample^>^) allSamples)[0]->Sources[0]);
+        DataReader()->CloseFile(((IList<ISample^>^) allSamples)[0]->Sources[0]);
         System::GC::Collect();
     }
 
-    static gcroot<ISampleDataApi^> DataReader;
+    ISampleDataApi^ DataReader() const
+    {
+        static gcroot<ISampleDataApi^> dataReader = (gcnew DataApiFactory())->CreateSampleDataApi();
+        return dataReader;
+    }
+
+    //gcroot<ISampleDataApi^> dataReader = (gcnew DataApiFactory())->CreateSampleDataApi();
     mutable gcroot<IList<ISample^>^> allSamples;
     mutable gcroot<ISample^> msSample;
     mutable gcroot<IList<IExperiment^>^> currentSampleExperiments;
@@ -88,8 +94,6 @@ class WiffFile2Impl : public WiffFile
     // on first access, sample names are made unique (giving duplicates a count suffix) and cached
     mutable vector<string> sampleNames;
 };
-
-gcroot<ISampleDataApi^> WiffFile2Impl::DataReader = (gcnew DataApiFactory())->CreateSampleDataApi();
 
 typedef boost::shared_ptr<WiffFile2Impl> WiffFile2ImplPtr;
 
@@ -189,7 +193,7 @@ struct Spectrum2Impl : public Spectrum
         auto& msSpectrum = msSpectrumCache[addZeros ? 1 : 0][doCentroid ? 1 : 0];
         if ((ISpectrum^) msSpectrum == nullptr)
         {
-            auto spectrumRequest = WiffFile2Impl::DataReader->RequestFactory->CreateSpectraReadRequest();
+            auto spectrumRequest = experiment->wiffFile_->DataReader()->RequestFactory->CreateSpectraReadRequest();
             spectrumRequest->SampleId = experiment->wiffFile_->msSample->Id;
             spectrumRequest->ExperimentId = experiment->msExperiment->Id;
             spectrumRequest->Range->Start = scanTime;
@@ -197,7 +201,7 @@ struct Spectrum2Impl : public Spectrum
             spectrumRequest->ConvertToCentroid = doCentroid;
             spectrumRequest->AddFramingZeros = addZeros;
 
-            auto spectraReader = WiffFile2Impl::DataReader->GetSpectra(spectrumRequest);
+            auto spectraReader = experiment->wiffFile_->DataReader()->GetSpectra(spectrumRequest);
             if (spectraReader->MoveNext())
                 msSpectrum = spectraReader->GetCurrent();
             else
@@ -243,12 +247,12 @@ WiffFile2Impl::WiffFile2Impl(const string& wiffpath)
 {
     try
     {
-        auto sampleRequest = DataReader->RequestFactory->CreateSamplesReadRequest();
+        auto sampleRequest = DataReader()->RequestFactory->CreateSamplesReadRequest();
         sampleRequest->AbsolutePathToWiffFile = ToSystemString(bfs::canonical(wiffpath, bfs::current_path()).string());
 
         allSamples = gcnew List<ISample^>();
 
-        auto sampleReader = DataReader->GetSamples(sampleRequest);
+        auto sampleReader = DataReader()->GetSamples(sampleRequest);
         while (sampleReader->MoveNext())
             allSamples->Add(sampleReader->GetCurrent());
 
@@ -294,11 +298,11 @@ int WiffFile2Impl::getCycleCount(int sample, int period, int experiment) const
         IList<IExperiment^>^ unwrappedExperiments = currentSampleExperiments;
         auto currentExperiment = unwrappedExperiments[experiment - 1];
 
-        auto experimentCyclesRequest = WiffFile2Impl::DataReader->RequestFactory->CreateExperimentCyclesReadRequest();
+        auto experimentCyclesRequest = DataReader()->RequestFactory->CreateExperimentCyclesReadRequest();
         experimentCyclesRequest->SampleId = msSample->Id;
         experimentCyclesRequest->ExperimentId = currentExperiment->Id;
 
-        auto experimentCycles = WiffFile2Impl::DataReader->GetExperimentCycles(experimentCyclesRequest);
+        auto experimentCycles = DataReader()->GetExperimentCycles(experimentCyclesRequest);
         return experimentCycles->Cycles->Length;
     }
     CATCH_AND_FORWARD
@@ -472,11 +476,11 @@ void Experiment2Impl::initializeTIC() const
 
     try
     {
-        auto experimentTicRequest = WiffFile2Impl::DataReader->RequestFactory->CreateExperimentTicReadRequest();
+        auto experimentTicRequest = wiffFile_->DataReader()->RequestFactory->CreateExperimentTicReadRequest();
         experimentTicRequest->SampleId = wiffFile_->msSample->Id;
         experimentTicRequest->ExperimentId = msExperiment->Id;
 
-        auto experimentTic = WiffFile2Impl::DataReader->GetExperimentTic(experimentTicRequest);
+        auto experimentTic = wiffFile_->DataReader()->GetExperimentTic(experimentTicRequest);
         ToBinaryData(experimentTic->XValues, cycleTimes_);
         ToBinaryData(experimentTic->YValues, cycleIntensities_);
         
@@ -768,12 +772,12 @@ void WiffFile2Impl::setSample(int sample) const
             IList<ISample^>^ unwrappedAllSamples = allSamples;
             this->msSample = (ISample^)unwrappedAllSamples[sample - 1];
 
-            auto experimentRequest = WiffFile2Impl::DataReader->RequestFactory->CreateExperimentsReadRequest();
+            auto experimentRequest = DataReader()->RequestFactory->CreateExperimentsReadRequest();
             experimentRequest->SampleId = msSample->Id;
 
             currentSampleExperiments = gcnew List<IExperiment^>();
 
-            auto experimentReader = WiffFile2Impl::DataReader->GetExperiments(experimentRequest);
+            auto experimentReader = DataReader()->GetExperiments(experimentRequest);
             while (experimentReader->MoveNext())
                 currentSampleExperiments->Add(experimentReader->GetCurrent());
 

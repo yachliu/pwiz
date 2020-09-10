@@ -45,7 +45,7 @@ using namespace pwiz::util;
 using namespace System;
 using namespace Clearcore2::Data;
 using namespace Clearcore2::Data::AnalystDataProvider;
-//using namespace Clearcore2::Data::Client;
+using namespace Clearcore2::Data::Client;
 using namespace Clearcore2::Data::DataAccess;
 using namespace Clearcore2::Data::DataAccess::SampleData;
 
@@ -246,8 +246,8 @@ WiffFileImpl::WiffFileImpl(const string& wiffpath)
         Licenser::LicenseKey = ABI_BETA_LICENSE_KEY;
 #endif*/
 
-        //provider = DataProviderFactory::CreateDataProvider("", true);
-        provider = gcnew AnalystWiffDataProvider();
+        provider = DataProviderFactory::CreateDataProvider("", true);
+        //provider = gcnew AnalystWiffDataProvider();
         batch = AnalystDataProviderFactory::CreateBatch(ToSystemString(wiffpath), provider);
 
         // This caused WIFF files where the first sample had been interrupted to
@@ -414,8 +414,12 @@ blt::local_date_time WiffFileImpl::getSampleAcquisitionTime(int sample, bool adj
 ExperimentPtr WiffFileImpl::getExperiment(int sample, int period, int experiment) const
 {
     setExperiment(sample, period, experiment);
-    ExperimentImplPtr msExperiment(new ExperimentImpl(this, sample, period, experiment));
-    return msExperiment;
+    try
+    {
+        ExperimentImplPtr msExperiment(new ExperimentImpl(this, sample, period, experiment));
+        return msExperiment;
+    }
+    CATCH_AND_FORWARD
 }
 
 

@@ -46,7 +46,7 @@ rule vendor-api-requirements ( properties * )
             result += <library>$(PWIZ_ROOT_PATH)/pwiz/utility/misc//pwiz_utility_misc ;
         }
         result += <assembly>$(dll_location)/Clearcore2.Data.AnalystDataProvider.dll ;
-        #result += <assembly>$(dll_location)/Clearcore2.Data.Client.dll ;
+        result += <assembly>$(dll_location)/Clearcore2.Data.Client.dll ;
         result += <assembly>$(dll_location)/Clearcore2.Data.dll ;
         result += <assembly>$(dll_location)/Clearcore2.RawXYProcessing.dll ;
         result += <assembly>$(dll_location)/Clearcore2.Data.CommonInterfaces.dll ;
@@ -125,7 +125,7 @@ rule install-requirements ( properties * )
         result += <source>$(dll_location)/Clearcore2.Compression.dll ;
         result += <source>$(dll_location)/Clearcore2.Data.AnalystDataProvider.dll ;
         result += <source>$(dll_location)/Clearcore2.Data.dll ;
-        #result += <source>$(dll_location)/Clearcore2.Data.Client.dll ;
+        result += <source>$(dll_location)/Clearcore2.Data.Client.dll ;
         result += <source>$(dll_location)/Clearcore2.Data.Wiff2.dll ;
         result += <source>$(dll_location)/Clearcore2.Data.WiffReader.dll ;
         result += <source>$(dll_location)/Clearcore2.Data.CommonInterfaces.dll ;
@@ -165,14 +165,14 @@ rule install-sqlite ( properties * )
     {
         if <address-model>64 in $(properties)
         {
-            result += <install-source-root>$(dll_location)/x64 ;
-            result += <source>$(dll_location)/x64/SQLite_v1.0.98/System.Data.SQLite.DLL ;
+            #result += <install-source-root>$(dll_location)/x64 ;
+            #result += <source>$(dll_location)/x64/SQLite_v1.0.98/System.Data.SQLite.DLL ;
             result += <source>$(dll_location)/x64/SQLite.Interop.dll ;
         }
         else
         {
-            result += <install-source-root>$(dll_location)/x86 ;
-            result += <source>$(dll_location)/x86/SQLite_v1.0.98/System.Data.SQLite.DLL ;
+            #result += <install-source-root>$(dll_location)/x86 ;
+            #result += <source>$(dll_location)/x86/SQLite_v1.0.98/System.Data.SQLite.DLL ;
             result += <source>$(dll_location)/x86/SQLite.Interop.dll ;
         }
     }
