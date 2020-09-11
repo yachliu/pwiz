@@ -68,7 +68,7 @@ namespace AutoQC
             } 
         }
 
-        private void Save()
+        public void Save()
         {
             AutoQcConfig newConfig;
             try
@@ -314,5 +314,25 @@ namespace AutoQC
             labelAccumulationTimeWindow.Enabled = checkBoxRemoveResults.Checked;
             labelDays.Enabled = checkBoxRemoveResults.Checked;
         }
+
+        #region For tests
+        public string ConfigName
+        {
+            get { return textConfigName.Text; }
+            set { textConfigName.Text = value; }
+        }
+
+        public string SkylineFilePath
+        {
+            get { return textSkylinePath.Text; }
+            set { textSkylinePath.Text = value; }
+        }
+
+        public string FolderToWatch
+        {
+            get { return textFolderToWatchPath.Text; }
+            set { textFolderToWatchPath.Text = value; }
+        }
+        #endregion
     }
 }

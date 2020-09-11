@@ -75,8 +75,9 @@ namespace AutoQC
             new AlertDlg(message, title, SystemIcons.Error.ToBitmap()) { Exception = exception }.ShowAndDispose(parent, MessageBoxButtons.OK);
         }
 
-        private string Message
+        public string Message
         {
+            get => _message;
             set
             {
                 _message = value;
@@ -324,6 +325,11 @@ namespace AutoQC
         {
             get { return base.Text; }
             set { base.Text = value; }
+        }
+
+        public void OkDialog()
+        {
+            DialogResult = DialogResult.OK;
         }
 
     }

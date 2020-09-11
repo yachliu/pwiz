@@ -22,7 +22,7 @@ namespace AutoQC.Properties {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Resources {
+    public class Resources {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -183,7 +183,7 @@ namespace AutoQC.Properties {
         /// <summary>
         ///   Looks up a localized string similar to A configuration with this name already exists..
         /// </summary>
-        internal static string AutoQcConfigForm_ValidateConfigName_A_configuration_with_this_name_already_exists_ {
+        public static string AutoQcConfigForm_ValidateConfigName_A_configuration_with_this_name_already_exists_ {
             get {
                 return ResourceManager.GetString("AutoQcConfigForm_ValidateConfigName_A_configuration_with_this_name_already_exists" +
                         "_", resourceCulture);

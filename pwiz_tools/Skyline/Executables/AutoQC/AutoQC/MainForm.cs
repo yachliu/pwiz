@@ -211,9 +211,7 @@ namespace AutoQC
         {
 //            MessageBox.Show(Application.UserAppDataPath + " directory");
             Program.LogInfo("Creating new configuration");
-            var configForm = new AutoQcConfigForm(this);
-            configForm.StartPosition = FormStartPosition.CenterParent;
-            ShowConfigForm(configForm);
+            ShowNewConfigForm();
         }
 
         private void btnEdit_Click(object sender, EventArgs e)
@@ -1094,6 +1092,20 @@ namespace AutoQC
                 }
             }
         }
+
+        #region For tests
+        public int ConfigCount()
+        {
+            return _configRunners.Count;
+        }
+
+        public void ShowNewConfigForm()
+        {
+            var configForm = new AutoQcConfigForm(this);
+            configForm.StartPosition = FormStartPosition.CenterParent;
+            ShowConfigForm(configForm);
+        }
+        #endregion
     }
 
     //
